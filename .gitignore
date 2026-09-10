@@ -10,3 +10,6 @@ venv/
 data/cards_beta.json
 data/cards_beta.csv
 exports/
+
+# stray wheels from pip download
+*.whl
