@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cyberpunk-deck-math"
+version = "1.0.0"
+description = "Mathematical analysis of Cyberpunk TCG constructed decks"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+ui = ["streamlit>=1.30", "pandas>=2.0"]
+llm = ["anthropic>=0.40"]
+dev = ["pytest>=7.4", "streamlit>=1.30", "pandas>=2.0"]
+
+[project.scripts]
+cyberpunk-deck-math = "cli:main"
+
+[tool.setuptools]
+packages = ["cyberpunk_deck_math"]
+py-modules = ["cli", "demo"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]

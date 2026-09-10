@@ -1,0 +1,27 @@
+# Sample constructed deck — placeholder card pool
+# 40 cards, 25 mechanical sellables = 62.5%
+Name: YYG Jackie (Sample)
+
+Legends
+
+1x Muamar Reyes — El Capitán
+1x Placeholder Legend Two
+1x Placeholder Legend Three
+
+Main Deck
+
+2x Jackie Welles — Ride or Die Choom
+2x Field Operator
+3x Zetatech Faceplate
+3x Memory Relapse
+3x Placeholder Sellable Gig A
+3x Placeholder Sellable Gig B
+3x Placeholder Sellable Gig C
+3x Placeholder Sellable Gig D
+3x Placeholder Sellable Gig E
+3x Placeholder Sellable Gig F
+2x Placeholder Sellable Gig G
+3x Placeholder Reactive Program
+3x Placeholder Expensive Finisher
+2x Placeholder Utility Program
+2x Placeholder Combat Unit

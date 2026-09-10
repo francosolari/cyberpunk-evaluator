@@ -1,0 +1,73 @@
+[
+  {
+    "name": "Jackie Aggressive",
+    "description": "Hard mulligan for Jackie. Maximum target access, worst resource stability.",
+    "keep": {"feature": "target", "operator": ">=", "value": 1},
+    "max_mulligans": 1
+  },
+  {
+    "name": "Jackie or Draw",
+    "description": "Keep on Jackie or an early draw source.",
+    "keep": {
+      "any": [
+        {"feature": "target", "operator": ">=", "value": 1},
+        {"feature": "early_draw_sources", "operator": ">=", "value": 1}
+      ]
+    },
+    "max_mulligans": 1
+  },
+  {
+    "name": "Balanced YYG",
+    "description": "Two sellables plus a payoff, a draw source, or two early plays.",
+    "keep": {
+      "all": [
+        {"feature": "sellables", "operator": ">=", "value": 2},
+        {
+          "any": [
+            {"feature": "target", "operator": ">=", "value": 1},
+            {"feature": "early_draw_sources", "operator": ">=", "value": 1},
+            {"feature": "early_playables", "operator": ">=", "value": 2}
+          ]
+        }
+      ]
+    },
+    "max_mulligans": 1
+  },
+  {
+    "name": "Sell Stability",
+    "description": "Resource-first: keep only three-sellable hands.",
+    "keep": {"feature": "sellables", "operator": ">=", "value": 3},
+    "max_mulligans": 1
+  },
+  {
+    "name": "Jackie Score Based",
+    "description": "Numeric scoring: Jackie +3, Field Operator +2, Zetatech +1, sellables +1 each, Memory Relapse -1, with interaction bonuses.",
+    "keep": {"feature": "score", "operator": ">=", "value": 7},
+    "score": {
+      "card_scores": {
+        "Jackie Welles — Ride or Die Choom": 3,
+        "Field Operator": 2,
+        "Zetatech Faceplate": 1,
+        "Memory Relapse": -1,
+        "Placeholder Expensive Finisher": -2
+      },
+      "sellable_score": 1,
+      "interactions": [
+        {"when": {"feature": "sellables", "operator": ">=", "value": 2}, "points": 2},
+        {"when": {"feature": "sellables", "operator": "==", "value": 0}, "points": -3},
+        {
+          "when": {
+            "all": [
+              {"feature": "target", "operator": ">=", "value": 1},
+              {"feature": "draw_sources", "operator": ">=", "value": 1}
+            ]
+          },
+          "points": 2
+        },
+        {"when": {"feature": "cards_cost_4_plus", "operator": ">=", "value": 3}, "points": -2},
+        {"when": {"feature": "sellable_pct", "operator": ">=", "value": 0.5}, "points": 2}
+      ]
+    },
+    "max_mulligans": 1
+  }
+]

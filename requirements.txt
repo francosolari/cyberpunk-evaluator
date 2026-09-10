@@ -1,0 +1,9 @@
+# Core analysis needs nothing beyond the standard library.
+# The UI and the test suite need these:
+streamlit>=1.30
+pandas>=2.0
+pytest>=7.4
+
+# Optional: LLM-assisted card-text interpretation and playability estimates.
+# Everything those features do can also be done by hand.
+anthropic>=0.40
