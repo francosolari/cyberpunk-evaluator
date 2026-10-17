@@ -127,37 +127,35 @@
 ---
 # Name: RRG - Fixers
 #L
-1x Padre
+1x Dexter DeShawn, Off the Grid
+1x Padre, Man of the Cross
 1x V, Streetkid
-1x Adam Smasher, Ender of Legends
 #D
-1x Valentino Street Racer
+2x Field Operator
 3x 6th Street Recruits
-1x Maelstrom Zealots
-2x Meredith Stout, Stone Cold Corpo
-3x Pepe Najarro
+1x Meredith Stout, Stone Cold Corpo
+3x Pepe Najarro, Working Doubles
 3x Animals Wrecker
-3x Yorinobu Arasaka
+2x Yorinobu Arasaka, Steel Dragon
 3x Mantis Blades
 1x Riot Shield
 3x Satori, Sword of Saburo
-1x Detonate
-2x Industrial Assembly
+3x Industrial Assembly
 3x Peace Offering
-2x Synapse Burnout
+3x Synapse Burnout
 3x Bonnie and Clyde
+1x Gunpoint Diplomacy
 3x Memory Relapse
 3x Carnage at the Colosseum
 #S
-3x Royce, Don't Call Me Simon
+3x Nadia, Fighting Through Grief
 1x Riot Shield
-1x Detonate
-1x Synapse Burnout
+2x Detonate
 1x Gunpoint Diplomacy
 ---
 # Name: RRG - Arasaka
 #L
-1x Padre
+1x Padre, Man of the Cross
 1x V, Streetkid
 1x Adam Smasher, Ender of Legends
 #D
@@ -165,9 +163,9 @@
 3x 6th Street Recruits
 1x Maelstrom Zealots
 2x Meredith Stout, Stone Cold Corpo
-3x Pepe Najarro
+3x Pepe Najarro, Working Doubles
 3x Animals Wrecker
-3x Yorinobu Arasaka
+3x Yorinobu Arasaka, Steel Dragon
 3x Mantis Blades
 1x Riot Shield
 3x Satori, Sword of Saburo
@@ -180,6 +178,6 @@
 3x Carnage at the Colosseum
 #S
 2x Royce, Don't Call Me Simon
-2x Nadia
+2x Nadia, Fighting Through Grief
 1x Riot Shield
 2x Gunpoint Diplomacy
