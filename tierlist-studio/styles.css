@@ -433,3 +433,41 @@ code { color: var(--accent); }
 #slide-board .board { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 900px) { #slide-board { max-height: none; } #slide-board .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) { #slide-board .board { grid-template-columns: 1fr; } }
+
+/* ---------- No text selection while dragging (phones especially) ---------- */
+.bcard, .deck-tile, .bcol, .pool, #stage-host, .fan, .list li { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.bcard, .deck-tile { touch-action: manipulation; }
+.bcard.dragging, .deck-tile.dragging { opacity: .35; }
+.touch-ghost { position: fixed; left: 0; top: 0; z-index: 400; pointer-events: none; margin: -46px 0 0 -40px; padding: 8px 12px; border-radius: 8px; background: var(--accent); color: #0a0b10; font: 700 14px "Chakra Petch", sans-serif; box-shadow: 0 10px 30px #000c; white-space: nowrap; }
+
+/* ---------- Deck list: search, groups, sort ---------- */
+.deck-tools { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 10px; }
+.deck-tools select { flex: 1; min-width: 0; font-size: 12px; padding: 5px 6px; }
+.deck-tools .row { flex-wrap: nowrap; }
+.dgroup { background: none !important; border: none !important; padding: 10px 2px 2px !important; cursor: pointer; font: 600 11px "Chakra Petch", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); gap: 6px !important; }
+.dgroup::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--g); }
+.dgroup b { margin-left: auto; color: var(--text); font-weight: 600; }
+.dgroup .caret { order: 3; transition: transform .15s; }
+.dgroup.closed .caret { transform: rotate(-90deg); }
+
+/* ---------- Unranked pool: filter + color groups ---------- */
+.pool-head input[type=search] { width: 180px; margin-left: auto; padding: 4px 8px; }
+.pool { align-items: flex-start; }
+.pgroup { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; padding-right: 12px; margin-right: 4px; border-right: 1px solid var(--line); }
+.pgroup:last-child { border-right: none; }
+.pg-label { flex-basis: 100%; font: 600 11px "Chakra Petch", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.pg-label::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--g); }
+
+@media (max-width: 900px) {
+  #deck-list { flex-direction: column; overflow-x: visible; max-height: 46vh; overflow-y: auto; }
+  #deck-list li { min-width: 0; }
+  .pool-head { flex-wrap: wrap; }
+  .pool-head input[type=search] { width: 100%; margin-left: 0; }
+}
+.pool-head input[type=search] { order: 3; }
+
+#deck-list li:not(.dgroup) { padding: 5px 8px; }
+#deck-list .fan .mini { width: 20px; height: 28px; margin-right: -5px; }
+#deck-list .dl-text strong { font-size: 13px; }
+#deck-list .dl-text .hint { font-size: 11px; }
+.pool.compact .deck-tile { width: 70px; height: 95px; }

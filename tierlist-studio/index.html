@@ -47,7 +47,8 @@
         <div class="stage-wrap" id="stage-wrap"><div id="stage-host"></div></div>
         <div class="pool-wrap">
           <div class="pool-head">
-            <h3>Unranked decks</h3>
+            <h3>Unranked decks <span id="pool-count" class="hint"></span></h3>
+            <input type="search" id="pool-q" placeholder="Filter…" aria-label="Filter unranked decks">
             <span class="hint">Drag onto a tier, or tap a deck and then a tier. Tap a deck to edit its list below.</span>
           </div>
           <div id="pool" class="pool" data-drop="pool"></div>
@@ -59,10 +60,17 @@
 
     <section id="view-decks" class="view">
       <aside class="panel">
-        <h3>Decks</h3>
+        <h3>Decks <span id="deck-count" class="hint"></span></h3>
         <button id="import-deck" class="primary block">⇩ Import deck export</button>
         <button id="add-deck" class="block">+ Blank deck</button>
-        <ul id="deck-list" class="list" style="margin-top:12px"></ul>
+        <div class="deck-tools">
+          <input type="search" id="deck-q" placeholder="Search decks or Legends…" aria-label="Search decks">
+          <div class="row gap">
+            <select id="deck-group" aria-label="Group decks"><option value="color">Group: main color</option><option value="tier">Group: tier</option><option value="none">No groups</option></select>
+            <select id="deck-sort" aria-label="Sort decks"><option value="new">Newest first</option><option value="name">Name</option><option value="cards">Most cards</option></select>
+          </div>
+        </div>
+        <ul id="deck-list" class="list"></ul>
       </aside>
       <div class="workspace pad" id="deck-editor"></div>
     </section>
