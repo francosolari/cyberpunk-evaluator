@@ -49,6 +49,7 @@ code { color: var(--accent); }
 .topbar { height: 54px; display: flex; align-items: center; gap: 18px; padding: 0 16px; background: #07080c; border-bottom: 1px solid var(--line); }
 .brand { font: 700 17px "Chakra Petch", sans-serif; letter-spacing: .06em; text-transform: uppercase; }
 .brand span { color: var(--accent); }
+.build { font: 500 10px "Saira", sans-serif; color: var(--muted); letter-spacing: 0; text-transform: none; }
 .tabs { display: flex; gap: 2px; }
 .tabs button { background: none; border-color: transparent; color: var(--muted); }
 .tabs button.active { color: var(--text); border-color: var(--line); background: var(--panel-2); }
