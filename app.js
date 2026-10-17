@@ -776,9 +776,10 @@ function deckStacksSlideHTML(s, d) {
   sections.forEach((x) => (x.count = x.rows.reduce((t, r) => t + r[1], 0)));
   const legends = legendsOf(d).map(card).filter(Boolean);
   const X = 70, TOP = 214, BOTTOM = 1080 - 40, gap = 14, label = 44;
-  const FOOT = 40, FOOT_S = 30; // label row under each card: copies, Key, Core / Flex
+  const FOOT = 20, FOOT_S = 14; // room for the tag bar that hangs off each card's bottom edge
+  const KEYPAD = 10; // room above the first row for Key brackets
   const stripH = strip.length ? 190 : 0;
-  const bodyH = BOTTOM - TOP - stripH - label;
+  const bodyH = BOTTOM - TOP - stripH - label - KEYPAD;
   // Legends: stacked in one column running the full height (the bottom strip sits under the deck grid).
   const legH = BOTTOM - TOP - label;
   const lh = legends.length ? Math.floor((legH - (legends.length - 1) * gap) / legends.length) : 0;
@@ -803,11 +804,11 @@ function deckStacksSlideHTML(s, d) {
   };
   walk(0, []);
   const w = Math.floor(best.w), h = Math.floor(w / CARD_ASPECT);
-  const gridH = Math.max(0, ...counts.map((n, i) => Math.ceil(n / best.cols[i]))) * (h + FOOT + gap) - gap;
+  const gridH = KEYPAD + Math.max(0, ...counts.map((n, i) => Math.ceil(n / best.cols[i]))) * (h + FOOT + gap) - gap;
   const stripTop = Math.min(TOP + label + gridH + 28, BOTTOM - stripH + 10); // right under the grid
   const sw = Math.floor((stripH - label - 6 - FOOT_S) * CARD_ASPECT);
   const cardHTML = (c, n, width, height, extra = '', typeColor = '', option = false, zone = d.roles?.[c.id] || 'deck') => `<div ${n ? `data-card="${c.id}" data-zone="${zone}"` : ''} class="fd-card ${MAIN_ZONES.includes(zone) && isKey(d, c.id) ? 'is-key' : ''} ${MAIN_ZONES.includes(zone) && roleOf(c) === 'flex' ? 'is-flex' : ''} ${extra}" style="width:${width}px${typeColor ? `;--k:${typeColor}` : ''}">
-      <div class="fd-face" style="height:${height}px">${artHTML(c, { full: true })}</div>${n ? `<div class="fd-foot"><span class="fd-n"><small>×</small>${n}</span>${MAIN_ZONES.includes(zone) && isKey(d, c.id) ? '<span class="fd-key">★ Key</span>' : ''}${MAIN_ZONES.includes(zone) ? roleTag(s, d, c.id) : ''}</div>` : ''}</div>`;
+      <div class="fd-face" style="height:${height}px">${artHTML(c, { full: true })}</div>${n ? `<div class="fd-tags"><span class="fd-n"><small>×</small>${n}</span>${MAIN_ZONES.includes(zone) && isKey(d, c.id) ? '<span class="fd-key">★ Key</span>' : ''}${MAIN_ZONES.includes(zone) ? roleTag(s, d, c.id) : ''}</div>` : ''}</div>`;
   const total = deckCount(d);
   return `<div class="stage deck-slide deck-full">
     <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(legends[0])}38, transparent)"></div><div class="glow g2"></div>
