@@ -996,7 +996,7 @@ function renderPool() {
   const pool = sortDecks(all.filter((d) => deckMatches(d, q)), 'name');
   const groups = pool.length > 8 ? groupDecks(pool, 'color') : [{ label: '', decks: pool }];
   $('#pool').classList.toggle('compact', pool.length > 12);
-  $('#pool').innerHTML = pool.length ? groups.map((g) => `<div class="pgroup">${g.label ? `<span class="pg-label" style="--g:${g.color}">${esc(g.label)} <b>${g.decks.length}</b></span>` : ''}
+  $('#pool').innerHTML = pool.length ? groups.map((g) => `<div class="pgroup" data-group="${g.key || ''}">${g.label ? `<span class="pg-label" style="--g:${g.color}">${esc(g.label)} <b>${g.decks.length}</b></span>` : ''}
       ${g.decks.map((d) => deckTileHTML(d, s.display, { showName: true })).join('')}</div>`).join('')
     : `<span class="hint">${all.length ? 'No unranked decks match.' : 'Every deck is ranked. Drag one here to unrank it, or import more decks in the Decks tab.'}</span>`;
 }
@@ -1241,6 +1241,15 @@ function enableDeckDrag() {
   let lastDrop = 0;
   const scale = () => $('#stage-host').getBoundingClientRect().width / STAGE_W;
   // FLIP: record positions, change the DOM, then animate every tile from its old spot.
+  // A deck going back to Unranked lands in its color group, in name order (the order renderPool uses).
+  const placeInPool = (el) => {
+    const d = deck(el.dataset.deck);
+    const group = $(`#pool .pgroup[data-group="c:${mainColor(d)}"]`) || $('#pool .pgroup');
+    if (!group) return $('#pool').prepend(el);
+    const cmp = (a, b) => deckLabel(a).localeCompare(deckLabel(b)) || (a.name || '').localeCompare(b.name || '');
+    const after = $$('.deck-tile', group).find((t) => t !== el && cmp(deck(t.dataset.deck), d) > 0);
+    group.insertBefore(el, after || null);
+  };
   const flip = (change) => {
     const tiles = $$('#stage-host .deck-tile, #pool .deck-tile').filter((t) => t !== st?.el);
     const before = new Map(tiles.map((t) => [t, t.getBoundingClientRect()]));
@@ -1280,7 +1289,7 @@ function enableDeckDrag() {
     $$('.drop-hover').forEach((z) => z !== row && z !== $('#pool') && z.classList.remove('drop-hover'));
     if (pool) {
       $('#pool').classList.add('drop-hover');
-      if (!st.el.closest('#pool')) flip(() => { st.el.style.width = st.el.style.height = ''; ($('#pool .pgroup') || $('#pool')).prepend(st.el); relayoutTiers(); });
+      if (!st.el.closest('#pool')) flip(() => { st.el.style.width = st.el.style.height = ''; placeInPool(st.el); relayoutTiers(); });
       return;
     }
     $('#pool').classList.remove('drop-hover');
@@ -1301,7 +1310,9 @@ function enableDeckDrag() {
       st.el.classList.remove('placeholder');
       document.body.classList.remove('dragging-deck');
       $$('.drop-hover').forEach((z) => z.classList.remove('drop-hover'));
+      const toPool = !!st.el.closest('#pool');
       commitTiersFromDom();
+      if (toPool) renderPool(); // back in Unranked: rebuild groups and counts with the deck in its color group
       lastDrop = Date.now();
     }
     st = null;
