@@ -529,7 +529,8 @@ function tierOf(d) {
 function deckSlideHTML(s) {
   const d = deck(s.deckId);
   if (!d) return `<div class="stage deck-slide"><div class="ds-empty">Pick a deck in the panel →</div></div>`;
-  if (s.listStyle && s.listStyle !== 'list') return deckFeaturedSlideHTML(s, d); // 'featured' (older 'text'/'cards' too)
+  if (s.listStyle === 'cards') return deckStacksSlideHTML(s, d);
+  if (s.listStyle && s.listStyle !== 'list') return deckFeaturedSlideHTML(s, d); // 'featured' (and the older 'text')
   const tier = tierOf(d);
   const key = card(d.keyCard);
   const cols = deckColors(d);
@@ -622,6 +623,50 @@ function deckFeaturedSlideHTML(s, d) {
   </div>`;
 }
 
+/** Full decklist as cards: a Legends column, then a column per card type, cards overlapped so every
+ * name bar shows and the last card of each column is fully visible (like a visual deck builder). */
+function deckStacksSlideHTML(s, d) {
+  const groups = typeGroups(d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c));
+  const legends = d.legends.map(card).filter(Boolean).map((c) => [c, 0]);
+  const PEEK = 0.15; // visible share of each covered card: its name bar and cost
+  const W = 1780, H = 800, gap = 30;
+  // Try different maximum column lengths; keep the one that gives the largest cards.
+  let best = null;
+  for (let maxPer = 3; maxPer <= 12; maxPer++) {
+    const cols = [];
+    const push = (label, color, rows, count) => {
+      for (let i = 0; i < rows.length; i += maxPer) cols.push({ label: i ? '' : label, count: i ? '' : count, color, rows: rows.slice(i, i + maxPer) });
+    };
+    if (legends.length) push('Legends', '#eef1f6', legends, legends.length);
+    for (const g of groups) {
+      // Key card last so it shows in full; otherwise by cost.
+      const rows = g.rows.slice().sort((a, b) => (a[0].id === d.keyCard) - (b[0].id === d.keyCard));
+      push(g.label, g.color, rows, g.count);
+    }
+    const tallest = Math.max(...cols.map((c) => c.rows.length));
+    const h = Math.min((H - 40) / (1 + (tallest - 1) * PEEK), ((W - (cols.length - 1) * gap) / cols.length) / CARD_ASPECT);
+    if (!best || h > best.h) best = { h, cols };
+  }
+  const h = Math.floor(best.h), w = Math.floor(h * CARD_ASPECT), step = Math.round(h * PEEK);
+  const colHTML = (col) => `<div class="dk-col" style="width:${w}px">
+      <div class="dk-label" style="--k:${col.color}">${esc(col.label)}${col.count !== '' ? ` <b>${col.count}</b>` : ''}</div>
+      <div class="dk-stack" style="height:${h + step * (col.rows.length - 1)}px">${col.rows.map(([c, n], i) => `
+        <div class="dk-card ${c.id === d.keyCard ? 'is-key' : ''}" style="top:${i * step}px;width:${w}px;height:${h}px;z-index:${i + 1}">
+          ${artHTML(c, { full: true })}
+          ${roleTag(s, d, c.id)}${n ? `<span class="dk-n">${n}×</span>` : ''}
+        </div>`).join('')}</div>
+    </div>`;
+  return `<div class="stage deck-slide deck-stacks">
+    <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(d.legends[0]))}38, transparent)"></div><div class="glow g2"></div>
+    <header class="dk-head">
+      <div><div class="ds-eyebrow">${deckEyebrow(d)}</div>
+      <h1 class="dk-code">${esc(deckLabel(d))}${d.name && d.name !== deckLabel(d) ? ` <span>${esc(d.name)}</span>` : ''}</h1></div>
+      ${groups.length ? breakdownHTML(groups, 'compact') : ''}
+    </header>
+    <div class="dk-cols">${best.cols.length ? best.cols.map(colHTML).join('') : '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}</div>
+  </div>`;
+}
+
 // Main-deck cards by type (Units, Gear, Programs, then anything else), each sorted by cost.
 const TYPE_GROUPS = [['unit', 'Units', '#ff6b6b'], ['gear', 'Gear', '#5ce1e6'], ['program', 'Programs', '#c08bff']];
 function typeGroups(rows) {
@@ -690,7 +735,7 @@ function renderSlideInspector() {
     el.innerHTML = `<h3>Deck page</h3>
       <label>Deck</label><select data-s="deckId">${state.decks.map((d) => `<option value="${d.id}" ${d.id === s.deckId ? 'selected' : ''}>${esc(deckLabel(d))}${d.name && d.name !== deckLabel(d) ? ' — ' + esc(d.name) : ''}</option>`).join('')}</select>
       <label>Decklist shows</label>
-      <select data-s="listStyle">${[['list', 'Names'], ['featured', 'Featured cards']].map(([k, v]) => `<option value="${k}" ${((s.listStyle || 'list') === 'list' ? 'list' : 'featured') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <select data-s="listStyle">${[['list', 'Names'], ['cards', 'Full decklist (cards)'], ['featured', 'Featured cards']].map(([k, v]) => `<option value="${k}" ${({ list: 'list', cards: 'cards' }[s.listStyle || 'list'] || 'featured') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
       <label class="check"><input type="checkbox" data-s="showRoles" ${s.showRoles !== false ? 'checked' : ''}> Show Core / Flex tags</label>
       <p class="hint">Featured cards shows the deck's Core cards large enough to read (or its key and most-played cards when nothing is marked Core). Mark cards as Core or Flex in the deck editor. The page shows the deck's Legends, key card, notes and decklist from its export.</p>
       <button data-edit-deck="${s.deckId}" class="block">Edit this deck</button>`;
