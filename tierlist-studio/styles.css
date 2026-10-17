@@ -336,12 +336,12 @@ code { color: var(--accent); }
 .fd-section { flex: none; }
 .fd-section .fd-label { color: #eef1f6; }
 .fd-section .fd-label { border-bottom: 3px solid var(--k); height: 34px; margin-bottom: 10px; }
-.fd-section .fd-label b { color: var(--k); }
+.fd-section .fd-label b { color: #eef1f6; }
 .fd-col { display: flex; flex-direction: column; gap: 14px; }
 .fd-rule { position: absolute; width: 1px; background: linear-gradient(#5ce1e655, #5ce1e600); }
 .fd-grid { display: grid; gap: 14px; }
 .fd-row { display: flex; gap: 12px; }
-.fd-card { position: relative; display: flex; border-radius: 10px; box-shadow: 0 10px 26px #000000a8, 0 3px 0 var(--k, transparent); }
+.fd-card { position: relative; display: flex; border-radius: 10px; box-shadow: 0 10px 26px #000000a8; }
 .fd-card .art { border-radius: 10px; }
 .fd-card.is-legend { box-shadow: 0 0 0 2px var(--k), 0 10px 30px #000000b0; }
 .fd-card.is-key { box-shadow: 0 0 0 3px var(--accent), 0 0 34px #f7d04670; }

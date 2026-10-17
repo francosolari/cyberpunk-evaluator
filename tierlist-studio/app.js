@@ -599,9 +599,9 @@ function deckStacksSlideHTML(s, d) {
     const core = mainRows.filter(([c]) => roleOf(c) !== 'flex'), flex = mainRows.filter(([c]) => roleOf(c) === 'flex');
     const anyCore = mainRows.some(([c]) => roleOf(c) === 'core');
     sections = [
-      { label: anyCore ? 'Core' : 'Deck', color: '#f7d046', rows: ordered(core) },
-      { label: 'Flex', color: '#5ce1e6', rows: ordered(flex) },
-      { label: 'Options', color: '#8b93a3', rows: ordered(optRows), option: true, note: 'not in the deck' },
+      { label: anyCore ? 'Core' : 'Deck', color: TYPE_INK, rows: ordered(core) },
+      { label: 'Flex', color: TYPE_INK, rows: ordered(flex) },
+      { label: 'Options', color: TYPE_INK, rows: ordered(optRows), option: true, note: 'not in the deck' },
     ].filter((x) => x.rows.length);
     strip = side.length ? [{ label: 'Sideboard', rows: side }] : [];
   } else {
@@ -642,7 +642,6 @@ function deckStacksSlideHTML(s, d) {
   const sw = Math.floor((stripH - label - 6) * CARD_ASPECT);
   const cardHTML = (c, n, width, height, extra = '', typeColor = '', option = false) => `<div class="fd-card ${isKey(d, c.id) ? 'is-key' : ''} ${!option && roleOf(c) === 'flex' ? 'is-flex' : ''} ${option ? 'is-option' : ''} ${extra}" style="width:${width}px;height:${height}px${typeColor ? `;--k:${typeColor}` : ''}">
       ${artHTML(c, { full: true })}${n ? `<span class="fd-n">${option ? '<small>+</small>' : '<small>×</small>'}${n}</span>` : ''}${option ? '' : roleTag(s, d, c.id)}${isKey(d, c.id) ? '<span class="fd-key">Key</span>' : ''}</div>`;
-  const typeColor = (c) => (TYPE_GROUPS.find(([k]) => (c.type || '').toLowerCase().includes(k)) || [, , '#8b93a3'])[2];
   const total = deckCount(d);
   const optCount = optRows.reduce((t, r) => t + r[1], 0);
   return `<div class="stage deck-slide deck-full">
@@ -663,7 +662,7 @@ function deckStacksSlideHTML(s, d) {
     <div class="fd-deck" style="left:${deckX}px;top:${TOP}px;width:${deckW}px">
       ${sections.map((g, i) => `<section class="fd-section ${g.option ? 'is-options' : ''}">
         <div class="fd-label" style="--k:${g.color}">${esc(g.label)} <b>${g.option ? '+' : ''}${g.count}</b>${g.note ? `<i>${g.note}</i>` : ''}</div>
-        <div class="fd-grid" style="grid-template-columns:repeat(${best.cols[i]}, ${w}px)">${g.rows.map(([c, n]) => cardHTML(c, n, w, h, '', s.groupBy === 'role' ? typeColor(c) : g.color, g.option)).join('')}</div>
+        <div class="fd-grid" style="grid-template-columns:repeat(${best.cols[i]}, ${w}px)">${g.rows.map(([c, n]) => cardHTML(c, n, w, h, '', '', g.option)).join('')}</div>
       </section>`).join('') || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}
     </div>
     ${strip.length ? `<div class="fd-strip" style="left:${deckX}px;top:${stripTop}px">${strip.map((x) => `<section class="${x.option ? 'is-options' : ''}">
@@ -673,14 +672,16 @@ function deckStacksSlideHTML(s, d) {
 }
 
 // Main-deck cards by type (Units, Gear, Programs, then anything else), each sorted by cost.
-const TYPE_GROUPS = [['unit', 'Units', '#ff6b6b'], ['gear', 'Gear', '#5ce1e6'], ['program', 'Programs', '#c08bff']];
+// Neutral on purpose: cards already carry their own colors, so types aren't color-coded.
+const TYPE_INK = '#4a5263';
+const TYPE_GROUPS = [['unit', 'Units', TYPE_INK], ['gear', 'Gear', TYPE_INK], ['program', 'Programs', TYPE_INK]];
 function typeGroups(rows) {
   const out = TYPE_GROUPS.map(([key, label, color]) => ({ key, label, color, rows: [], count: 0 }));
   for (const [c, n] of rows) {
     let g = out.find((x) => (c.type || '').toLowerCase().includes(x.key));
     if (!g) {
       const label = c.type ? c.type.replace(/^./, (ch) => ch.toUpperCase()) + 's' : 'Other';
-      g = out.find((x) => x.label === label) || out[out.push({ key: label, label, color: '#8b93a3', rows: [], count: 0 }) - 1];
+      g = out.find((x) => x.label === label) || out[out.push({ key: label, label, color: TYPE_INK, rows: [], count: 0 }) - 1];
     }
     g.rows.push([c, n]);
     g.count += n;
