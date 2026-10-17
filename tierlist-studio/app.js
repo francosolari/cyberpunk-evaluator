@@ -244,16 +244,26 @@ function load() {
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
+// Browsers allow roughly 5 million characters per site. Warn well before that.
+const STORAGE_WARN = 3500000;
+let storageWarned = false;
 function save() {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
-  catch { toast('Browser storage is full. Save the project as .json and use image URLs instead of uploads.', 6000); }
+  if (ui.viewing) return; // a shared link never writes to this browser's own studio
+  const json = JSON.stringify(state);
+  try { localStorage.setItem(STORE_KEY, json); }
+  catch { return toast('Browser storage is full, so this change wasn\'t saved. Save the project as a file (Project → Save project), then remove the logo upload or old decks.', 8000); }
+  if (json.length > STORAGE_WARN && !storageWarned) {
+    storageWarned = true;
+    toast(`Browser storage is ${Math.round((json.length / 5e6) * 100)}% full. Save the project as a file to back it up.`, 7000);
+  }
 }
 
 /* ---------------- cards & catalog ---------------- */
 function rebuildIndex() {
   cardIndex = new Map();
   for (const c of state.catalog?.cards || []) cardIndex.set(c.id, c);
-  for (const c of state.custom || []) cardIndex.set(c.id, c);
+  state.custom = (state.custom || []).filter((c) => c.demo); // custom card images aren't supported
+  for (const c of state.custom) cardIndex.set(c.id, c);
 }
 const card = (id) => (id ? cardIndex.get(id) || null : null);
 const allCards = () => [...cardIndex.values()];
@@ -906,6 +916,7 @@ function bindSlides() {
   for (const z of [$('#stage-host'), $('#pool')]) {
     z.addEventListener('click', (e) => {
       const cardEl = e.target.closest('[data-card]');
+      if (ui.viewing) return;
       if (cardEl && slide()?.type === 'deck') { e.stopPropagation(); openCardMenu(deck(slide().deckId), cardEl.dataset.card, e.clientX, e.clientY, cardEl.dataset.zone); return; }
       const tile = e.target.closest('.deck-tile');
       if (!tile) return;
@@ -1026,7 +1037,7 @@ function enableDeckDrag() {
   document.addEventListener('pointerdown', (e) => {
     if (e.button > 0) return;
     const el = e.target.closest('#stage-host .tier-slide .deck-tile, #pool .deck-tile');
-    if (!el || slide()?.type !== 'tier') return;
+    if (!el || slide()?.type !== 'tier' || ui.viewing) return;
     st = { el, x: e.clientX, y: e.clientY, touch: e.pointerType === 'touch', active: false };
     if (st.touch) st.timer = setTimeout(() => st && start(), 200);
   });
@@ -1542,7 +1553,7 @@ function renderCards() {
       <div class="thumbs">${artHTML(c, { full: true })}${artHTML(c)}</div>
       <div class="nm" title="${esc(c.name)}">${esc(c.name)}</div>
       <div class="meta">${c.color ? `<span class="chip" style="background:${hexOf(c)}"></span>` : ''}<span class="tag">${esc(c.type || 'Card')}</span>${state.crops[c.id] ? '<span class="tag">custom crop</span>' : ''}</div>
-      <div class="btns"><button class="small" data-crop="${c.id}">Crop art</button>${c.custom || c.demo ? `<button class="small danger" data-del-card="${c.id}">×</button>` : ''}</div>
+      <div class="btns"><button class="small" data-crop="${c.id}">Crop art</button></div>
     </div>`).join('') || '<div class="empty-msg">No cards match.</div>');
 }
 
@@ -1592,38 +1603,13 @@ function openCrop(c) {
   if ($('#crop-all')) $('#crop-all').onclick = () => { state.legendCrop = { ...k }; delete state.crops[c.id]; save(); closeModal(); renderCards(); toast('Saved as the default crop for all Legends.'); };
 }
 
-function customCardForm() {
-  openModal(`<h3>Custom card</h3>
-    <p class="hint">For cards that aren't in the catalog yet (spoilers, promos).</p>
-    <div class="grid2">
-      <div><label>Name</label><input id="cf-name"></div>
-      <div><label>Type</label><select id="cf-type"><option>Legend</option><option>Unit</option><option>Gear</option><option>Program</option></select></div>
-      <div><label>Color</label><select id="cf-color"><option value="">None</option>${COLOR_ORDER.map((k) => `<option value="${k}">${COLORS[k].name}</option>`).join('')}</select></div>
-      <div><label>Image URL</label><input id="cf-img" type="url" placeholder="https://…"></div>
-    </div>
-    <label>…or upload an image</label><input type="file" id="cf-file" accept="image/*">
-    <div class="row gap" style="margin-top:16px"><button class="primary" id="cf-save">Add</button><button data-close>Cancel</button></div>`);
-  $('#cf-save').onclick = async () => {
-    const name = $('#cf-name').value.trim() || 'Untitled';
-    const f = $('#cf-file').files[0];
-    const img = f ? await fileToDataURL(f, 700) : $('#cf-img').value.trim();
-    state.custom.push({ id: 'custom_' + uid(), name, type: $('#cf-type').value, color: $('#cf-color').value, img, custom: true });
-    rebuildIndex(); nameIndex = null; save(); closeModal(); renderCards();
-  };
-}
-
 function bindCards() {
   $('#card-search').oninput = renderCards;
   $('#card-filter').onchange = renderCards;
-  $('#add-card').onclick = customCardForm;
   $('#card-grid').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
     if (b.dataset.crop) openCrop(card(b.dataset.crop));
-    else if (b.dataset.delCard) {
-      state.custom = state.custom.filter((c) => c.id !== b.dataset.delCard);
-      rebuildIndex(); nameIndex = null; save(); renderCards();
-    }
   });
 }
 
@@ -1779,6 +1765,103 @@ function enableTouchDrag() {
   document.addEventListener('click', (e) => { if (Date.now() - lastDrop < 400) { e.stopPropagation(); e.preventDefault(); } }, true);
 }
 
+/* ---------------- share links ----------------
+ * Decks live in each person's own browser, so a link can't point at them. Instead the link carries
+ * a compressed snapshot of the shared slides and only the decks they use (cards by catalog id).
+ * Opening it shows a read-only viewer; "Add to my studio" copies it in with fresh ids. */
+const SHARE_PREFIX = '#s=';
+const b64url = {
+  encRaw: (bytes) => { let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(bin); },
+  enc: (bytes) => b64url.encRaw(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+  dec: (str) => { let b = str.replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '='; return Uint8Array.from(atob(b), (c) => c.charCodeAt(0)); },
+};
+async function pipe(bytes, Stream) {
+  return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new Stream('deflate-raw'))).arrayBuffer());
+}
+function shareSnapshot(slides) {
+  const ids = new Set(slides.flatMap((x) => (x.type === 'tier' ? x.tiers.flatMap((t) => t.deckIds) : [x.deckId])));
+  const decks = state.decks.filter((d) => ids.has(d.id)).map((d) => {
+    const out = { id: d.id, name: d.name, label: d.label, legends: d.legends, keyCards: keysOf(d), roles: d.roles, notes: d.notes, display: d.display };
+    // Tier tiles only need Legends and key cards; full lists ride along only for decks with a deck page.
+    if (slides.some((x) => x.type === 'deck' && x.deckId === d.id)) Object.assign(out, { main: d.main, side: d.side, options: d.options });
+    return out;
+  });
+  return { v: 1, slides, decks, legendCrop: state.legendCrop, crops: Object.fromEntries(Object.entries(state.crops).filter(([id]) => decks.some((d) => d.legends.includes(id) || keysOf(d).includes(id)))) };
+}
+async function shareLink(slides) {
+  const bytes = new TextEncoder().encode(JSON.stringify(shareSnapshot(slides)));
+  let data;
+  try { data = 'z' + b64url.enc(await pipe(bytes, CompressionStream)); } catch { data = 'j' + b64url.enc(bytes); }
+  return location.href.split('#')[0] + SHARE_PREFIX + data;
+}
+async function readShare(hash) {
+  const data = hash.slice(SHARE_PREFIX.length);
+  const raw = b64url.dec(data.slice(1));
+  const bytes = data[0] === 'z' ? await pipe(raw, DecompressionStream) : raw;
+  const snap = JSON.parse(new TextDecoder().decode(bytes));
+  if (snap.v !== 1 || !Array.isArray(snap.slides)) throw new Error('unknown link format');
+  snap.decks = snap.decks.map((d) => newDeck({ ...d, keyCard: d.keyCards?.[0] || null }));
+  return snap;
+}
+function openShare() {
+  const s = slide();
+  openModal(`<h3>Share</h3>
+    <p class="hint">The link contains the slides and the decks on them, so anyone can open it. It doesn't change when you edit; share again after changes.</p>
+    <label class="check"><input type="radio" name="share-scope" value="one" checked> This slide${s ? ` (${esc(s.name || '')})` : ''}</label>
+    <label class="check"><input type="radio" name="share-scope" value="all"> All ${state.slides.length} slides</label>
+    <div class="row gap" style="margin-top:12px"><input id="share-url" readonly placeholder="Making link…" style="flex:1"><button class="primary" id="share-copy">Copy link</button></div>
+    <p class="hint" id="share-note"></p>`);
+  const make = async () => {
+    const all = $('input[name=share-scope]:checked').value === 'all';
+    const url = await shareLink(all ? state.slides : [s]);
+    $('#share-url').value = url;
+    $('#share-note').textContent = url.length > 8000 ? `This link is long (${Math.round(url.length / 1000)}k characters). Some chat apps cut long links; share fewer slides if it doesn't open.` : '';
+  };
+  $$('input[name=share-scope]').forEach((r) => (r.onchange = make));
+  $('#share-copy').onclick = () => {
+    const url = $('#share-url').value;
+    navigator.clipboard?.writeText(url).then(() => toast('Link copied.'), () => { $('#share-url').select(); toast('Select the link and copy it.'); });
+  };
+  make();
+}
+let ownState = null;
+async function enterViewer() {
+  let snap;
+  try { snap = await readShare(location.hash); } catch (err) { toast('This share link is damaged or cut off. Ask for the link again.', 7000); history.replaceState(null, '', location.pathname); return false; }
+  ownState = state;
+  ui.viewing = true;
+  state = { ...makeDemo(), catalog: ownState.catalog, custom: [], decks: snap.decks, slides: snap.slides, legendCrop: snap.legendCrop || {}, crops: snap.crops || {}, prefs: { guide: { dismissed: true } } };
+  rebuildIndex(); nameIndex = null;
+  ui.slideId = state.slides[0]?.id;
+  document.body.classList.add('viewing');
+  $('#viewer-bar').hidden = false;
+  return true;
+}
+function addSharedToStudio() {
+  const snap = state;
+  const mine = ownState;
+  const idMap = {};
+  for (const d of snap.decks) { idMap[d.id] = uid(); mine.decks.push({ ...clone(d), id: idMap[d.id], createdAt: Date.now() }); }
+  for (const sl of snap.slides) {
+    const c = clone(sl);
+    c.id = uid();
+    if (c.type === 'tier') c.tiers.forEach((t) => { t.id = uid(); t.deckIds = t.deckIds.map((x) => idMap[x]).filter(Boolean); });
+    else c.deckId = idMap[c.deckId] || null;
+    mine.slides.push(c);
+  }
+  Object.assign(mine.crops, snap.crops);
+  if (!mine.catalog && snap.catalog) mine.catalog = snap.catalog;
+  ui.viewing = false;
+  state = mine;
+  save();
+  history.replaceState(null, '', location.pathname);
+  location.reload();
+}
+function leaveViewer() {
+  history.replaceState(null, '', location.pathname);
+  location.reload();
+}
+
 /* ---------------- getting started + help ---------------- */
 // A short checklist that ticks itself off; hidden once finished or dismissed.
 function guideSteps() {
@@ -1824,6 +1907,7 @@ function openHelp() {
       <li><b>Core, Flex, key cards:</b> drag cards between columns in the list; ★ marks a key card (up to 3).</li>
     </ul>
     <p class="hint">Everything saves in this browser. Use Project → Save project to back up or move to another device.</p>
+    <p class="hint">Fan-made, not affiliated with CD PROJEKT or WeirdCo. Cyberpunk and all card images © CD PROJEKT S.A. Card data comes from the Cyberpunk TCG Sim.</p>
     <div class="row gap" style="margin-top:14px"><button class="primary" data-close>Got it</button>${prefs().guide.dismissed ? '<button data-guide-reset>Show getting started again</button>' : ''}</div>
   </div>`);
 }
@@ -1963,8 +2047,14 @@ function bindGlobal() {
     } catch (err) { toast('Could not load: ' + err.message); }
     e.target.value = '';
   };
+  $('#btn-wipe').onclick = () => {
+    if (!confirm('Delete everything saved in this browser (decks, tiers, slides and card data) and start fresh? This can\'t be undone. Save a project file first if you want a backup.')) return;
+    try { localStorage.removeItem(STORE_KEY); } catch { /* storage unavailable */ }
+    location.hash = '';
+    location.reload();
+  };
   $('#btn-reset').onclick = () => {
-    if (!confirm('Replace everything with the demo project? Card data is kept.')) return;
+    if (!confirm('Replace your decks and slides with the sample ones? Card data is kept.')) return;
     const catalog = state.catalog;
     state = makeDemo(); state.catalog = catalog;
     rebuildIndex(); nameIndex = null;
@@ -1990,6 +2080,12 @@ document.addEventListener('click', (e) => {
   if ('guideReset' in b.dataset) { prefs().guide.dismissed = false; save(); closeModal(); return renderGuide(); }
   guideSteps().find((x) => x[0] === b.dataset.guide)?.[3]();
 });
+$('#btn-share').onclick = openShare;
+// Pasting a share link into a tab that already has the studio open only changes the hash.
+window.addEventListener('hashchange', () => { if (location.hash.startsWith(SHARE_PREFIX)) location.reload(); });
+$('#viewer-add').onclick = addSharedToStudio;
+$('#viewer-close').onclick = leaveViewer;
+$('#viewer-present').onclick = () => present(0);
 bindBoards();
 enableTouchDrag();
 enableDeckDrag();
@@ -2003,6 +2099,8 @@ render();
 // First run: load card data (a bundled data/catalog.json when hosted with one, else the sim directly),
 // then swap the placeholder demo for real sample decks.
 (async () => {
+  const viewing = location.hash.startsWith(SHARE_PREFIX) && (await enterViewer());
+  if (viewing) render();
   if (state.catalog && state.catalog.schema !== CATALOG_SCHEMA) {
     try { await loadCatalogFromSim(); } catch { /* keep the older copy */ }
   }
@@ -2016,6 +2114,7 @@ render();
     }
     toast(`Loaded ${state.catalog.cards.length} cards.`);
   }
+  if (viewing) { if (ownState && !ownState.catalog) ownState.catalog = state.catalog; return render(); }
   if (await applySamples()) { ui.slideId = state.slides[0]?.id; ui.deckId = state.decks[0]?.id; toast('Loaded sample decks with real cards.'); }
   render();
 })();

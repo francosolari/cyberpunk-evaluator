@@ -21,6 +21,7 @@
     </nav>
     <div class="actions">
       <button id="btn-help" aria-label="How it works" title="How it works">?</button>
+      <button id="btn-share">Share</button>
       <button id="btn-present" class="primary">▶ Present</button>
       <button id="btn-png">Export PNG</button>
       <details class="menu">
@@ -30,11 +31,19 @@
           <button id="btn-export">Save project (.json)</button>
           <label class="filebtn">Load project (.json)<input type="file" id="file-project" accept="application/json,.json" hidden></label>
           <button id="btn-reset" class="danger">Reset to samples</button>
+          <button id="btn-wipe" class="danger">Reset everything</button>
+          <p class="hint menu-note credit">Fan-made, not affiliated with CD PROJEKT or WeirdCo. Cyberpunk and card images © CD PROJEKT S.A. Card data from the Cyberpunk TCG Sim.</p>
         </div>
       </details>
     </div>
   </header>
 
+  <div id="viewer-bar" class="viewer-bar" hidden>
+    <span>You're viewing a shared tier list. Nothing here is saved unless you add it.</span>
+    <button id="viewer-present">▶ Present</button>
+    <button id="viewer-add" class="primary">Add to my studio</button>
+    <button id="viewer-close">Close</button>
+  </div>
   <main id="app">
     <section id="view-slides" class="view active">
       <aside class="panel slide-list">
@@ -87,7 +96,6 @@
             <option value="all">All cards</option>
             <option value="card">Non-Legends</option>
           </select>
-          <button id="add-card">+ Custom card</button>
         </div>
         <div id="card-grid" class="card-grid"></div>
       </div>
