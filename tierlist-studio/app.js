@@ -1666,7 +1666,7 @@ function bindDecks() {
     if (!b) return;
     if (b.dataset.altAdd) {
       const id = d.legends[Number(b.dataset.altAdd)];
-      openPicker('legend', (alt) => { setAlts(d, id, [...altsOf(d, id), alt]); save(); renderDecks(); });
+      openPicker('legend', (alt) => { if (alt) setAlts(d, id, [...altsOf(d, id), alt]); save(); renderDecks(); }, null, d);
       return;
     }
     if (b.dataset.altSel) { ui.altSel = ui.altSel === b.dataset.altSel ? null : b.dataset.altSel; renderDecks(); return; }
@@ -1683,7 +1683,7 @@ function bindDecks() {
         if (role === 'key') { const ks = keysOf(d).slice(); ks[Number(b.dataset.i)] = id; setKeys(d, ks); }
         else { const old = d.legends[Number(b.dataset.i)]; d.legends[Number(b.dataset.i)] = id; const keep = altsOf(d, old); if (d.altLegends) delete d.altLegends[old]; setAlts(d, id, keep); }
         save(); renderDecks();
-      }, onlyDeck);
+      }, onlyDeck, d);
       return;
     }
     if (b.dataset.display) d.display = b.dataset.display;
@@ -1705,7 +1705,7 @@ function bindDecks() {
         const row = d.options.find((r) => r[0] === id);
         if (row) row[1]++; else d.options.push([id, 1]);
         save(); renderDecks();
-      });
+      }, null, d);
       return;
     } else if (b.dataset.moveTo) {
       d.options = d.options || [];
@@ -1801,25 +1801,77 @@ function openImport(target = null) {
 }
 
 /* ---------------- Card picker ---------------- */
-function openPicker(kind, onPick, onlyIds = null) {
-  let q = '', filter = kind, limit = !!onlyIds;
-  const draw = () => {
-    const list = allCards().filter((c) => (!limit || onlyIds.includes(c.id)) && (filter === 'all' || (filter === 'legend') === isLegend(c)) && norm(c.name).includes(norm(q)))
-      .sort((a, b) => a.name.localeCompare(b.name)).slice(0, 300);
-    $('#picker-grid').innerHTML = `<div class="pick" data-pick=""><div class="art empty"></div><div class="n">(none)</div></div>` +
-      list.map((c) => `<div class="pick" data-pick="${c.id}">${artHTML(c, { full: true })}<div class="n">${esc(c.name)}</div></div>`).join('');
+/** Card / Legend picker, laid out like a deck builder's pool: search (name or rules text), type tabs,
+ * color toggles, sort, and the list grouped (Legends by color, cards by cost) with jump buttons.
+ * With a deck, card choices start on the deck's colors and show copies already in it. */
+const PICK_TYPES = [['all', 'All'], ['unit', 'Units'], ['gear', 'Gear'], ['program', 'Programs']];
+function openPicker(kind, onPick, onlyIds = null, d = null) {
+  const legends = kind === 'legend';
+  const pf = prefs();
+  const deckCols = d ? [...new Set(deckColors(d))] : [];
+  const f = { q: '', type: 'all', colors: !legends && deckCols.length ? deckCols : [], sort: pf.pickSort?.[legends ? 'legend' : 'card'] || (legends ? 'color' : 'cost'), limit: !!onlyIds, kind: legends ? 'legend' : kind === 'card' ? 'card' : 'all' };
+  const inDeck = new Map(d ? [...d.main, ...(d.side || []), ...(d.options || [])].map(([id, n]) => [id, n]) : []);
+  const used = new Set(d ? [...d.legends, ...allAlts(d)] : []);
+  const typeOf = (c) => PICK_TYPES.find(([k]) => k !== 'all' && (c.type || '').toLowerCase().includes(k))?.[0] || 'other';
+  const bucket = (c) => (c.cost == null ? '–' : c.cost >= 6 ? '6+' : String(c.cost));
+  const list = () => {
+    const q = norm(f.q);
+    const rows = allCards().filter((c) => (!f.limit || onlyIds.includes(c.id))
+      && (f.kind === 'all' || (f.kind === 'legend') === isLegend(c))
+      && (f.type === 'all' || isLegend(c) || typeOf(c) === f.type)
+      && (!f.colors.length || f.colors.includes(c.color))
+      && (!q || norm(c.name).includes(q) || norm(c.text).includes(q)));
+    const byName = (a, b) => a.name.localeCompare(b.name);
+    const colorIdx = (c) => (COLOR_ORDER.indexOf(c.color) + 1 || 9);
+    rows.sort(f.sort === 'name' ? byName : f.sort === 'color' ? (a, b) => colorIdx(a) - colorIdx(b) || byName(a, b) : (a, b) => (a.cost ?? 99) - (b.cost ?? 99) || colorIdx(a) - colorIdx(b) || byName(a, b));
+    return rows;
   };
-  openModal(`<h3>Choose ${kind === 'legend' ? 'a Legend' : 'a card'}</h3>
-    <div class="toolbar"><input type="search" id="picker-q" placeholder="Search…">
-    <select id="picker-f"><option value="legend" ${kind === 'legend' ? 'selected' : ''}>Legends</option><option value="card">Non-Legends</option><option value="all" ${kind === 'all' ? 'selected' : ''}>All</option></select>
-    ${onlyIds ? '<label class="check"><input type="checkbox" id="picker-limit" checked> Only cards in this deck</label>' : ''}</div>
+  const groupKey = (c) => (f.sort === 'color' ? COLORS[c.color]?.name || 'Other' : f.sort === 'cost' ? (isLegend(c) ? 'Legends' : 'Cost ' + bucket(c)) : '');
+  const draw = () => {
+    const rows = list();
+    const groups = [];
+    for (const c of rows) { const k = groupKey(c); if (!groups.length || groups[groups.length - 1].k !== k) groups.push({ k, rows: [] }); groups[groups.length - 1].rows.push(c); }
+    const cell = (c) => `<button class="pick ${used.has(c.id) ? 'used' : ''}" data-pick="${c.id}" title="${esc(c.name)}">${artHTML(c, { full: true })}<span class="n">${esc(c.name)}</span>${inDeck.has(c.id) ? `<span class="pick-n">×${inDeck.get(c.id)}</span>` : used.has(c.id) ? '<span class="pick-n">In deck</span>' : ''}</button>`;
+    $('#picker-grid').innerHTML = (groups.length ? groups.map((g, gi) => `${g.k ? `<div class="pick-head" id="pick-g${gi}">${esc(g.k)} <b>${g.rows.length}</b></div>` : ''}<div class="pick-row">${g.rows.map(cell).join('')}</div>`).join('')
+      : '<p class="hint">Nothing matches. Try another type or color.</p>') + `<button class="pick-none linkish" data-pick="">Clear this slot</button>`;
+    $('#picker-count').textContent = `${rows.length} ${legends ? 'Legends' : 'cards'}`;
+    $('#picker-jump').innerHTML = groups.length > 1 ? groups.map((g, gi) => `<button data-jump="${gi}" style="${f.sort === 'color' ? `--c:${COLORS[COLOR_ORDER.find((k) => COLORS[k].name === g.k)]?.hex || '#8b93a3'}` : ''}" class="${f.sort === 'color' ? 'by-color' : ''}">${esc(f.sort === 'cost' ? g.k.replace('Cost ', '').replace('Legends', 'L') : g.k[0])}</button>`).join('') : '';
+    $$('#picker-types button').forEach((b) => b.classList.toggle('on', b.dataset.type === f.type));
+    $$('#picker-colors button').forEach((b) => b.classList.toggle('on', f.colors.includes(b.dataset.color)));
+    $$('#picker-sort button').forEach((b) => b.classList.toggle('on', b.dataset.sort === f.sort));
+  };
+  const sorts = legends ? [['color', 'Color'], ['name', 'Name']] : [['cost', 'Cost'], ['color', 'Color'], ['name', 'Name']];
+  openModal(`<div class="picker">
+    <div class="picker-top">
+      <div class="picker-title"><h3>Choose ${legends ? 'a Legend' : 'a card'}</h3><button class="picker-x" data-close aria-label="Close">×</button></div>
+      <input type="search" id="picker-q" placeholder="Search names or rules text…" aria-label="Search">
+      ${legends ? '' : `<div class="seg picker-seg" id="picker-types" role="group" aria-label="Card type">${PICK_TYPES.map(([k, v]) => `<button data-type="${k}">${v}</button>`).join('')}</div>`}
+      <div class="picker-row">
+        <div class="picker-colors" id="picker-colors" role="group" aria-label="Colors">${COLOR_ORDER.map((k) => `<button data-color="${k}" style="--c:${COLORS[k].hex}" aria-label="${COLORS[k].name}" title="${COLORS[k].name}"><i></i>${COLORS[k].name}</button>`).join('')}</div>
+        <div class="seg picker-seg" id="picker-sort" role="group" aria-label="Sort">${sorts.map(([k, v]) => `<button data-sort="${k}">${v}</button>`).join('')}</div>
+      </div>
+      <div class="picker-row picker-meta"><span id="picker-count" class="hint"></span>
+        ${onlyIds ? '<label class="check"><input type="checkbox" id="picker-limit" checked> Only cards in this deck</label>' : ''}
+        ${!legends && deckCols.length ? '<span class="hint">Starts on the deck\'s colors; tap a color to change.</span>' : ''}
+        <div class="picker-jump" id="picker-jump" aria-label="Jump to"></div></div>
+    </div>
     <div class="picker-grid" id="picker-grid"></div>
-    ${state.catalog ? '' : '<p class="hint">Only demo cards are available. Load the real card data in the Card Data tab.</p>'}`);
+    ${state.catalog ? '' : '<p class="hint">Only demo cards are available. Load the real card data in the Card Data tab.</p>'}</div>`);
+  $('#modal').classList.add('picker-modal');
   draw();
-  $('#picker-q').oninput = (e) => { q = e.target.value; draw(); };
-  $('#picker-f').onchange = (e) => { filter = e.target.value; draw(); };
-  if ($('#picker-limit')) $('#picker-limit').onchange = (e) => { limit = e.target.checked; draw(); };
-  // On phones, opening the picker shouldn't pop the keyboard over the Legends; tap the box to search.
+  $('#picker-q').oninput = (e) => { f.q = e.target.value; draw(); };
+  if ($('#picker-limit')) $('#picker-limit').onchange = (e) => { f.limit = e.target.checked; draw(); };
+  $('.picker-top').onclick = (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.type) f.type = b.dataset.type;
+    else if (b.dataset.color) f.colors = f.colors.includes(b.dataset.color) ? f.colors.filter((x) => x !== b.dataset.color) : [...f.colors, b.dataset.color];
+    else if (b.dataset.sort) { f.sort = b.dataset.sort; pf.pickSort = { ...pf.pickSort, [legends ? 'legend' : 'card']: f.sort }; save(); }
+    else if (b.dataset.jump) { $('#pick-g' + b.dataset.jump)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    else return;
+    draw();
+  };
+  // On phones, opening the picker shouldn't pop the keyboard over the list; tap the box to search.
   if (!matchMedia('(pointer: coarse)').matches) $('#picker-q').focus();
   $('#picker-grid').onclick = (e) => {
     const p = e.target.closest('[data-pick]');
@@ -2260,7 +2312,7 @@ function fileToDataURL(file, maxW) {
 }
 
 /* ---------------- modal ---------------- */
-function openModal(html) { $('#modal-body').innerHTML = html; $('#modal').hidden = false; }
+function openModal(html) { $('#modal').classList.remove('picker-modal'); $('#modal-body').innerHTML = html; $('#modal').hidden = false; }
 function closeModal() { $('#modal').hidden = true; $('#modal-body').innerHTML = ''; $('#modal-body').oninput = null; }
 
 /* ---------------- present ---------------- */
