@@ -695,3 +695,31 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 .or-label { margin-top: 14px; }
 .import-sub { margin: 6px 2px 0; }
 .diag { white-space: pre-wrap; word-break: break-all; font: 11px/1.4 var(--mono); max-height: 240px; overflow: auto; background: var(--bg); padding: 8px; margin-top: 8px; }
+
+/* Full decklist: copies, Key and Core / Flex sit in a label row under each card, never over its text. */
+.fd-card { display: flex; flex-direction: column; border-radius: 0; outline: none !important; }
+.fd-face { position: relative; display: flex; border-radius: 10px; }
+.fd-face > .art { flex: 1; border-radius: 10px; }
+.fd-card.is-legend .fd-face { outline: 2px solid var(--k); }
+.fd-card.is-key::before { display: none; }
+.fd-card.is-key .fd-face::before {
+  content: ""; position: absolute; inset: -8px; pointer-events: none; z-index: 2;
+  --b: 3px; --l: 24px; --k2: var(--accent-2);
+  background:
+    linear-gradient(var(--k2), var(--k2)) top left / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) top left / var(--b) var(--l) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) top right / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) top right / var(--b) var(--l) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom left / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom left / var(--b) var(--l) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom right / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom right / var(--b) var(--l) no-repeat;
+}
+.fd-foot { height: 40px; display: flex; align-items: center; gap: 8px; padding-top: 8px; }
+.fd-card.is-small .fd-foot { height: 30px; padding-top: 6px; gap: 6px; }
+.fd-foot .fd-n { position: static; outline: none !important; background: none !important; padding: 0 !important; font-size: 30px; line-height: 1; color: var(--accent) !important; }
+.fd-foot .fd-n small { font-size: 20px; }
+.fd-card.is-small .fd-foot .fd-n { font-size: 22px; }
+.fd-card.is-small .fd-foot .fd-n small { font-size: 15px; }
+.fd-foot .fd-key { position: static; transform: none; background: none !important; clip-path: none !important; padding: 0 !important; color: var(--accent-2) !important; font-size: 17px !important; font-weight: 700; white-space: nowrap; }
+.stage .fd-foot .role { position: static; margin-left: auto; font-size: 16px !important; padding: 4px 10px 3px !important; }
