@@ -66,13 +66,18 @@ The script names each file with its number. Slides are 1920×1080; interface sho
 
 ## Capturing them
 
-Needs Node 18+ and network access to the site and its card images.
+Needs Node 18+, Chrome (or another Chromium-based browser), and network access to the site and its card images.
 
 ```sh
-npm i playwright
-npx playwright install chromium
-node promo/capture.mjs                                   # live site → promo/shots/ and promo/story/
-node promo/capture.mjs https://…/ ./my-shots             # another URL or folder
+npm i --no-save playwright-core     # a few MB, no browser download
+node promo/capture.mjs               # live site → promo/shots/ and promo/story/
+rm -rf node_modules package-lock.json   # optional: remove it again afterwards
+```
+
+It runs in the Google Chrome already installed on your computer. To use another Chromium-based browser instead (Edge, Brave, or a Playwright browser you already have), point `CHROME_PATH` at it:
+
+```sh
+CHROME_PATH="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" node promo/capture.mjs
 ```
 
 The script starts with an empty browser, so it sees the same seeded decks and tier list a new visitor does. It then sets up one **featured deck** to show every deck feature: Core / Flex roles, two key cards, a few sideboard / options cards, and two alternate Legends on one slot. It makes three slides (the tier list, a names deck page and a full decklist deck page) and captures everything above.

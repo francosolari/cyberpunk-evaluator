@@ -1,11 +1,16 @@
 // Captures the promo screenshots listed in PROMO_SHOTS.md from the live site, with real card art.
 //
-//   npm i playwright && npx playwright install chromium
+//   npm i --no-save playwright-core      (a few MB; no browser download)
 //   node promo/capture.mjs [siteUrl] [outDir]
+//
+// It runs in the Google Chrome already on the computer. Set CHROME_PATH to use another Chromium-based
+// browser (Edge, Brave, a Playwright browser you already have). With the full `playwright` package
+// installed instead, it falls back to that package's own browser.
 //
 // Optional: put a deck export (text, import link or deck-builder link) in promo/hero-deck.txt to feature
 // that deck. Otherwise the seeded deck with the fullest list is used.
-import { chromium, devices } from 'playwright';
+const pw = await import('playwright-core').catch(() => import('playwright'));
+const { chromium, devices } = pw;
 import { mkdirSync, existsSync, readFileSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -16,7 +21,8 @@ const OUT = process.argv[3] || join(here, 'shots');
 const HERO = existsSync(join(here, 'hero-deck.txt')) ? readFileSync(join(here, 'hero-deck.txt'), 'utf8') : '';
 mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch();
+const browser = await (process.env.CHROME_PATH ? chromium.launch({ executablePath: process.env.CHROME_PATH })
+  : chromium.launch({ channel: 'chrome' }).catch(() => chromium.launch()));
 const shotsTaken = [];
 const errors = [];
 
