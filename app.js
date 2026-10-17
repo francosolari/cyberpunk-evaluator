@@ -8,7 +8,7 @@ const SIM_ORIGIN = 'https://cyberpunk-tcg-sim.online';
 const CATALOG_URL = `${SIM_ORIGIN}/api/cards/catalog`;
 const LEADERBOARD_URL = `${SIM_ORIGIN}/api/ranked/leaderboard`;
 const STAGE_W = 1920, STAGE_H = 1080;
-const CATALOG_SCHEMA = 4; // 2 rules text, 3-4 collector numbers; older saved catalogs are refreshed once
+const CATALOG_SCHEMA = 5; // 2 rules text, 3-4 collector numbers, 5 sellable; older saved catalogs are refreshed once
 const CARD_ASPECT = 0.716;          // card width / height
 const TILE_ASPECT = 0.74;           // deck tile width / height (art + caption)
 // Crop = the card's art window (top/bottom, % of card height) + focus point + extra zoom.
@@ -373,6 +373,7 @@ function parseCatalog(json, origin = SIM_ORIGIN) {
       color: colorCode(c.color),
       cost: Number.isFinite(c.cost) ? c.cost : null,
       ram: Number.isFinite(c.ram) ? c.ram : null,
+      sell: typeof c.is_eddiable === 'boolean' ? c.is_eddiable : null, // can be sold for Eddies
       img: !path ? '' : /^(https?:|data:)/.test(path) ? path : path.startsWith('/') ? origin + path : path,
       page: c.source?.card_page_url || '',
       text: typeof c.rules_text === 'string' ? c.rules_text.slice(0, 800) : '',
@@ -819,7 +820,7 @@ function deckStacksSlideHTML(s, d) {
           <span class="fd-code">${esc(deckLabel(d))}</span><span class="chips">${chips(deckColors(d), 'chip-lg')}</span>
           ${missingNote(d)}<span class="ds-meta">${total} cards · ${legends.length} Legends${extras.length ? ` · ${extras.reduce((t, r) => t + r[1], 0)} sideboard / options` : ''}</span></div>
       </div>
-      ${typeSecs.length ? breakdownHTML(typeSecs, 'compact') : ''}
+      ${typeSecs.length ? `<div class="fd-stats">${breakdownHTML(typeSecs, 'compact')}${deckStatsHTML(mainRows)}</div>` : ''}
     </header>
     ${legends.length ? `<section class="fd-legends" style="left:${X}px;top:${TOP}px;width:${lw}px">
       <div class="fd-label">Legends <b>${legends.length}</b></div>
@@ -835,6 +836,19 @@ function deckStacksSlideHTML(s, d) {
       <div class="fd-label">${x.label} <b>${x.rows.reduce((t, r) => t + r[1], 0)}</b></div>
       <div class="fd-row">${x.rows.map(([c, n, zone]) => cardHTML(c, n, sw, Math.floor(sw / CARD_ASPECT), 'is-small', '', false, zone)).join('')}</div></section>`).join('')}</div>` : ''}
   </div>`;
+}
+
+/** Sellable share and cost curve (0–5, 6+) of the main deck, as on deck builders. */
+function deckStatsHTML(rows) {
+  const total = rows.reduce((t, [, n]) => t + n, 0);
+  if (!total) return '';
+  const curve = [0, 0, 0, 0, 0, 0, 0];
+  for (const [c, n] of rows) if (c.cost != null) curve[Math.min(6, Math.max(0, c.cost))] += n;
+  const top = Math.max(1, ...curve);
+  const known = rows.some(([c]) => c.sell != null);
+  const sold = rows.reduce((t, [c, n]) => t + (c.sell ? n : 0), 0);
+  return `${known ? `<div class="fd-sell"><b>${Math.round((sold / total) * 100)}<small>%</small></b><span>Sellable · ${sold} cards</span></div>` : ''}
+    <div class="fd-curve" aria-label="Cost curve">${curve.map((n, i) => `<div><em>${n || ''}</em><i style="height:${Math.max(3, Math.round((n / top) * 58))}px"></i><span>${i === 6 ? '6+' : i}</span></div>`).join('')}</div>`;
 }
 
 // Main-deck cards by type (Units, Gear, Programs, then anything else), each sorted by cost.

@@ -732,3 +732,15 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 /* One meaning per color: yellow = Core (and copy counts), cyan = Key only, Flex = plain white outline. */
 .role.flex { background: #07080c !important; color: var(--text) !important; box-shadow: inset 0 0 0 2px #dfe4ec !important; border: none !important; }
 .bcol.flex { border-top-color: #dfe4ec; }
+
+/* Full decklist header: type counts, sellable share and cost curve, top right. */
+.fd-stats { flex: none; display: flex; align-items: center; gap: 34px; }
+.fd-sell { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding-left: 30px; border-left: 1px solid #ffffff14; }
+.fd-sell b { font: 600 40px/1 var(--mono); color: var(--text); }
+.fd-sell b small { font-size: 24px; color: var(--muted); margin-left: 2px; }
+.fd-sell span { font: 500 18px "Saira", sans-serif; color: var(--muted); white-space: nowrap; }
+.fd-curve { display: flex; align-items: flex-end; gap: 6px; height: 96px; padding-left: 30px; border-left: 1px solid #ffffff14; }
+.fd-curve > div { width: 26px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
+.fd-curve i { width: 100%; background: #cfd5df; }
+.fd-curve em { font: 600 14px/1 var(--mono); font-style: normal; color: var(--muted); }
+.fd-curve span { font: 600 14px/1 var(--mono); color: #6f7787; }
