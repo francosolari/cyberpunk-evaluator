@@ -342,3 +342,21 @@ code { color: var(--accent); }
 .df-chip { display: inline-flex; align-items: center; gap: 8px; font: 500 19px "Saira", sans-serif; background: #10131a; border: 1px solid #ffffff12; border-left: 4px solid var(--c); border-radius: 6px; padding: 5px 10px; }
 .df-chip b { color: var(--accent); font-family: "Chakra Petch", sans-serif; }
 .df-chip .role { font-size: 11px; padding: 3px 5px 2px; }
+
+/* ---------- Deck page: full decklist as card stacks ---------- */
+.dk-head { position: absolute; left: 70px; right: 70px; top: 46px; height: 140px; display: flex; align-items: center; justify-content: space-between; gap: 40px; }
+.dk-code { margin: 10px 0 0; font: 700 92px/.9 "Chakra Petch", sans-serif; }
+.dk-code span { font: 600 34px "Saira", sans-serif; color: #c9d0dc; margin-left: 14px; }
+.dk-head .ds-breakdown { width: 600px; }
+.dk-cols { position: absolute; left: 70px; right: 70px; top: 214px; bottom: 40px; display: flex; justify-content: center; gap: 30px; }
+.dk-col { flex: none; display: flex; flex-direction: column; gap: 10px; }
+.dk-label { height: 30px; font: 600 19px "Chakra Petch", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #9aa3b5; border-bottom: 3px solid var(--k); }
+.dk-label b { color: #eef1f6; }
+.dk-stack { position: relative; }
+.dk-card { position: absolute; left: 0; display: flex; border-radius: 12px; box-shadow: 0 -6px 18px #000000a8; }
+.dk-card .art { border-radius: 12px; }
+.dk-card.is-key { box-shadow: 0 0 0 4px var(--accent), 0 0 30px #f7d04666; }
+/* Badges hang off the card edges so they never cover the card's own name bar. */
+.dk-n { position: absolute; right: -12px; top: 6px; font: 700 24px/1 "Chakra Petch", sans-serif; background: #07080c; color: var(--accent); border: 2px solid var(--accent); border-radius: 6px; padding: 4px 8px 3px; }
+.dk-card .role { position: absolute; left: -12px; top: 8px; font-size: 12px; padding: 4px 6px 3px; }
+.dk-card .role.flex { background: #07080c; }
