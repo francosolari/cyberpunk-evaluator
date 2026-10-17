@@ -519,13 +519,13 @@ function tierSlideHTML(s, editing) {
     const nameSize = Math.min(64, Math.max(30, rowH * 0.3));
     return `<div class="tier-row" data-tier="${t.id}" style="--t:${esc(t.color)};--tt:${esc(t.color)}40;height:${rowH}px">
       <div class="tier-head">
-        <div class="tier-name" style="font-size:${nameSize}px">${esc(t.name)}</div>
+        <div class="tier-name" style="font-size:${nameSize}px"><span>${esc(t.name)}</span></div>
         ${t.desc && rowH > 120 ? `<div class="tier-desc">${esc(t.desc)}</div>` : ''}
       </div>
       <div class="tier-decks" data-drop="${t.id}">${tiles || (editing ? '<span class="drop-hint">Drop decks here</span>' : '')}</div>
     </div>`;
   }).join('');
-  return `<div class="stage tier-slide">
+  return `<div class="stage tier-slide look-${esc(s.look || 'rail')}">
     <div class="glow g1"></div><div class="glow g2"></div>
     <header class="s-head">
       ${s.eyebrow || s.pill ? `<div class="s-eyebrow">${s.eyebrow ? `<span class="brandmark">${esc(s.eyebrow)}</span>` : ''}${s.pill ? `<span class="pill">${esc(s.pill)}</span>` : ''}</div>` : ''}
@@ -779,6 +779,8 @@ function renderSlideInspector() {
       <div><label>Format pill</label><input data-s="pill" value="${esc(s.pill)}" placeholder="Beta · Oct 2026"></div>
     </div>
     <label>Footnote</label><input data-s="footnote" value="${esc(s.footnote)}" placeholder="optional">
+    <label>Style</label>
+    <select data-s="look">${[['rail', 'Rail (current)'], ['band', 'Band'], ['ledger', 'Ledger'], ['frame', 'Frame']].map(([k, v]) => `<option value="${k}" ${(s.look || 'rail') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
     <label>Deck tiles show</label>
     <select data-s="display">${Object.entries(DISPLAY_MODES).map(([k, v]) => `<option value="${k}" ${k === s.display ? 'selected' : ''}>${v}</option>`).join('')}</select>
     <label class="check"><input type="checkbox" data-s="showNames" ${s.showNames ? 'checked' : ''}> Show deck names under codes</label>

@@ -482,3 +482,39 @@ code { color: var(--accent); }
 .bcol.side { border-top: 3px dashed #8b93a3; background: #0b0d12; }
 .ds-group.extra { margin-top: 6px; border-bottom-style: dashed; }
 .ds-row.is-extra { opacity: .85; border-style: dashed; }
+
+/* ================= Tier list styles (looks) =================
+ * rail: the original (colored rail, glows, rounded). The others drop the glow blobs, grid, rails and
+ * soft rounded cards. */
+.look-band .glow, .look-ledger .glow, .look-frame .glow { display: none; }
+.stage.look-band::before, .stage.look-ledger::before, .stage.look-frame::before { display: none; }
+.look-band, .look-ledger, .look-frame { background: #0b0c10; }
+.look-band .tier-row::before, .look-ledger .tier-row::before, .look-frame .tier-row::before { display: none; }
+.look-band .tier-name, .look-ledger .tier-name, .look-frame .tier-name { text-shadow: none; }
+.look-band .deck-tile, .look-ledger .deck-tile, .look-frame .deck-tile { border-radius: 3px; box-shadow: none; }
+.look-band .pill, .look-ledger .pill, .look-frame .pill { background: none; color: #c9d0dc; border-radius: 0; padding: 0; font-weight: 500; letter-spacing: .06em; }
+.look-band .pill::before, .look-ledger .pill::before, .look-frame .pill::before { content: "/ "; color: #5b6475; }
+.look-band .brandmark, .look-ledger .brandmark, .look-frame .brandmark { letter-spacing: .12em; }
+
+/* Band: classic tier-list blocks. Solid color label, flat dark lane, square edges. */
+.look-band .tiers { gap: 6px; }
+.look-band .tier-row { border-radius: 0; border: none; background: #14161c; }
+.look-band .tier-head { background: var(--t); }
+.look-band .tier-name { color: #0b0c10; }
+.look-band .tier-desc { color: #0b0c10b8; font-weight: 600; }
+
+/* Ledger: no boxes. A hairline above each tier, the name in its color, decks on the line. */
+.look-ledger .tiers { gap: 0; }
+.look-ledger .tier-row { border-radius: 0; background: none; border: none; border-top: 1px solid #ffffff24; }
+.look-ledger .tier-row:last-child { border-bottom: 1px solid #ffffff24; }
+.look-ledger .tier-head { padding-left: 0; }
+.look-ledger .tier-name { color: var(--t); }
+
+/* Frame: borrows the card frame: thin colored frame, the tier name in a tab on the top edge. */
+.look-frame .tiers { gap: 16px; }
+.look-frame .tier-row { border-radius: 0; background: #101217; border: 2px solid var(--t); }
+.look-frame .tier-head { padding-top: 54px; }
+.look-frame .tier-name { color: #eef1f6; }
+.look-frame .tier-name span { position: absolute; left: -2px; top: -2px; font-size: 30px; line-height: 1; letter-spacing: .06em; padding: 8px 40px 7px 16px; background: var(--t); color: #0b0c10;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
+.look-frame .tier-name { font-size: 0 !important; }
