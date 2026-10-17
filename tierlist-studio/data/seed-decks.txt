@@ -1,7 +1,7 @@
 # Seed decks: what a new visitor's studio starts with.
 #
-# Paste deck exports here (Cyberpunk TCG Sim text export, official deck builder text list,
-# or a sim import link), separated by a line containing only ---
+# Paste deck exports here (a deck text export, an official deck builder text list,
+# or a deck link), separated by a line containing only ---
 # Optional lines in each deck:
 #   # Tier: Tier 1        which tier on the starting tier list (Tier 1, Tier 2 or Rogue)
 #   # Notes: ...          shown on the deck page

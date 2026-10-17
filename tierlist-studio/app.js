@@ -1,6 +1,6 @@
 /* Tier List Studio — Cyberpunk TCG tier list & deck page slide maker.
- * Plain JS, no build step. Card data comes from the Cyberpunk TCG Sim public catalog
- * (the same /api/cards/catalog the cyberpunk-tcg-tracker uses). Decks come from deck exports. */
+ * Plain JS, no build step. Card data comes from a public card catalog (the same one
+ * cyberpunk-tcg-tracker reads). Decks come from deck exports. */
 'use strict';
 
 const STORE_KEY = 'cp-tierlist-studio-v2';
@@ -143,8 +143,8 @@ const SAMPLE_DECKS = [
 1x Muamar Reyes`,
 ];
 const SAMPLE_NOTES = {
-  'Heist Tempo': 'Sample: the sim\'s public starter list.\nReplace with your own export any time.',
-  'Arasaka Steel': 'Sample: the sim\'s public starter list.',
+  'Heist Tempo': 'Sample: official starter deck.\nReplace with your own export any time.',
+  'Arasaka Steel': 'Sample: official starter deck.',
 };
 
 /** Replaces the placeholder demo with real sample decks (and ranked meta trios, if reachable). */
@@ -175,7 +175,7 @@ async function applySamples() {
     if (r.ok) {
       for (const t of topTrios(await r.json(), 14)) {
         if (decks.some((d) => d.legends.slice().sort().join('+') === t.key)) continue;
-        const d = newDeck({ legends: t.key.split('+'), notes: `${t.games} ranked games on the sim leaderboard`, sample: true, fromLeaderboard: true });
+        const d = newDeck({ legends: t.key.split('+'), notes: `${t.games} ranked games this season`, sample: true, fromLeaderboard: true });
         if (d.legends.every(card)) { d.name = d.legends.map((id) => card(id).name.split(',')[0].split(' ')[0]).join(' · '); decks.push(d); }
       }
     }
@@ -262,6 +262,11 @@ function newDeck(p = {}) {
 /* ---------------- state ---------------- */
 let state = load() || makeDemo();
 const ui = { view: 'slides', slideId: state.slides[0]?.id, deckId: state.decks[0]?.id, selectedDeck: null };
+// Earlier versions wrote source names into sample notes; rewrite them so slides stay neutral.
+for (const d of state.decks || []) {
+  if (typeof d.notes !== 'string') continue;
+  d.notes = d.notes.replace(/Sample: the sim's public starter list\./g, 'Sample: official starter deck.').replace(/ranked games on the sim leaderboard/g, 'ranked games this season');
+}
 let cardIndex = new Map();
 // Projects saved with an earlier default crop pick up the current one.
 if (state.legendCrop && OLD_DEFAULT_CROPS.includes(`${state.legendCrop.top}/${state.legendCrop.bottom}`)) state.legendCrop = {};
@@ -375,7 +380,7 @@ function decodeSimDeckCode(text) {
 async function loadCatalogFromSim() {
   const r = await fetch(CATALOG_URL, { headers: { Accept: 'application/json' }, credentials: 'omit' });
   if (!r.ok) throw new Error('HTTP ' + r.status);
-  return applyCatalog(await r.json(), 'Cyberpunk TCG Sim');
+  return applyCatalog(await r.json(), 'card catalog');
 }
 function applyCatalog(json, from) {
   const cards = parseCatalog(json);
@@ -1291,7 +1296,7 @@ function renderDecks() {
       <p class="hint">Made from the Legends' colors, e.g. RRG. Type to override it.</p>
       <label>Tile display for this deck</label>
       <div class="seg">${[['inherit', 'Slide default'], ...Object.entries(DISPLAY_MODES)].map(([k, v]) => `<button data-display="${k}" class="${(d.display || 'inherit') === k ? 'on' : ''}">${v}</button>`).join('')}</div>
-      <div class="row gap" style="margin-top:14px"><button data-copy-export>Copy sim export</button><button data-del-deck class="danger">Delete deck</button></div></details>
+      <div class="row gap" style="margin-top:14px"><button data-copy-export>Copy deck export</button><button data-del-deck class="danger">Delete deck</button></div></details>
     </div>
     <div>
       <h3>On the tier list</h3>
@@ -1577,7 +1582,7 @@ function bindDecks() {
     } else if ('deckpage' in b.dataset) return addDeckSlide(d);
     else if ('reimport' in b.dataset) return openImport(d);
     else if ('copyExport' in b.dataset) {
-      navigator.clipboard?.writeText(exportSimText(d)).then(() => toast('Copied in Cyberpunk TCG Sim text format.'), () => toast('Copy failed.'));
+      navigator.clipboard?.writeText(exportSimText(d)).then(() => toast('Deck copied as a text export.'), () => toast('Copy failed.'));
       return;
     } else if ('delDeck' in b.dataset) {
       if (!confirm(`Delete deck "${deckLabel(d)}"?`)) return;
@@ -1595,11 +1600,11 @@ function openImport(target = null) {
     <label class="dropzone" id="imp-drop">
       <input type="file" id="imp-image" accept="image/*" hidden>
       <span class="dz-icon" aria-hidden="true">▣</span>
-      <b>Drop the sim's deck image here, or tap to choose one</b>
+      <b>Drop a deck image with a QR code here, or tap to choose one</b>
       <span class="hint" id="imp-scan">The QR code on the image is read on this device. The image is never uploaded or saved. You can also paste a screenshot.</span>
     </label>
     <label for="imp-text" class="or-label">or paste a deck export or link</label>
-    <p class="hint">A sim text export, a sim deck link, or the official deck builder's text list. Separate several decks with a line of <code>---</code>.</p>
+    <p class="hint">A deck text export, a deck link, or the official deck builder's text list. Separate several decks with a line of <code>---</code>.</p>
     <textarea id="imp-text" rows="7" placeholder="# Name: Geary Noble Safety&#10;#L&#10;1x Panam Palmer&#10;1x River Ward&#10;1x Muamar Reyes&#10;&#10;#D&#10;3x …"></textarea>
     <div class="row gap" style="margin-top:8px"><label class="filebtn">Load .txt file<input type="file" id="imp-file" accept=".txt,.json,text/plain" hidden></label></div>
     <div id="imp-preview" style="margin-top:12px"></div>
@@ -1623,7 +1628,7 @@ function openImport(target = null) {
     try {
       const text = await readQrFromImage(file);
       if (!text) throw new Error('No QR code found in that image. Try a sharper or uncropped export.');
-      if (!decodeB64Deck(text) && !decodeSimDeckCode(text) && !/#L|^\s*\d+\s*x?\s+\S/im.test(text)) throw new Error(`The QR code holds "${text.slice(0, 80)}", which isn't a deck export. Open it in the sim and use Export → Text instead.`);
+      if (!decodeB64Deck(text) && !decodeSimDeckCode(text) && !/#L|^\s*\d+\s*x?\s+\S/im.test(text)) throw new Error(`The QR code holds "${text.slice(0, 80)}", which isn't a deck. Export the deck as text and paste it instead.`);
       const box = $('#imp-text');
       box.value = (box.value.trim() ? box.value.trim() + '\n---\n' : '') + text;
       preview();
@@ -1756,21 +1761,19 @@ function renderData() {
   const cat = state.catalog;
   const legends = cat ? cat.cards.filter(isLegend) : [];
   $('#data-view').innerHTML = `<h3>Card data</h3>
-    ${cat ? `<div class="callout ok"><b>${cat.cards.length} cards</b> (${legends.length} Legends) from ${esc(cat.from)}, loaded ${new Date(cat.at).toLocaleString()}${cat.revision ? ` · pool revision ${esc(cat.revision)}` : ''}.</div>`
+    ${cat ? `<div class="callout ok"><b>${cat.cards.length} cards</b> (${legends.length} Legends), loaded ${new Date(cat.at).toLocaleString()}${cat.revision ? ` · pool revision ${esc(cat.revision)}` : ''}.</div>`
       : '<div class="callout warn">No card data yet. The app is showing demo placeholders.</div>'}
-    <p>Card names, types, colors and art come from the <b>Cyberpunk TCG Sim</b> public catalog, the same one its deck builder and the Cyberpunk TCG Tracker use. Card images load straight from the simulator.</p>
-    <div class="row gap"><button class="primary" id="cat-fetch">${cat ? 'Refresh' : 'Load'} from Cyberpunk TCG Sim</button>
+    <p>Card names, types, colors and art load automatically from a public card catalog. Refresh after a new set releases.</p>
+    <div class="row gap"><button class="primary" id="cat-fetch">${cat ? 'Refresh' : 'Load'} card data</button>
       <label class="filebtn">Load catalog .json<input type="file" id="cat-file" accept=".json,application/json" hidden></label>
       <button id="cat-paste-btn">Paste JSON</button></div>
     <textarea id="cat-paste" rows="5" hidden placeholder='{"cards":[…]}'></textarea>
     <div id="cat-status" class="hint" style="margin-top:8px"></div>
-    <div class="callout" style="margin-top:16px">If <i>Load</i> is blocked by the browser (CORS), open
-      <a href="${CATALOG_URL}" target="_blank" rel="noopener">${CATALOG_URL}</a>, save the page as <code>catalog.json</code> (Ctrl/⌘+S), and use <b>Load catalog .json</b>.</div>
+
     <h3 style="margin-top:26px">Ranked meta</h3>
-    <p>Create decks from the most-played Legend trios on the sim's public ranked leaderboard. Each one becomes a Legends-only deck you can rank, then fill in with an export later.</p>
+    <p>Create decks from the most-played Legend trios on the public ranked ladder. Each one becomes a Legends-only deck you can rank, then fill in with an export later.</p>
     <div class="row gap"><button id="meta-fetch" ${cat ? '' : 'disabled'}>Add top ranked Legend trios</button>
-      <label class="filebtn">Load leaderboard .json<input type="file" id="meta-file" accept=".json" hidden></label>
-      <a href="${LEADERBOARD_URL}" target="_blank" rel="noopener" class="hint">leaderboard JSON ↗</a></div>
+      <label class="filebtn">Load leaderboard .json<input type="file" id="meta-file" accept=".json" hidden></label></div>
     <div id="meta-status" class="hint" style="margin-top:8px"></div>`;
 }
 
@@ -1803,7 +1806,7 @@ function bindData() {
     if (id === 'cat-fetch') {
       status('Loading…');
       try { const n = await loadCatalogFromSim(); await applySamples(); renderData(); updateBadge(); status(`Loaded ${n} cards.`); }
-      catch (err) { status(`Couldn't load (${err.message}). Use the save-as-file option below.`); }
+      catch (err) { status(`Couldn't load the card data (${err.message}). Try again in a moment.`); }
     } else if (id === 'cat-paste-btn') $('#cat-paste').hidden = !$('#cat-paste').hidden;
     else if (id === 'meta-fetch') {
       $('#meta-status').textContent = 'Loading…';
@@ -1811,7 +1814,7 @@ function bindData() {
         const r = await fetch(LEADERBOARD_URL, { credentials: 'omit' });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         $('#meta-status').textContent = `Added ${addTrios(await r.json())} decks. Find them in Unranked.`;
-      } catch (err) { $('#meta-status').textContent = `Couldn't load (${err.message}). Open the leaderboard JSON link, save it, then use Load leaderboard .json.`; }
+      } catch (err) { $('#meta-status').textContent = `Couldn't load the ladder (${err.message}). Try again in a moment.`; }
     }
   });
   v.addEventListener('input', (e) => {
@@ -2033,7 +2036,7 @@ function openHelp() {
     <h3>How Tier List Studio works</h3>
     <ol class="help-steps">
       <li><b>Card data</b> loads by itself. If it doesn't, the Card Data tab shows how to load it from a file.</li>
-      <li><b>Decks:</b> in the Decks tab, choose <i>Import deck</i>. Drop the sim's deck image (its QR code is read on your device), or paste a deck export or link from the Cyberpunk TCG Sim or the official deck builder.</li>
+      <li><b>Decks:</b> in the Decks tab, choose <i>Import deck</i>. Drop a deck image with a QR code (it's read on your device), or paste a deck export or link.</li>
       <li><b>Tier list:</b> drag decks from Unranked into tiers. Rename, recolor, add or remove tiers in the panel on the right.</li>
       <li><b>Deck pages:</b> add one with <i>+ Deck page</i> to show a deck's Legends, key cards and full list.</li>
       <li><b>Present</b> shows the slides full screen. Use ← → to move, Esc to exit.</li>
@@ -2047,7 +2050,7 @@ function openHelp() {
       <li><b>Core, Flex, key cards:</b> drag cards between columns in the list; ★ marks a key card (up to 3).</li>
     </ul>
     <p class="hint">Everything saves in this browser. Use Project → Save project to back up or move to another device.</p>
-    <p class="hint">Fan-made, not affiliated with CD PROJEKT or WeirdCo. Cyberpunk and all card images © CD PROJEKT S.A. Card data comes from the Cyberpunk TCG Sim.</p>
+    <p class="hint">Fan-made, not affiliated with CD PROJEKT or WeirdCo. Cyberpunk and all card images © CD PROJEKT S.A.</p>
     <div class="row gap" style="margin-top:14px"><button class="primary" data-close>Got it</button>${prefs().guide.dismissed ? '<button data-guide-reset>Show getting started again</button>' : ''}</div>
   </div>`);
 }
@@ -2285,7 +2288,7 @@ render();
     try {
       const r = await fetch('data/catalog.json');
       if (!r.ok) throw new Error();
-      applyCatalog(await r.json(), 'bundled snapshot of the Cyberpunk TCG Sim catalog');
+      applyCatalog(await r.json(), 'bundled card catalog');
     } catch {
       try { await loadCatalogFromSim(); } catch { return; }
     }
