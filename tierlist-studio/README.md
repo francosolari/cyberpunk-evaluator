@@ -1,57 +1,48 @@
 # Tier List Studio
 
-A browser tool for building Cyberpunk TCG tier list slides and deck spotlight slides. It's plain HTML, CSS and JS, so there's no build step.
+Builds Cyberpunk TCG tier list slides and deck page slides from real card data and real deck exports. It's plain HTML, CSS and JS, so there's no build step.
 
 ## Run it
 
-Open `index.html` in a browser. To serve it locally instead, run this from this folder:
+Open `index.html` in a browser, or serve this folder (`python3 -m http.server`). Work saves in the browser. Use **Project → Save project** to back it up or move it to another machine.
 
-```sh
-python3 -m http.server 8000   # then visit http://localhost:8000
-```
+## Card data
 
-Your work saves to the browser automatically. Use **Project → Save project (.json)** to back it up, share it or move it to another machine.
+Cards come from the **Cyberpunk TCG Sim public catalog** at `https://cyberpunk-tcg-sim.online/api/cards/catalog`. It's the same endpoint the sim's deck builder and `cyberpunk-tcg-tracker` use. Each card's `id`, `display_name`, `card_type`, `color`, `cost` and `assets.image_url` are read, and images load from the sim's `/media/…` paths.
 
-## How it fits together
+The app tries to load the catalog on first run. If the browser blocks the request (CORS), open the catalog URL, save it as `catalog.json`, and use **Card Data → Load catalog .json**.
 
-| Tab | What it's for |
-| --- | --- |
-| **Slides** | A 1920×1080 slide editor. Drag decks between tiers, or tap a deck and then tap a tier. Edit the title, side badge, footnote, logo, tier names, colors and description lines. Add **Deck spotlight** slides. |
-| **Decks** | Each deck has a name/color code (e.g. `RRG`), an optional subtitle, **3 Legends**, a **key card** and notes. You can also set a per-deck display override. |
-| **Card Library** | All the cards (Legends and others), each with an image. **Crop art** sets which part of the card is shown. |
-| **Card Source** | Imports cards in bulk from the card database's JSON. |
+**Card Data → Add top ranked Legend trios** reads the sim's public ranked leaderboard and creates a Legends-only deck for each popular trio, ready to rank.
 
-### Deck display modes (per slide, or overridden per deck)
+## Decks from exports
 
-- **Key card (full)**: the whole key card with the color code over it, like the current slides.
-- **Key card (art only)**: only the key card's illustration.
-- **Legends (art strips)**: the three Legends' art side by side in one tile.
-- **Legends (art bands)**: the three Legends' art stacked as horizontal bands.
-- **Key art + legends**: key card art on top and a strip of Legend art below.
+**Decks → Import deck export** accepts:
 
-Deck borders take their colors from the Legends' colors. If no Legends are set, they come from the letters of the deck name.
+- **Sim text export**:
+  ```
+  # Name: Heist Tempo
+  #L
+  1x V, Corporate Exile
+  …
+  #D
+  3x Floor It
+  #S
+  …
+  ```
+- **Sim import links**, e.g. `…/import?svc=sim&b64deck=…`. The deck is decoded from the link.
+- **Text lists** from the official deck builder and other builders. These look like `3 Card Name`, `3x Card Name` or `Card Name x3`, with `Legends:`, `Main Deck:` and `Sideboard:` headers or `//` comments. Legends are detected from the card type even without a header.
+- **JSON decklists** with name/count fields.
 
-### Art cropping (showing the art, not the text)
+To import several decks at once, separate them with a `---` line. Names are matched to the catalog without regard to case or punctuation. A short name like "Panam Palmer" matches "Panam Palmer, Nomad Cavalry" when only one card fits. Lines that match no card are listed so you can fix them.
 
-Each card stores an **art window**: the top and bottom of its illustration, as a % of card height. It also stores a focus point and an optional extra zoom. Every layout scales the image so that only the art window is visible. The rules text box never shows, whatever the tile shape is (a tall strip, a tile, a wide band or a spotlight).
+Each deck gets a **tile code** from its Legends' colors, majority color first (2 Red + 1 Green → `RRG`). You can override the code. The deck also gets a **key card**, suggested from the decklist; change it with ★. **Copy sim export** writes the deck back out in sim text format.
 
-All cards share a frame layout, so you can set the window once on one Legend and click **Use window for all Legends**. After that, only fine-tune the focus point per card.
+## Slides
 
-### Presenting / exporting
+- **Tier list**: any number of tiers, each with a name, color and description. Add, remove and reorder tiers freely, or start from a preset (Tier 1/2/Rogue, S/A/B/C, Tier 0–3). Drag decks between tiers, or on a touch screen tap a deck and then a tier. Tiles show the Legends' art, the key card's art, both, or the full key card.
+- **Deck page**: the deck code and name, its tier, three large Legend portraits, a key card banner, notes, and the full decklist sorted by cost.
+- **▶ Present** opens fullscreen slides (← → to move, Esc to exit). **Export PNG** renders 1920×1080. Card art only appears in the PNG if the image host allows cross-origin reads. Otherwise use Present and take a screenshot.
 
-- **▶ Present** opens a fullscreen slideshow. Use ← → or Space to move between slides, and Esc to exit.
-- **Export PNG** renders the current slide at 1920×1080 using html2canvas, which is loaded from cdnjs. Card images hosted on another domain only export if that host sends CORS headers. If an export fails, use Present mode and take a screenshot.
+## Art crops
 
-## Connecting the official card database
-
-Out of the box the project has **placeholder** cards (marked `demo`). To use real card art:
-
-1. Find the JSON the official card database loads. Open the database site, open DevTools → Network, filter by `Fetch/XHR`, and look for the request that returns the card list. You can also note the image URLs it loads (the CDN host and naming pattern).
-2. In **Card Source**, fetch that URL. If the site blocks cross-origin requests, open the JSON in a tab, save it as a file and use **Load .json file**, or paste it in.
-3. Check the field mapping: the list path, name, image, color, type, and the type value that means "Legend". Fields are guessed automatically, and dotted paths like `images.large` work.
-4. If the JSON has only an id or filename, fill in the **image URL template**, e.g. `https://<cdn-host>/cards/{id}.webp`. Any `{field}` is filled in from each card.
-5. Click **Preview**, then **Import into library**. Re-importing updates existing cards by id or name and keeps your crops.
-
-You can also add single cards by hand (**Card Library → + Add card**) with an image URL or an uploaded image. Uploads are downscaled and stored in the browser. Image URLs keep the project small.
-
-Card art and names belong to their owners. This tool only shows images from wherever you point it.
+Each card has an **art window**: the top and bottom of its illustration, as a % of card height. Every layout scales the card so only that window shows, which keeps names and rules text off the slides. Set it once on any Legend with **Cards → Crop art → Save as default for all Legends**, then fine-tune the focus point on individual cards if needed.
