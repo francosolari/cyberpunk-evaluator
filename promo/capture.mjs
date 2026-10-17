@@ -77,7 +77,19 @@ const hero = await page.evaluate((heroText) => {
   }
   d.main.filter(([id, n]) => !d.roles[id] && n <= 2).slice(-2).forEach(([id]) => (d.roles[id] = 'flex'));
   const coreIds = Object.keys(d.roles).filter((id) => d.roles[id] === 'core');
-  setKeys(d, [suggestKeyCard(d), ...coreIds].filter(Boolean).slice(0, 2));
+  // Keep the seed's own key card; add one core card so the deck page shows two.
+  setKeys(d, [...keysOf(d), suggestKeyCard(d), ...coreIds].filter(Boolean).slice(0, 2));
+  // For the shots only: decks without a key card (the Legends-only seeds) get the most-played card in their
+  // colors across the full seed lists, so key card tile views show art on every tile.
+  const fullLists = state.decks.filter((x) => deckCount(x) >= 40);
+  for (const x of state.decks) {
+    if (keysOf(x).length) continue;
+    const cols = new Set(deckColors(x));
+    const tally = new Map();
+    for (const f of fullLists) for (const [id, n] of f.main) if (cols.has(card(id)?.color)) tally.set(id, (tally.get(id) || 0) + n);
+    const top = [...tally].sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (top) setKeys(x, [top]);
+  }
   // Sideboard / options: a few on-color cards that aren't in the deck.
   if (!(d.side || []).length && !(d.options || []).length) {
     const cols = new Set(deckColors(d));
