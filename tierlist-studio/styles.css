@@ -696,15 +696,19 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 .import-sub { margin: 6px 2px 0; }
 .diag { white-space: pre-wrap; word-break: break-all; font: 11px/1.4 var(--mono); max-height: 240px; overflow: auto; background: var(--bg); padding: 8px; margin-top: 8px; }
 
-/* Full decklist: copies, Key and Core / Flex sit in a label row under each card, never over its text. */
+/* Full decklist: copies, Key and Core / Flex as one tag bar hanging off the card's bottom-left edge,
+ * clear of the rules text and power; Key brackets hug the card so they stay under the section title. */
 .fd-card { display: flex; flex-direction: column; border-radius: 0; outline: none !important; }
 .fd-face { position: relative; display: flex; border-radius: 10px; }
 .fd-face > .art { flex: 1; border-radius: 10px; }
 .fd-card.is-legend .fd-face { outline: 2px solid var(--k); }
+.fd-card:not(.is-legend):not(.is-small) { margin-bottom: 20px; }
+.fd-card.is-small { margin-bottom: 14px; }
+.fd-grid { padding-top: 10px; }
 .fd-card.is-key::before { display: none; }
 .fd-card.is-key .fd-face::before {
-  content: ""; position: absolute; inset: -8px; pointer-events: none; z-index: 2;
-  --b: 3px; --l: 24px; --k2: var(--accent-2);
+  content: ""; position: absolute; inset: -6px; pointer-events: none; z-index: 2;
+  --b: 3px; --l: 22px; --k2: var(--accent-2);
   background:
     linear-gradient(var(--k2), var(--k2)) top left / var(--l) var(--b) no-repeat,
     linear-gradient(var(--k2), var(--k2)) top left / var(--b) var(--l) no-repeat,
@@ -715,11 +719,12 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
     linear-gradient(var(--k2), var(--k2)) bottom right / var(--l) var(--b) no-repeat,
     linear-gradient(var(--k2), var(--k2)) bottom right / var(--b) var(--l) no-repeat;
 }
-.fd-foot { height: 40px; display: flex; align-items: center; gap: 8px; padding-top: 8px; }
-.fd-card.is-small .fd-foot { height: 30px; padding-top: 6px; gap: 6px; }
-.fd-foot .fd-n { position: static; outline: none !important; background: none !important; padding: 0 !important; font-size: 30px; line-height: 1; color: var(--accent) !important; }
-.fd-foot .fd-n small { font-size: 20px; }
-.fd-card.is-small .fd-foot .fd-n { font-size: 22px; }
-.fd-card.is-small .fd-foot .fd-n small { font-size: 15px; }
-.fd-foot .fd-key { position: static; transform: none; background: none !important; clip-path: none !important; padding: 0 !important; color: var(--accent-2) !important; font-size: 17px !important; font-weight: 700; white-space: nowrap; }
-.stage .fd-foot .role { position: static; margin-left: auto; font-size: 16px !important; padding: 4px 10px 3px !important; }
+.fd-tags { position: absolute; left: 8px; bottom: 0; transform: translateY(50%); z-index: 3; display: flex; align-items: stretch; height: 36px; box-shadow: 0 3px 10px #000c; }
+.fd-card.is-small .fd-tags { left: 4px; height: 24px; }
+.fd-tags > span { position: static !important; display: flex; align-items: center; margin: 0 !important; transform: none !important; clip-path: none !important; border-radius: 0 !important; outline: none !important; box-shadow: none !important; }
+.fd-tags .fd-n { background: #07080c !important; color: var(--accent) !important; padding: 0 9px 0 7px !important; font-size: 26px; line-height: 1; box-shadow: inset 0 0 0 2px var(--accent) !important; }
+.fd-tags .fd-n small { font-size: 17px; }
+.fd-card.is-small .fd-tags .fd-n { font-size: 17px; padding: 0 6px 0 5px !important; }
+.fd-card.is-small .fd-tags .fd-n small { font-size: 12px; }
+.fd-tags .fd-key { background: #07080c !important; color: var(--accent-2) !important; padding: 0 9px !important; font-size: 16px !important; font-weight: 700; white-space: nowrap; box-shadow: inset 0 -2px 0 var(--accent-2), inset 0 2px 0 var(--accent-2) !important; }
+.stage .fd-tags .role { font-size: 16px !important; padding: 0 10px !important; }
