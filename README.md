@@ -14,6 +14,10 @@ The app tries to load the catalog on first run. If the browser blocks the reques
 
 **Card Data → Add top ranked Legend trios** reads the sim's public ranked leaderboard and creates a Legends-only deck for each popular trio, ready to rank.
 
+## Seed decks
+
+A new visitor's studio starts from `data/seed-decks.txt`: deck exports separated by `---` lines, each with an optional `# Tier: Tier 1` line (where it starts on the tier list) and `# Notes: …` line. A deck with only Legends shows as an archetype. Edit that file to change what everyone starts with; it doesn't touch anyone's saved decks. Popular trios from the sim's ranked leaderboard are added to Unranked.
+
 ## Decks from exports
 
 **Decks → Import deck export** accepts:

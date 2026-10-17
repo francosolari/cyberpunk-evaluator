@@ -141,16 +141,34 @@ const SAMPLE_NOTES = {
 };
 
 /** Replaces the placeholder demo with real sample decks (and ranked meta trios, if reachable). */
+/** Seed decks: data/seed-decks.txt (deck exports separated by ---, with optional "# Tier:" and
+ * "# Notes:" lines), falling back to the built-in starters. */
+async function loadSeeds() {
+  let blocks;
+  try {
+    const r = await fetch('data/seed-decks.txt', { cache: 'no-cache' });
+    if (!r.ok) throw new Error();
+    blocks = (await r.text()).split(/^\s*-{3,}\s*$/m);
+  } catch { blocks = SAMPLE_DECKS; }
+  return blocks.map((text) => {
+    const tier = text.match(/^#\s*Tier:\s*(.+)$/im)?.[1].trim();
+    const notes = text.match(/^#\s*Notes:\s*(.+)$/im)?.[1].trim();
+    const d = parseDeckExport(text.replace(/^#\s*(Tier|Notes):.*$/gim, ''));
+    d.notes = notes || SAMPLE_NOTES[d.name] || '';
+    d.sample = true;
+    d.seedTier = tier;
+    return d;
+  }).filter((d) => d.legends.some(Boolean));
+}
 async function applySamples() {
   if (!state.catalog || !state.decks.some(isDemoDeck)) return false;
-  const decks = SAMPLE_DECKS.map(parseDeckExport).filter((d) => d.legends.filter(Boolean).length === 3);
-  decks.forEach((d) => { d.notes = SAMPLE_NOTES[d.name] || ''; d.sample = true; });
+  const decks = await loadSeeds();
   try {
     const r = await fetch(LEADERBOARD_URL, { credentials: 'omit' });
     if (r.ok) {
       for (const t of topTrios(await r.json(), 14)) {
         if (decks.some((d) => d.legends.slice().sort().join('+') === t.key)) continue;
-        const d = newDeck({ legends: t.key.split('+'), notes: `${t.games} ranked games on the sim leaderboard`, sample: true });
+        const d = newDeck({ legends: t.key.split('+'), notes: `${t.games} ranked games on the sim leaderboard`, sample: true, fromLeaderboard: true });
         if (d.legends.every(card)) { d.name = d.legends.map((id) => card(id).name.split(',')[0].split(' ')[0]).join(' · '); decks.push(d); }
       }
     }
@@ -164,13 +182,17 @@ async function applySamples() {
   const tierSlide = state.slides.find((x) => x.type === 'tier');
   if (tierSlide) {
     tierSlide.showNames = true;
-    const order = [...decks.slice(3), ...decks.slice(0, 3)]; // ranked trios first, starters lower
-    const sizes = [4, 5, 4];
-    let i = 0;
-    tierSlide.tiers.forEach((t, k) => { t.deckIds = order.slice(i, i + (sizes[k] ?? 4)).map((d) => d.id); i += sizes[k] ?? 4; });
+    tierSlide.tiers.forEach((t) => (t.deckIds = []));
+    const byName = (name) => tierSlide.tiers.find((t) => norm(t.name) === norm(name || ''));
+    // Seeds with a "# Tier:" line go there; the rest (and leaderboard trios) fill tiers in order.
+    const placed = decks.filter((d) => byName(d.seedTier));
+    placed.forEach((d) => byName(d.seedTier).deckIds.push(d.id));
+    const rest = decks.filter((d) => !placed.includes(d) && !d.fromLeaderboard); // leaderboard trios start unranked
+    rest.forEach((d, i) => { const t = tierSlide.tiers[Math.min(tierSlide.tiers.length - 1, Math.floor(i / 4))]; if (t.deckIds.length < 6) t.deckIds.push(d.id); });
   }
+  decks.forEach((d) => { delete d.seedTier; delete d.fromLeaderboard; });
   state.slides = state.slides.filter((x) => x.type !== 'deck' || !gone.has(x.deckId));
-  const heist = decks.find((d) => d.name === 'Heist Tempo') || decks[0];
+  const heist = decks.find((d) => d.main.length) || decks[0];
   state.slides.push({ id: uid(), type: 'deck', name: 'Deck: ' + heist.name, deckId: heist.id });
   save();
   return true;
@@ -339,13 +361,18 @@ function buildNameIndex() {
     nameIndex.list.push([norm(c.name), c.id]);
   }
 }
-function resolveCard(name) {
+function resolveCard(name, { legend = false } = {}) {
   if (!nameIndex) buildNameIndex();
   const n = norm(name);
   if (!n) return null;
   if (nameIndex.exact.has(n)) return nameIndex.exact.get(n);
   // "Panam Palmer" vs "Panam Palmer, Nomad Cavalry": accept a unique prefix match either way
-  const hits = nameIndex.list.filter(([k]) => k.startsWith(n) || n.startsWith(k));
+  let hits = nameIndex.list.filter(([k]) => k.startsWith(n) || n.startsWith(k));
+  // Under a Legends header, "Goro Takemura" means the Legend, not a unit with the same name.
+  if (legend && hits.length > 1) {
+    const legends = hits.filter(([, id]) => isLegend(card(id)));
+    if (legends.length) hits = legends.sort((a, b) => a[0].length - b[0].length).slice(0, 1);
+  }
   return hits.length === 1 ? hits[0][1] : null;
 }
 
@@ -406,7 +433,7 @@ function parseDeckExport(raw) {
   const legends = [];
   d.unmatched = [];
   for (const e of entries) {
-    const id = resolveCard(e.name);
+    const id = resolveCard(e.name, { legend: e.section === 'legend' });
     if (!id) { d.unmatched.push(e); continue; }
     if (e.section === 'legend' || isLegend(card(id))) { if (!legends.includes(id)) legends.push(id); continue; }
     add(e.section === 'side' ? d.side : e.section === 'options' ? d.options : d.main, id, e.qty);
