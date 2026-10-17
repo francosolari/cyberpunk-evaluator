@@ -306,3 +306,48 @@ code { color: var(--accent); }
   .pool-wrap { max-height: none; }
   .deck-edit, .crop, .grid2 { grid-template-columns: 1fr; }
 }
+
+/* ---------- Core / Flex tags ---------- */
+.role { flex: none; position: relative; z-index: 1; font: 700 14px/1 "Chakra Petch", sans-serif; letter-spacing: .12em; text-transform: uppercase; padding: 5px 8px 4px; border-radius: 4px; }
+.role.core { background: var(--accent); color: #0a0b10; }
+.role.flex { color: var(--accent-2); border: 2px solid var(--accent-2); padding: 3px 6px 2px; }
+.role-btn { min-width: 64px; color: var(--muted); }
+.role-btn.core { color: var(--accent); border-color: var(--accent); }
+.role-btn.flex { color: var(--accent-2); border-color: var(--accent-2); }
+
+/* ---------- Deck page: card text ---------- */
+.ds-breakdown.compact .ds-type { min-width: 0; padding: 8px 12px 10px; }
+.ds-breakdown.compact .ds-type-n { font-size: 34px; }
+.ds-breakdown.compact .ds-type-l { font-size: 13px; }
+.dt-left { position: absolute; left: 70px; top: 64px; bottom: 56px; width: 440px; display: flex; flex-direction: column; gap: 18px; }
+.dt-code { margin: 0; font: 700 110px/.9 "Chakra Petch", sans-serif; letter-spacing: .02em; }
+.dt-deckname { font: 600 30px/1.15 "Saira", sans-serif; color: #c9d0dc; margin-top: -8px; }
+.dt-legends { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.dt-legend { flex: 1; min-height: 0; position: relative; display: flex; border-radius: 10px; overflow: hidden; border-left: 6px solid var(--c); }
+.dt-legend span { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 14px 10px; font: 600 21px "Saira", sans-serif; background: linear-gradient(transparent, #07080ce6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-key { display: flex; flex-direction: column; gap: 2px; padding-left: 14px; border-left: 6px solid var(--accent); }
+.dt-key span { font: 600 15px "Chakra Petch", sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+.dt-key b { font: 700 28px "Saira", sans-serif; }
+.dt-cols { position: absolute; left: 560px; right: 60px; top: 64px; bottom: 56px; display: grid; gap: 22px; align-items: start; }
+.dt-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.dt-col .ds-group { border-bottom-width: 3px; padding-bottom: 6px; }
+.dt-card { background: #10131a; border-radius: 8px; border: 2px solid #ffffff0d; border-left: 5px solid var(--c); overflow: hidden; }
+.dt-card.is-key { border-color: var(--accent); border-left-color: var(--c); }
+.dt-top { display: flex; align-items: center; gap: 10px; height: 44px; padding-right: 10px; }
+.dt-top .ds-cost { align-self: stretch; width: 40px; font-size: 22px; }
+.dt-name { flex: 1; min-width: 0; font: 700 20px "Saira", sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-top .ds-n { font-size: 22px; }
+.dt-text { padding: 2px 12px 10px 14px; font: 400 var(--fs)/1.32 "Saira", sans-serif; color: #c4cbd8; white-space: pre-line; }
+
+/* ---------- Deck page: full cards ---------- */
+.dc-head { position: absolute; left: 70px; right: 70px; top: 50px; height: 150px; display: flex; align-items: center; justify-content: space-between; gap: 40px; }
+.dc-code { margin: 10px 0 0; font: 700 96px/.9 "Chakra Petch", sans-serif; }
+.dc-code span { font: 600 36px "Saira", sans-serif; color: #c9d0dc; margin-left: 14px; }
+.dc-head .ds-breakdown { width: 620px; }
+.dc-grid { position: absolute; left: 50%; transform: translateX(-50%); top: 236px; display: flex; flex-wrap: wrap; gap: 14px; }
+.dc-card { position: relative; display: flex; border-radius: 10px; }
+.dc-card .art { border-radius: 10px; }
+.dc-card.is-key { box-shadow: 0 0 0 4px var(--accent), 0 0 30px #f7d04666; }
+.dc-badge { position: absolute; right: -6px; top: -8px; font: 700 22px/1 "Chakra Petch", sans-serif; background: #07080c; color: var(--accent); border: 2px solid var(--accent); border-radius: 6px; padding: 5px 8px 4px; }
+.dc-card.is-legend .dc-badge { color: #eef1f6; border-color: #ffffff55; font-size: 14px; letter-spacing: .12em; text-transform: uppercase; }
+.dc-card .role { position: absolute; left: 8px; bottom: 8px; }

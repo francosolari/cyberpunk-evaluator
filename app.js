@@ -8,6 +8,7 @@ const SIM_ORIGIN = 'https://cyberpunk-tcg-sim.online';
 const CATALOG_URL = `${SIM_ORIGIN}/api/cards/catalog`;
 const LEADERBOARD_URL = `${SIM_ORIGIN}/api/ranked/leaderboard`;
 const STAGE_W = 1920, STAGE_H = 1080;
+const CATALOG_SCHEMA = 2; // 2 added rules text; older saved catalogs are refreshed once
 const CARD_ASPECT = 0.716;          // card width / height
 const TILE_ASPECT = 0.74;           // deck tile width / height (art + caption)
 // Crop = the card's art window (top/bottom, % of card height) + focus point + extra zoom.
@@ -281,6 +282,7 @@ function parseCatalog(json, origin = SIM_ORIGIN) {
       ram: Number.isFinite(c.ram) ? c.ram : null,
       img: !path ? '' : /^(https?:|data:)/.test(path) ? path : path.startsWith('/') ? origin + path : path,
       page: c.source?.card_page_url || '',
+      text: typeof c.rules_text === 'string' ? c.rules_text.slice(0, 800) : '',
       codes,
     });
   }
@@ -295,7 +297,7 @@ async function loadCatalogFromSim() {
 function applyCatalog(json, from) {
   const cards = parseCatalog(json);
   if (!cards.length) throw new Error('No cards found in that JSON.');
-  state.catalog = { from, at: new Date().toISOString(), revision: String(json?.cardPoolRevision ?? ''), cards };
+  state.catalog = { schema: CATALOG_SCHEMA, from, at: new Date().toISOString(), revision: String(json?.cardPoolRevision ?? ''), cards };
   rebuildIndex();
   nameIndex = null;
   relinkDecks();
@@ -527,6 +529,8 @@ function tierOf(d) {
 function deckSlideHTML(s) {
   const d = deck(s.deckId);
   if (!d) return `<div class="stage deck-slide"><div class="ds-empty">Pick a deck in the panel →</div></div>`;
+  if (s.listStyle === 'text') return deckTextSlideHTML(s, d);
+  if (s.listStyle === 'cards') return deckCardsSlideHTML(s, d);
   const tier = tierOf(d);
   const key = card(d.keyCard);
   const cols = deckColors(d);
@@ -543,11 +547,10 @@ function deckSlideHTML(s) {
   const many = lines * 66 + groups.length * 48 > (d.notes ? 640 : 770);
   const rowHTML = ([c, n]) => `<div class="ds-row ${c.id === d.keyCard ? 'is-key' : ''}" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
       ${artHTML(c, { cls: 'ds-row-art' })}
-      <span class="ds-cost">${c.cost ?? '·'}</span><span class="ds-name">${esc(c.name)}</span><span class="ds-n">${n}×</span>
+      <span class="ds-cost">${c.cost ?? '·'}</span><span class="ds-name">${esc(c.name)}</span>${roleTag(s, d, c.id)}<span class="ds-n">${n}×</span>
     </div>`;
   const list = groups.map((g) => `<div class="ds-group"><span>${esc(g.label)}</span><b>${g.count}</b></div>${g.rows.map(rowHTML).join('')}`).join('');
-  const breakdown = total ? `<div class="ds-breakdown">${groups.map((g) => `<div class="ds-type" style="flex-grow:${g.count};--k:${g.color}">
-      <div class="ds-type-n">${g.count}</div><div class="ds-type-l">${esc(g.label)}</div></div>`).join('')}</div>` : '';
+  const breakdown = total ? breakdownHTML(groups) : '';
   return `<div class="stage deck-slide">
     <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(d.legends[0]))}38, transparent)"></div><div class="glow g2"></div>
     <header class="ds-head">
@@ -562,6 +565,74 @@ function deckSlideHTML(s) {
       ${breakdown}
       <div class="ds-list ${many ? 'dense' : ''}">${list || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}</div>
     </div>
+  </div>`;
+}
+
+const ROLES = ['', 'core', 'flex'];
+const roleTag = (s, d, id) => (s.showRoles !== false && d.roles?.[id] ? `<span class="role ${d.roles[id]}">${d.roles[id]}</span>` : '');
+const breakdownHTML = (groups, cls = '') => `<div class="ds-breakdown ${cls}">${groups.map((g) => `<div class="ds-type" style="flex-grow:${g.count};--k:${g.color}">
+  <div class="ds-type-n">${g.count}</div><div class="ds-type-l">${esc(g.label)}</div></div>`).join('')}</div>`;
+const deckEyebrow = (d) => {
+  const tier = tierOf(d);
+  return `${tier ? `<span class="pill tier-pill" style="--t:${esc(tier.color)}">${esc(tier.name)}</span>` : ''}<span class="chips">${chips(deckColors(d), 'chip-lg')}</span>${d.main.length ? `<span class="ds-meta">${deckCount(d)} cards</span>` : ''}`;
+};
+
+/** Deck page with each card's rules text, one column per card type (like a deck builder). */
+function deckTextSlideHTML(s, d) {
+  const groups = typeGroups(d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c));
+  const cols = Math.max(1, groups.length);
+  const colW = (1300 - (cols - 1) * 22) / cols;
+  // Largest text size at which the tallest column still fits.
+  const fit = [17, 15.5, 14, 12.5].find((fs) => Math.max(0, ...groups.map((g) => 52 + g.rows.reduce((h, [c]) =>
+    h + 46 + Math.ceil(((c.text || '').length + 1) / (colW / (fs * 0.52))) * fs * 1.32 + 10, 0))) <= 950) || 12;
+  const block = ([c, n]) => `<div class="dt-card ${c.id === d.keyCard ? 'is-key' : ''}" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
+      <div class="dt-top"><span class="ds-cost">${c.cost ?? '·'}</span><span class="dt-name">${esc(c.name)}</span>${roleTag(s, d, c.id)}<span class="ds-n">${n}×</span></div>
+      ${c.text ? `<div class="dt-text">${esc(c.text)}</div>` : ''}
+    </div>`;
+  const legends = d.legends.map((id) => {
+    const c = card(id);
+    return `<div class="dt-legend" style="--c:${hexOf(c)}">${artHTML(c)}<span>${esc(c?.name || '—')}</span></div>`;
+  }).join('');
+  return `<div class="stage deck-slide deck-text">
+    <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(d.legends[0]))}38, transparent)"></div><div class="glow g2"></div>
+    <aside class="dt-left">
+      <div class="ds-eyebrow">${deckEyebrow(d)}</div>
+      <h1 class="dt-code">${esc(deckLabel(d))}</h1>
+      ${d.name && d.name !== deckLabel(d) ? `<div class="dt-deckname">${esc(d.name)}</div>` : ''}
+      ${groups.length ? breakdownHTML(groups, 'compact') : ''}
+      <div class="dt-legends">${legends}</div>
+      ${card(d.keyCard) ? `<div class="dt-key"><span>Key card</span><b>${esc(card(d.keyCard).name)}</b></div>` : ''}
+    </aside>
+    <div class="dt-cols" style="--fs:${fit}px;grid-template-columns:repeat(${cols}, 1fr)">
+      ${groups.map((g) => `<section class="dt-col"><div class="ds-group" style="border-color:${g.color}"><span>${esc(g.label)}</span><b>${g.count}</b></div>${g.rows.map(block).join('')}</section>`).join('')
+        || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}
+    </div>
+  </div>`;
+}
+
+/** Deck page showing every card in full (Legends first, then by type), sized so the whole deck fits. */
+function deckCardsSlideHTML(s, d) {
+  const groups = typeGroups(d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c));
+  const items = [...d.legends.map(card).filter(Boolean).map((c) => [c, 0]), ...groups.flatMap((g) => g.rows)];
+  const W = 1780, H = 790, gap = 14;
+  let best = { w: 0, cols: 1 };
+  for (let cols = 1; cols <= items.length; cols++) {
+    const rows = Math.ceil(items.length / cols);
+    const w = Math.min((W - (cols - 1) * gap) / cols, ((H - (rows - 1) * gap) / rows) * CARD_ASPECT);
+    if (w > best.w) best = { w, cols };
+  }
+  const w = Math.floor(best.w);
+  const cell = ([c, n]) => `<div class="dc-card ${c.id === d.keyCard ? 'is-key' : ''} ${n ? '' : 'is-legend'}" style="width:${w}px;height:${Math.floor(w / CARD_ASPECT)}px">
+      ${artHTML(c, { full: true })}<span class="dc-badge">${n ? n + '×' : 'Legend'}</span>${roleTag(s, d, c.id)}
+    </div>`;
+  return `<div class="stage deck-slide deck-cards">
+    <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(d.legends[0]))}38, transparent)"></div><div class="glow g2"></div>
+    <header class="dc-head">
+      <div><div class="ds-eyebrow">${deckEyebrow(d)}</div>
+      <h1 class="dc-code">${esc(deckLabel(d))}${d.name && d.name !== deckLabel(d) ? ` <span>${esc(d.name)}</span>` : ''}</h1></div>
+      ${groups.length ? breakdownHTML(groups, 'compact') : ''}
+    </header>
+    <div class="dc-grid" style="width:${best.cols * w + (best.cols - 1) * gap}px">${items.map(cell).join('')}</div>
   </div>`;
 }
 
@@ -632,7 +703,10 @@ function renderSlideInspector() {
   if (s.type === 'deck') {
     el.innerHTML = `<h3>Deck page</h3>
       <label>Deck</label><select data-s="deckId">${state.decks.map((d) => `<option value="${d.id}" ${d.id === s.deckId ? 'selected' : ''}>${esc(deckLabel(d))}${d.name && d.name !== deckLabel(d) ? ' — ' + esc(d.name) : ''}</option>`).join('')}</select>
-      <p class="hint">Shows the deck's Legends, key card, notes and full decklist from its export.</p>
+      <label>Decklist shows</label>
+      <select data-s="listStyle">${[['list', 'Names'], ['text', 'Card text'], ['cards', 'Full cards']].map(([k, v]) => `<option value="${k}" ${(s.listStyle || 'list') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <label class="check"><input type="checkbox" data-s="showRoles" ${s.showRoles !== false ? 'checked' : ''}> Show Core / Flex tags</label>
+      <p class="hint">Mark cards as Core or Flex in the deck editor. The page shows the deck's Legends, key card, notes and decklist from its export.</p>
       <button data-edit-deck="${s.deckId}" class="block">Edit this deck</button>`;
     return;
   }
@@ -824,6 +898,7 @@ function renderDecks() {
     const c = card(id);
     return `<div class="dl-row" style="--c:${hexOf(c)}"><span class="ds-cost">${c?.cost ?? '·'}</span><span class="nm">${esc(c?.name || id)}</span>
       <span class="qty"><button class="small" data-q="${id}" data-side="${side}" data-dq="-1">−</button>${n}<button class="small" data-q="${id}" data-side="${side}" data-dq="1">+</button></span>
+      <button class="small role-btn ${d.roles?.[id] || ''}" data-role="${id}" title="Mark as Core or Flex">${d.roles?.[id] || 'core/flex'}</button>
       <button class="small ${d.keyCard === id ? 'on' : ''}" data-setkey="${id}" title="Use as key card">★</button></div>`;
   }).join('');
   ed.innerHTML = `<div class="deck-edit">
@@ -906,6 +981,11 @@ function bindDecks() {
     }
     if (b.dataset.display) d.display = b.dataset.display;
     else if (b.dataset.setkey) d.keyCard = b.dataset.setkey;
+    else if (b.dataset.role) {
+      d.roles = d.roles || {};
+      const next = ROLES[(ROLES.indexOf(d.roles[b.dataset.role] || '') + 1) % ROLES.length];
+      if (next) d.roles[b.dataset.role] = next; else delete d.roles[b.dataset.role];
+    }
     else if (b.dataset.dq) {
       const list = b.dataset.side === '1' ? d.side : d.main;
       const row = list.find((r) => r[0] === b.dataset.q);
@@ -1311,6 +1391,9 @@ render();
 // First run: load card data (a bundled data/catalog.json when hosted with one, else the sim directly),
 // then swap the placeholder demo for real sample decks.
 (async () => {
+  if (state.catalog && state.catalog.schema !== CATALOG_SCHEMA) {
+    try { await loadCatalogFromSim(); } catch { /* keep the older copy */ }
+  }
   if (!state.catalog) {
     try {
       const r = await fetch('data/catalog.json');
