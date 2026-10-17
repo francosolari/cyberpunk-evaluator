@@ -525,7 +525,7 @@ function tierSlideHTML(s, editing) {
       <div class="tier-decks" data-drop="${t.id}">${tiles || (editing ? '<span class="drop-hint">Drop decks here</span>' : '')}</div>
     </div>`;
   }).join('');
-  return `<div class="stage tier-slide look-${esc(s.look || 'rail')}">
+  return `<div class="stage tier-slide look-${esc(s.look || 'ledger')}">
     <div class="glow g1"></div><div class="glow g2"></div>
     <header class="s-head">
       ${s.eyebrow || s.pill ? `<div class="s-eyebrow">${s.eyebrow ? `<span class="brandmark">${esc(s.eyebrow)}</span>` : ''}${s.pill ? `<span class="pill">${esc(s.pill)}</span>` : ''}</div>` : ''}
@@ -598,8 +598,8 @@ function extraRows(d, s = {}) {
 }
 const EXTRA_LABEL = 'Sideboard / Options';
 const roleTag = (s, d, id) => (s.showRoles !== false && d.roles?.[id] ? `<span class="role ${d.roles[id]}">${d.roles[id]}</span>` : '');
-const breakdownHTML = (groups, cls = '') => `<div class="ds-breakdown ${cls}">${groups.map((g) => `<div class="ds-type" style="flex-grow:${g.count};--k:${g.color}">
-  <div class="ds-type-n">${g.count}</div><div class="ds-type-l">${esc(g.label)}</div></div>`).join('')}</div>`;
+/** Type counts as one plain line: "16 Units · 13 Gear · 7 Programs". */
+const breakdownHTML = (groups, cls = '') => `<div class="ds-breakdown-line ${cls}">${groups.map((g) => `<span><b>${g.count}</b> ${esc(g.label)}</span>`).join('<i>·</i>')}</div>`;
 const deckEyebrow = (d) => {
   const tier = tierOf(d);
   return `${tier ? `<span class="pill tier-pill" style="--t:${esc(tier.color)}">${esc(tier.name)}</span>` : ''}<span class="chips">${chips(deckColors(d), 'chip-lg')}</span>${d.main.length ? `<span class="ds-meta">${deckCount(d)} cards</span>` : ''}`;
@@ -780,7 +780,7 @@ function renderSlideInspector() {
     </div>
     <label>Footnote</label><input data-s="footnote" value="${esc(s.footnote)}" placeholder="optional">
     <label>Style</label>
-    <select data-s="look">${[['rail', 'Rail (current)'], ['band', 'Band'], ['ledger', 'Ledger'], ['frame', 'Frame']].map(([k, v]) => `<option value="${k}" ${(s.look || 'rail') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+    <select data-s="look">${[['ledger', 'Ledger'], ['band', 'Band'], ['frame', 'Frame'], ['rail', 'Rail']].map(([k, v]) => `<option value="${k}" ${(s.look || 'ledger') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
     <label>Deck tiles show</label>
     <select data-s="display">${Object.entries(DISPLAY_MODES).map(([k, v]) => `<option value="${k}" ${k === s.display ? 'selected' : ''}>${v}</option>`).join('')}</select>
     <label class="check"><input type="checkbox" data-s="showNames" ${s.showNames ? 'checked' : ''}> Show deck names under codes</label>
