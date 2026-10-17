@@ -39,11 +39,13 @@ Each deck gets a **tile code** from its Legends' colors, majority color first (2
 
 ### Editing a decklist
 
-The **Slides** tab has a **Core / Deck / Flex / Options** board under the slide: for a deck page it edits that deck, and on a tier list it edits whichever deck you tap. The Decks tab has the same board. Drag cards between columns, or tap a card and then a column on a phone. Use −/+ to change counts and ★ for key cards (up to 3). The **quick add** box above the board finds a card by name and adds it to whichever column you pick. On a deck page slide, tap any card to move it, star it, change its count or remove it, without leaving the slide. The slide panel has its own quick add box.
+The **Slides** tab has a **Core / Deck / Flex / Sideboard / Options** board under the slide: for a deck page it edits that deck, and on a tier list it edits whichever deck you tap. The Decks tab has the same board. Drag cards between columns, or tap a card and then a column on a phone. Use −/+ to change counts and ★ for key cards (up to 3). The **quick add** box above the board finds a card by name and adds it to whichever column you pick. On a deck page slide, tap any card to move it, star it, change its count or remove it, without leaving the slide. The slide panel has its own quick add box.
 
 On phones, **press and hold** a card or deck, then drag it. A quick swipe still scrolls, and tap-then-tap still works.
 
 The **Decks** list has search (deck code, name or Legend), grouping (by main color or tier, collapsible) and sorting (newest, name, most cards). The **Unranked** area on a tier list has its own filter and groups by main color once it holds more than 8 decks.
+
+**Sideboard vs. Options:** the sideboard is part of the deck you register (up to 7 cards). It imports from `#S` / `Sideboard:` and is included when you copy the deck out. Options are your own "considering" list; they're never exported. A card can be in more than one list, e.g. 3 in the deck and 1 in the sideboard.
 
 Legends and color strips always list the doubled color first, together: Yellow, Yellow, Blue, never Yellow, Blue, Yellow.
 
