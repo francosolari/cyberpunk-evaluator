@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tier List Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Martian+Mono:wdth,wght@87.5,400;87.5,600&family=Saira:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="build" content="dev">
+  <link rel="stylesheet" href="styles.css?v=dev">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Tier List <span>Studio</span> <small id="build" class="build"></small></div>
+    <nav class="tabs">
+      <button data-view="slides" class="active">Slides</button>
+      <button data-view="decks">Decks</button>
+      <button data-view="cards">Cards</button>
+      <button data-view="data">Card Data <span id="data-badge" class="badge"></span></button>
+    </nav>
+    <div class="actions">
+      <button id="btn-help" aria-label="How it works" title="How it works">?</button>
+      <button id="btn-share">Share</button>
+      <button id="btn-present" class="primary">▶ Present</button>
+      <button id="btn-png">Export PNG</button>
+      <details class="menu">
+        <summary>Project</summary>
+        <div class="menu-body">
+          <p class="hint menu-note">Your decks, tiers and slides save automatically in this browser. Save a project file to back them up or move them to another device.</p>
+          <button id="btn-export">Save project (.json)</button>
+          <label class="filebtn">Load project (.json)<input type="file" id="file-project" accept="application/json,.json" hidden></label>
+          <button id="btn-reset" class="danger">Reset to samples</button>
+          <button id="btn-wipe" class="danger">Reset everything</button>
+          <p class="hint menu-note credit">Fan-made, not affiliated with CD PROJEKT or WeirdCo. Cyberpunk and card images © CD PROJEKT S.A. Card data from the Cyberpunk TCG Sim.</p>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <div id="viewer-bar" class="viewer-bar" hidden>
+    <span>You're viewing a shared tier list. Nothing here is saved unless you add it.</span>
+    <button id="viewer-present">▶ Present</button>
+    <button id="viewer-add" class="primary">Add to my studio</button>
+    <button id="viewer-close">Close</button>
+  </div>
+  <main id="app">
+    <section id="view-slides" class="view active">
+      <aside class="panel slide-list">
+        <div id="guide" class="guide" hidden></div>
+        <h3>Slides</h3>
+        <ol id="slide-list"></ol>
+        <div class="row gap">
+          <button id="add-tier-slide">+ Tier list</button>
+          <button id="add-deck-slide">+ Deck page</button>
+        </div>
+      </aside>
+      <div class="workspace">
+        <div class="stage-wrap" id="stage-wrap"><div id="stage-host"></div></div>
+        <div class="pool-wrap">
+          <div class="pool-head">
+            <h3>Unranked decks <span id="pool-count" class="hint"></span></h3>
+            <input type="search" id="pool-q" placeholder="Filter…" aria-label="Filter unranked decks">
+            <span class="hint">Drag a deck onto a tier. Tap a deck to edit its list below.</span>
+          </div>
+          <div id="pool" class="pool" data-drop="pool"></div>
+        </div>
+        <div class="pool-wrap" id="slide-board" hidden></div>
+      </div>
+      <aside class="panel inspector" id="slide-inspector"></aside>
+    </section>
+
+    <section id="view-decks" class="view">
+      <aside class="panel">
+        <h3>Decks <span id="deck-count" class="hint"></span></h3>
+        <button id="import-deck" class="primary block">⇩ Import deck export</button>
+        <button id="add-deck" class="block">+ Blank deck</button>
+        <div class="deck-tools">
+          <input type="search" id="deck-q" placeholder="Search decks or Legends…" aria-label="Search decks">
+          <div class="row gap">
+            <select id="deck-group" aria-label="Group decks"><option value="color">Group: main color</option><option value="tier">Group: tier</option><option value="none">No groups</option></select>
+            <select id="deck-sort" aria-label="Sort decks"><option value="new">Newest first</option><option value="name">Name</option><option value="cards">Most cards</option></select>
+          </div>
+        </div>
+        <ul id="deck-list" class="list"></ul>
+      </aside>
+      <div class="workspace pad" id="deck-editor"></div>
+    </section>
+
+    <section id="view-cards" class="view">
+      <div class="workspace pad">
+        <div class="toolbar">
+          <input type="search" id="card-search" placeholder="Search cards…">
+          <select id="card-filter">
+            <option value="legend">Legends</option>
+            <option value="all">All cards</option>
+            <option value="card">Non-Legends</option>
+          </select>
+        </div>
+        <div id="card-grid" class="card-grid"></div>
+      </div>
+    </section>
+
+    <section id="view-data" class="view">
+      <div class="workspace pad narrow" id="data-view"></div>
+    </section>
+  </main>
+
+  <div id="present" class="present" hidden>
+    <div id="present-host"></div>
+    <div class="present-hud"><span id="present-count"></span> · ← → to navigate · Esc to exit</div>
+  </div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card">
+      <button class="modal-x" data-close>×</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="app.js?v=dev"></script>
+</body>
+</html>

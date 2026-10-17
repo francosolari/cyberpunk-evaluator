@@ -1,0 +1,680 @@
+:root {
+  --bg: #0a0b10;
+  --panel: #12151c;
+  --panel-2: #191d26;
+  --line: #262c38;
+  --text: #e9edf4;
+  --muted: #8790a2;
+  --accent: #f7d046;
+  --accent-2: #5ce1e6;
+  --danger: #ff5c7a;
+  --ok: #3ddc97;
+  --radius: 8px;
+  font-family: "Saira", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font-size: 14px; overflow: hidden; }
+a { color: var(--accent-2); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button, .filebtn {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
+  padding: 6px 12px; cursor: pointer; white-space: nowrap; display: inline-block; font-size: 13px;
+}
+button:hover, .filebtn:hover { border-color: #3a4252; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+button.danger { color: var(--danger); }
+button.block { width: 100%; margin-top: 8px; }
+button.small { padding: 2px 8px; font-size: 12px; }
+button.on { border-color: var(--accent); color: var(--accent); }
+input[type=text], input[type=url], input[type=search], input:not([type]), select, textarea {
+  background: #0b0d12; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; width: 100%;
+}
+textarea { resize: vertical; min-height: 54px; font-size: 13px; }
+input[type=color] { width: 34px; height: 32px; padding: 0; border: 1px solid var(--line); background: none; border-radius: 6px; flex: none; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+label { display: block; margin: 12px 0 5px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+label.check { display: flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--text); }
+label.check input { width: auto; }
+label.filebtn { margin: 0; text-transform: none; letter-spacing: 0; color: var(--text); font-size: 13px; }
+h3 { margin: 0 0 10px; font: 600 12px "Chakra Petch", sans-serif; text-transform: uppercase; letter-spacing: .14em; color: var(--accent); }
+.row { display: flex; align-items: center; }
+.gap { gap: 8px; flex-wrap: wrap; }
+.hint { color: var(--muted); font-size: 12px; }
+code { color: var(--accent); }
+
+/* ---------- Top bar ---------- */
+.topbar { height: 54px; display: flex; align-items: center; gap: 18px; padding: 0 16px; background: #07080c; border-bottom: 1px solid var(--line); }
+.brand { font: 700 17px "Chakra Petch", sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+.brand span { color: var(--accent); }
+.build { font: 500 10px "Saira", sans-serif; color: var(--muted); letter-spacing: 0; text-transform: none; }
+.tabs { display: flex; gap: 2px; }
+.tabs button { background: none; border-color: transparent; color: var(--muted); }
+.tabs button.active { color: var(--text); border-color: var(--line); background: var(--panel-2); }
+.badge { font-size: 10px; padding: 1px 6px; border-radius: 9px; background: #1f3a2f; color: var(--ok); margin-left: 4px; }
+.badge.warn { background: #3a2a14; color: var(--accent); }
+.actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.menu { position: relative; }
+.menu summary { list-style: none; cursor: pointer; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); font-size: 13px; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu-body { position: absolute; right: 0; top: 38px; z-index: 30; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 210px; }
+
+/* ---------- Layout ---------- */
+#app { height: calc(100% - 54px); }
+.view { display: none; height: 100%; }
+.view.active { display: flex; }
+.panel { width: 270px; flex: none; background: var(--panel); border-right: 1px solid var(--line); padding: 14px; overflow-y: auto; }
+.inspector { border-right: none; border-left: 1px solid var(--line); width: 310px; }
+.workspace { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+.workspace.pad { padding: 18px; overflow-y: auto; display: block; }
+.workspace.narrow > * { max-width: 820px; }
+
+#slide-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+#slide-list li { display: flex; align-items: center; gap: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; background: var(--panel-2); }
+#slide-list li.active { border-color: var(--accent); }
+#slide-list li .t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+#slide-list li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#slide-list li .k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+#slide-list li button { padding: 0 6px; font-size: 12px; }
+
+.stage-wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 14px; background: radial-gradient(circle at 50% 40%, #141824, #090a0e); }
+#stage-host { position: relative; box-shadow: 0 20px 60px #000a; border-radius: 4px; overflow: hidden; }
+.pool-wrap { flex: none; border-top: 1px solid var(--line); background: var(--panel); padding: 10px 14px; max-height: 36%; overflow-y: auto; }
+.pool-wrap[hidden] { display: none; }
+.pool-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.pool-head h3 { margin: 0; }
+.pool { display: flex; flex-wrap: wrap; gap: 10px; min-height: 140px; border: 1px dashed var(--line); border-radius: 8px; padding: 10px; }
+.pool .deck-tile { width: 96px; height: 130px; }
+.pool.drop-hover, .tier-decks.drop-hover { outline: 3px dashed var(--accent); outline-offset: -3px; }
+
+.tier-edit { border: 1px solid var(--line); border-left: 4px solid var(--t); border-radius: 6px; padding: 8px; margin-bottom: 8px; background: var(--panel-2); }
+.tier-edit textarea { margin-top: 6px; min-height: 40px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+
+/* ================= SLIDES (1920×1080, scaled) ================= */
+/* Colors with alpha come in as variables (--tt, --ca) from JS so PNG export can parse them. */
+.stage {
+  width: 1920px; height: 1080px; position: relative; overflow: hidden; color: #eef1f6; transform-origin: 0 0;
+  font-family: "Saira", sans-serif; background: #07080c;
+}
+.stage::before { /* faint grid */
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+  background-image: linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.glow { position: absolute; border-radius: 50%; pointer-events: none; }
+.glow.g1 { width: 1400px; height: 1000px; left: -500px; top: -520px; background: radial-gradient(closest-side, #5ce1e622, transparent); }
+.glow.g2 { width: 1500px; height: 1100px; right: -600px; bottom: -650px; background: radial-gradient(closest-side, #ff2e8826, transparent); }
+
+/* header */
+.s-head { position: absolute; left: 80px; right: 80px; top: 58px; }
+.s-eyebrow { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
+.brandmark { font: 700 26px "Chakra Petch", sans-serif; letter-spacing: .22em; text-transform: uppercase; color: #fff; }
+.pill { font: 600 22px "Chakra Petch", sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #0a0b10; background: var(--accent); padding: 4px 14px 3px; border-radius: 4px; }
+.s-title { margin: 0; font: 700 92px/1 "Chakra Petch", sans-serif; letter-spacing: .01em; text-transform: uppercase; color: #fff; }
+.s-logo { position: absolute; right: 0; top: -10px; height: 150px; max-width: 260px; object-fit: contain; }
+.s-foot { position: absolute; left: 80px; right: 80px; bottom: 34px; font-size: 24px; color: #9aa3b5; }
+
+/* tiers */
+.tiers { position: absolute; left: 80px; right: 80px; display: flex; flex-direction: column; gap: 14px; }
+.tier-row {
+  position: relative; display: flex; border-radius: 14px; overflow: hidden; flex: none;
+  background: linear-gradient(90deg, var(--tt) 0%, #10131a00 45%), #0e1117d9;
+  border: 1px solid #ffffff12;
+}
+.tier-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background: var(--t); box-shadow: 0 0 24px var(--t); }
+.tier-head { flex: none; width: 290px; padding: 18px 20px 18px 36px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.tier-name { font-family: "Chakra Petch", sans-serif; font-weight: 700; line-height: .95; color: var(--t); text-transform: uppercase; letter-spacing: .01em; text-shadow: 0 0 30px var(--tt); }
+.tier-desc { font-size: 19px; line-height: 1.35; color: #b7bfcd; white-space: pre-line; }
+.tier-decks { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 14px; align-content: center; align-items: center; padding: 14px; }
+.drop-hint { color: #ffffff40; font-size: 22px; letter-spacing: .08em; text-transform: uppercase; }
+
+/* deck tile */
+.deck-tile {
+  position: relative; display: flex; flex-direction: column; flex: none; container-type: inline-size; cursor: grab; user-select: none;
+  /* the tile is its own size container, so its own box uses %/px (cq units would resolve against an ancestor) */
+  border-radius: 7% / 5%; overflow: hidden; background: #0d0f15; border: 1px solid #ffffff1f;
+  box-shadow: 0 8px 22px #00000099;
+}
+.deck-tile.selected { border-color: var(--accent-2); box-shadow: 0 0 0 3px var(--accent-2), 0 8px 22px #00000099; }
+.deck-tile.dragging { opacity: .35; }
+.tile-art { position: relative; flex: 1; min-height: 0; display: flex; background: #000; }
+.tile-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 62%, #0d0f15 100%); pointer-events: none; }
+.tile-cap { flex: none; position: relative; padding: 0 5cqw 5cqw; text-align: center; }
+.segs { display: flex; gap: 1.5cqw; height: 2.2cqw; margin: 0 -5cqw 4.5cqw; }
+.segs span { flex: 1; }
+.code { font: 700 25cqw/1 "Chakra Petch", sans-serif; letter-spacing: .02em; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.code.long { font-size: 16cqw; }
+.sub { margin-top: 2cqw; font-size: 8.5cqw; font-weight: 500; color: #aab3c2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.strips { display: flex; flex: 1; gap: 1cqw; background: #000; }
+.strip { flex: 1; min-width: 0; display: flex; }
+.strips.bands { flex-direction: column; }
+.strips.bands .strip { min-height: 0; }
+.split { display: flex; flex-direction: column; flex: 1; gap: 1cqw; background: #000; }
+.split > .art { flex: 1.4; }
+.split > .strips { flex: 1; }
+
+/* art crop: the img is sized/positioned against the .art box (a size container) */
+.art { position: relative; overflow: hidden; flex: 1; min-width: 0; min-height: 0; background: #111; container-type: size; }
+.art img { position: absolute; display: block; max-width: none; object-fit: cover; }
+.art.full { background: transparent; }
+.art.full img { inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.art.empty { background: repeating-linear-gradient(45deg, #15171d 0 10px, #1b1e25 10px 20px); }
+
+/* deck page */
+.ds-head { position: absolute; left: 90px; top: 70px; width: 900px; }
+.ds-eyebrow { display: flex; align-items: center; gap: 18px; }
+.tier-pill { background: var(--t); }
+.chips { display: inline-flex; gap: 6px; }
+.chip-lg { width: 26px; height: 26px; border-radius: 4px; display: inline-block; }
+.ds-meta { font: 600 24px "Chakra Petch", sans-serif; color: #9aa3b5; letter-spacing: .08em; text-transform: uppercase; }
+.ds-code { margin: 14px 0 0; font: 700 150px/.9 "Chakra Petch", sans-serif; letter-spacing: .02em; }
+.ds-name-big { font: 600 40px "Saira", sans-serif; color: #c9d0dc; margin-top: 8px; }
+.ds-legends { position: absolute; left: 90px; top: 380px; width: 930px; height: 470px; display: flex; gap: 22px; }
+.ds-legend { margin: 0; flex: 1; display: flex; flex-direction: column; min-width: 0; border-radius: 14px; overflow: hidden; background: #0d0f15;
+  border: 2px solid var(--ca); box-shadow: 0 0 50px var(--ca), 0 20px 50px #000a; }
+.ds-legend .art { flex: 1; }
+.ds-legend figcaption { flex: none; background: #0d0f15; padding: 12px 14px 14px; text-align: center; border-top: 6px solid var(--c); display: flex; flex-direction: column; gap: 2px; }
+.ds-legend figcaption b, .ds-legend figcaption span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-legend figcaption b { font: 700 27px/1.1 "Saira", sans-serif; }
+.ds-legend figcaption span { font: 500 19px/1.2 "Saira", sans-serif; color: #aab3c2; min-height: 23px; }
+.ds-keys { position: absolute; left: 90px; top: 880px; width: 930px; height: 140px; display: flex; gap: 14px; }
+.ds-key { position: relative; flex: 1; min-width: 0; border-radius: 14px; overflow: hidden; display: flex; }
+.ds-key .ds-key-art { position: absolute; inset: 0; }
+.ds-key::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #07080cf2 0%, #07080cb0 45%, #07080c00 85%); }
+.ds-key-cap { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 30px; border-left: 8px solid var(--c); }
+.ds-key-cap span { font: 600 20px "Chakra Petch", sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+.ds-key-cap { min-width: 0; }
+.ds-key-cap b { font: 700 40px "Saira", sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-keys .ds-key:nth-child(2) .ds-key-cap b, .ds-keys .ds-key:nth-child(3) .ds-key-cap b, .ds-keys:has(.ds-key:nth-child(2)) .ds-key-cap b { font-size: 26px; }
+.ds-keys:has(.ds-key:nth-child(2)) .ds-key-cap { padding: 0 18px; }
+.ds-right { position: absolute; left: 1080px; right: 80px; top: 76px; bottom: 56px; display: flex; flex-direction: column; gap: 22px; }
+.ds-notes { flex: none; font-size: 26px; line-height: 1.4; color: #c9d0dc; white-space: pre-line; max-height: 110px; overflow: hidden; }
+.ds-list { flex: 1; min-height: 0; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 58px; gap: 8px 14px; align-content: start; }
+.ds-list.dense { grid-auto-rows: 46px; gap: 6px 12px; }
+.ds-list.dense .ds-name { font-size: 19px; }
+.ds-list.dense .ds-cost, .ds-list.dense .ds-n { font-size: 22px; }
+.ds-group { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: 10px; padding: 6px 2px 0; font: 600 18px "Chakra Petch", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #9aa3b5; border-bottom: 1px solid #ffffff14; }
+.ds-group b { color: #eef1f6; }
+.ds-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 0 14px 0 0; border-radius: 8px; overflow: hidden; background: #10131a; border: 2px solid #ffffff0d; border-left: 5px solid var(--c); }
+.ds-row .ds-row-art { position: absolute; right: 0; top: 0; bottom: 0; width: 50%; opacity: .45; }
+.ds-row::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 56%; background: linear-gradient(90deg, #10131a, #10131a00 70%); }
+.ds-row > span { position: relative; z-index: 1; }
+.ds-cost { flex: none; width: 46px; align-self: stretch; display: grid; place-items: center; font: 700 26px "Chakra Petch", sans-serif; background: var(--ca); }
+.ds-name { flex: 1; min-width: 0; font: 600 22px "Saira", sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 6px #000; }
+.ds-n { font: 700 26px "Chakra Petch", sans-serif; color: var(--accent); text-shadow: 0 1px 6px #000; }
+.ds-row.is-key { border-color: var(--accent); border-left-color: var(--c); }
+.ds-nolist, .ds-empty { color: #ffffff55; font-size: 28px; grid-column: 1 / -1; }
+.ds-empty { position: absolute; inset: 0; display: grid; place-items: center; }
+
+/* ---------- Deck editor ---------- */
+.list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.list li { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.list li.active { border-color: var(--accent); }
+.fan { display: flex; flex: none; }
+.fan .mini { width: 26px; height: 36px; display: flex; margin-right: -6px; border-radius: 3px; overflow: hidden; border-bottom: 3px solid var(--c); box-shadow: 0 0 0 1px #000; }
+.fan .mini:last-child { margin-right: 0; }
+.dl-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.dl-text strong { font-family: "Chakra Petch", sans-serif; }
+.dl-text .hint { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+.deck-edit { display: grid; grid-template-columns: minmax(300px, 440px) 1fr; gap: 28px; align-items: start; }
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.slots.key { grid-template-columns: 1fr 2fr; align-items: center; }
+.slot { display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 8px; border: 1px solid var(--line); background: #0b0d12; text-align: center; }
+.slot:hover { border-color: var(--accent); }
+.slot .art { aspect-ratio: .8; flex: none; width: 100%; }
+.slot .n { padding: 6px; font-size: 12px; border-top: 3px solid var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.previews { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+.previews figure { margin: 0; text-align: center; }
+.previews figcaption { color: var(--muted); font-size: 12px; margin-top: 6px; }
+.previews .deck-tile { width: 150px; height: 203px; }
+
+.callout { border: 1px solid var(--line); border-left: 3px solid var(--accent-2); padding: 10px 14px; border-radius: 6px; background: var(--panel); margin: 12px 0; color: #b9c1cf; }
+.callout.warn { border-left-color: var(--accent); }
+.callout.ok { border-left-color: var(--ok); }
+.warn-text { color: var(--accent); font-size: 12px; margin-top: 4px; }
+.ok-text { color: var(--ok); font-size: 12px; margin-top: 4px; }
+.imp-row { display: flex; gap: 14px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.imp-row .deck-tile { flex: none; }
+
+/* ---------- Cards ---------- */
+.toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+.toolbar input[type=search] { max-width: 320px; }
+.toolbar select { width: auto; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.card-cell { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; gap: 6px; box-shadow: inset 0 -3px 0 var(--c); }
+.card-cell .thumbs { display: flex; gap: 4px; }
+.card-cell .thumbs .art { aspect-ratio: .716; border-radius: 4px; }
+.card-cell .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-cell .meta { font-size: 11px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.card-cell .btns { display: flex; gap: 4px; }
+.tag { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; padding: 1px 6px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--line); }
+.empty-msg { color: var(--muted); padding: 30px; text-align: center; border: 1px dashed var(--line); border-radius: var(--radius); }
+
+/* ---------- Modal ---------- */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal[hidden] { display: none; }
+.modal-card { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 22px; width: min(1000px, 100%); max-height: 92vh; overflow-y: auto; }
+.modal-x { position: absolute; right: 10px; top: 10px; font-size: 18px; padding: 0 10px; }
+.picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 10px; margin-top: 12px; }
+.picker-grid .pick { cursor: pointer; border: 1px solid var(--line); border-radius: 6px; padding: 4px; background: #0b0d12; }
+.picker-grid .pick:hover { border-color: var(--accent); }
+.picker-grid .pick .art { aspect-ratio: .716; border-radius: 4px; }
+.picker-grid .pick .n { font-size: 11px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+
+.crop { display: grid; grid-template-columns: minmax(220px, 340px) 1fr; gap: 20px; }
+.crop-src { position: relative; cursor: crosshair; border-radius: 8px; overflow: hidden; }
+.crop-src img { width: 100%; display: block; }
+.crop-src .shade { position: absolute; left: 0; right: 0; background: rgba(0,0,0,.62); pointer-events: none; }
+.crop-src .win { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--accent); border-bottom: 2px dashed var(--accent); pointer-events: none; }
+.crop-src .focus { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 3px solid var(--accent-2); border-radius: 50%; box-shadow: 0 0 0 2px #000; pointer-events: none; }
+.crop-previews { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-top: 12px; }
+.crop-previews .art { border-radius: 6px; }
+.crop-previews figure { margin: 0; text-align: center; font-size: 11px; color: var(--muted); }
+
+/* ---------- Present ---------- */
+.present { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; align-items: center; justify-content: center; }
+.present[hidden] { display: none; }
+#present-host { position: relative; }
+.present-hud { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #fff8; opacity: 0; transition: opacity .3s; }
+.present:hover .present-hud { opacity: 1; }
+
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--panel-2); border: 1px solid var(--accent); padding: 10px 16px; border-radius: 8px; z-index: 200; max-width: 90vw; }
+.toast[hidden] { display: none; }
+
+@media (max-width: 900px) {
+  body { overflow: auto; }
+  .topbar { height: auto; flex-wrap: wrap; padding: 8px 16px; }
+  #app { height: auto; }
+  .view.active { flex-direction: column; }
+  .panel, .inspector { width: 100%; border: none; border-bottom: 1px solid var(--line); }
+  .stage-wrap { flex: none; width: 100%; overflow: hidden; padding: 14px; }
+  .workspace { width: 100%; }
+  #view-slides .workspace { order: -1; }
+  .pool-wrap { max-height: none; }
+  .deck-edit, .crop, .grid2 { grid-template-columns: 1fr; }
+}
+
+/* ---------- Core / Flex tags ---------- */
+.role { flex: none; position: relative; z-index: 1; font: 700 14px/1 "Chakra Petch", sans-serif; letter-spacing: .12em; text-transform: uppercase; padding: 5px 8px 4px; border-radius: 4px; }
+.role.core { background: var(--accent); color: #0a0b10; }
+.role.flex { color: var(--accent-2); border: 2px solid var(--accent-2); padding: 3px 6px 2px; }
+
+/* ---------- Deck page: full decklist (modelled on the official deck builder's deck view) ---------- */
+.fd-head { position: absolute; left: 70px; right: 70px; top: 44px; height: 140px; display: flex; align-items: center; justify-content: space-between; gap: 40px; border-bottom: 1px solid #ffffff14; }
+.fd-title h1 { margin: 0; font: 700 76px/1 "Chakra Petch", sans-serif; letter-spacing: .01em; }
+.fd-meta { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
+.fd-code { font: 700 30px "Chakra Petch", sans-serif; color: #c9d0dc; letter-spacing: .04em; }
+.fd-label { white-space: nowrap; height: 44px; font: 700 22px "Chakra Petch", sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--accent-2); }
+.fd-label b { color: #eef1f6; font-weight: 600; margin-left: 4px; }
+.fd-legends, .fd-deck { position: absolute; }
+.fd-deck { display: flex; gap: 40px; }
+.fd-section { flex: none; }
+.fd-section .fd-label { color: #eef1f6; }
+.fd-section .fd-label { border-bottom: 3px solid var(--k); height: 34px; margin-bottom: 10px; }
+.fd-section .fd-label b { color: #eef1f6; }
+.fd-col { display: flex; flex-direction: column; gap: 14px; }
+.fd-rule { position: absolute; width: 1px; background: linear-gradient(#5ce1e655, #5ce1e600); }
+.fd-grid { display: grid; gap: 14px; }
+.fd-row { display: flex; gap: 12px; }
+.fd-card { position: relative; display: flex; border-radius: 10px; box-shadow: 0 10px 26px #000000a8; }
+.fd-card .art { border-radius: 10px; }
+.fd-card.is-legend { box-shadow: 0 0 0 2px var(--k), 0 10px 30px #000000b0; }
+.fd-card.is-key { box-shadow: 0 0 0 3px var(--accent), 0 0 34px #f7d04670; }
+.fd-n { position: absolute; left: -6px; bottom: 10px; font: 700 34px/1 "Chakra Petch", sans-serif; color: var(--accent); background: #07080cf0; border: 2px solid var(--accent); border-radius: 6px; padding: 5px 10px 4px 8px; box-shadow: 0 4px 12px #000a; }
+.fd-n small { font-size: 22px; margin-right: 1px; }
+.fd-card.is-small .fd-n { font-size: 20px; padding: 3px 6px 2px 5px; bottom: 6px; }
+.fd-card.is-small .fd-n small { font-size: 14px; }
+.fd-card .role { position: absolute; right: -6px; bottom: 12px; font-size: 12px; padding: 4px 6px 3px; }
+.fd-card .role.flex { background: #07080c; }
+.fd-key { position: absolute; left: 50%; top: -11px; transform: translateX(-50%); font: 700 13px/1 "Chakra Petch", sans-serif; letter-spacing: .16em; text-transform: uppercase; color: #0a0b10; background: var(--accent); border-radius: 4px; padding: 4px 8px 3px; }
+
+/* Flex cards and options (cards outside the deck) */
+.fd-card.is-flex::after { content: ""; position: absolute; inset: -5px; border: 2px dashed var(--accent-2); border-radius: 13px; pointer-events: none; }
+.fd-label i { font: 500 15px "Saira", sans-serif; letter-spacing: .02em; text-transform: none; color: #8b93a3; margin-left: 12px; }
+.fd-strip { position: absolute; display: flex; gap: 40px; }
+
+/* ---------- Deck editor: quick add + Core / Deck / Flex / Options board ---------- */
+.qa { position: relative; display: flex; gap: 8px; margin: 6px 0 12px; }
+.qa .qa-input { flex: 1; }
+.qa .qa-zone { width: auto; flex: none; }
+.qa-results { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 40; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 16px 40px #000c; }
+.qa-hit { display: flex; align-items: center; gap: 10px; text-align: left; background: none; border-color: transparent; border-left: 3px solid var(--c); padding: 4px 8px 4px 0; }
+.qa-hit .ds-cost { width: 26px; height: 26px; font-size: 14px; background: #0b0d12; margin-left: 0; }
+.qa-hit .hint { margin-left: auto; }
+.qa-hit.first, .qa-hit:hover { background: var(--panel-2); border-color: transparent; border-left-color: var(--c); }
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.bcol { background: #0d1016; border: 1px solid var(--line); border-radius: 10px; padding: 8px; min-height: 120px; display: flex; flex-direction: column; gap: 6px; transition: border-color .15s, background .15s; }
+.bcol.over { border-color: var(--accent); background: #15130a; }
+.bcol.core { border-top: 3px solid var(--accent); }
+.bcol.flex { border-top: 3px dashed var(--accent-2); }
+.bcol.options { border-top: 3px dashed #8b93a3; background: #0b0d12; }
+.bhead { display: flex; align-items: baseline; gap: 6px; padding: 2px 4px 6px; font-family: "Chakra Petch", sans-serif; text-transform: uppercase; letter-spacing: .1em; font-size: 12px; }
+.bhead span { color: var(--muted); }
+.bhead small { margin-left: auto; text-transform: none; letter-spacing: 0; color: var(--muted); font-family: "Saira", sans-serif; }
+.bcard { display: flex; align-items: center; gap: 6px; background: var(--panel-2); border-radius: 6px; border-left: 3px solid var(--c); padding-right: 4px; cursor: grab; user-select: none; touch-action: manipulation; }
+.bcard.picked { outline: 2px solid var(--accent-2); }
+.bcard .ds-cost { width: 26px; height: 30px; font-size: 14px; background: #0b0d12; margin-left: 0; }
+.bcard .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+.bq { display: flex; align-items: center; gap: 2px; }
+.bq b { min-width: 14px; text-align: center; font-size: 13px; }
+.bq button, .bcard .key { padding: 0 6px; }
+.bempty { color: var(--muted); font-size: 12px; text-align: center; padding: 18px 0; border: 1px dashed var(--line); border-radius: 6px; }
+
+/* ---------- Card menu on deck slides ---------- */
+.card-menu { position: fixed; z-index: 120; width: 270px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; box-shadow: 0 18px 50px #000d; display: flex; flex-direction: column; gap: 8px; }
+.cm-title { font-weight: 600; border-left: 3px solid var(--c); padding-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-zones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.cm-zones button { padding: 6px 4px; font-size: 12px; }
+.cm-row { display: flex; align-items: center; gap: 6px; }
+.cm-row b { min-width: 28px; text-align: center; }
+.cm-row [data-cm-key] { margin-left: auto; }
+#stage-host [data-card] { cursor: pointer; }
+
+/* ---------- Phones and narrow windows ---------- */
+@media (max-width: 900px) {
+  .topbar { gap: 10px; }
+  .brand { font-size: 15px; }
+  .tabs { order: 3; width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .tabs button { flex: none; }
+  .actions { margin-left: auto; }
+  button, .filebtn, .menu summary { min-height: 36px; }
+  button.small { min-height: 30px; }
+  .panel { padding: 12px 16px; }
+  #deck-list { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
+  #deck-list li { flex: none; min-width: 200px; }
+  .workspace.pad { padding: 14px 16px; }
+  .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .previews .deck-tile { width: 110px; height: 149px; }
+  .slots { gap: 6px; }
+  .modal { padding: 0; align-items: stretch; }
+  .modal-card { width: 100%; max-height: none; height: 100%; border-radius: 0; }
+  .pool .deck-tile { width: 80px; height: 108px; }
+}
+@media (max-width: 520px) {
+  .board { grid-template-columns: 1fr; }
+  .actions #btn-png { display: none; }
+  .grid2 { grid-template-columns: 1fr; }
+}
+
+.dl-full { grid-column: 1 / -1; }
+
+#slide-board { max-height: 46%; }
+#slide-board[hidden] { display: none; }
+#slide-board .board { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { #slide-board { max-height: none; } #slide-board .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { #slide-board .board { grid-template-columns: 1fr; } }
+
+/* ---------- No text selection while dragging (phones especially) ---------- */
+.bcard, .deck-tile, .bcol, .pool, #stage-host, .fan, .list li { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.bcard, .deck-tile { touch-action: manipulation; }
+.bcard.dragging, .deck-tile.dragging { opacity: .35; }
+.touch-ghost { position: fixed; left: 0; top: 0; z-index: 400; pointer-events: none; margin: -46px 0 0 -40px; padding: 8px 12px; border-radius: 8px; background: var(--accent); color: #0a0b10; font: 700 14px "Chakra Petch", sans-serif; box-shadow: 0 10px 30px #000c; white-space: nowrap; }
+
+/* ---------- Deck list: search, groups, sort ---------- */
+.deck-tools { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 10px; }
+.deck-tools select { flex: 1; min-width: 0; font-size: 12px; padding: 5px 6px; }
+.deck-tools .row { flex-wrap: nowrap; }
+.dgroup { background: none !important; border: none !important; padding: 10px 2px 2px !important; cursor: pointer; font: 600 11px "Chakra Petch", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); gap: 6px !important; }
+.dgroup::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--g); }
+.dgroup b { margin-left: auto; color: var(--text); font-weight: 600; }
+.dgroup .caret { order: 3; transition: transform .15s; }
+.dgroup.closed .caret { transform: rotate(-90deg); }
+
+/* ---------- Unranked pool: filter + color groups ---------- */
+.pool-head input[type=search] { width: 180px; margin-left: auto; padding: 4px 8px; }
+.pool { align-items: flex-start; }
+.pgroup { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; padding-right: 12px; margin-right: 4px; border-right: 1px solid var(--line); }
+.pgroup:last-child { border-right: none; }
+.pg-label { flex-basis: 100%; font: 600 11px "Chakra Petch", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.pg-label::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--g); }
+
+@media (max-width: 900px) {
+  #deck-list { flex-direction: column; overflow-x: visible; max-height: 46vh; overflow-y: auto; }
+  #deck-list li { min-width: 0; }
+  .pool-head { flex-wrap: wrap; }
+  .pool-head input[type=search] { width: 100%; margin-left: 0; }
+}
+.pool-head input[type=search] { order: 3; }
+
+#deck-list li:not(.dgroup) { padding: 5px 8px; }
+#deck-list .fan .mini { width: 20px; height: 28px; margin-right: -5px; }
+#deck-list .dl-text strong { font-size: 13px; }
+#deck-list .dl-text .hint { font-size: 11px; }
+.pool.compact .deck-tile { width: 70px; height: 95px; }
+
+.board, #slide-board .board { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.bcol.side { border-top: 3px solid #8b93a3; }
+.cm-zones { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px) { .board, #slide-board .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .board, #slide-board .board { grid-template-columns: 1fr; } }
+.menu-note { margin: 0 2px 4px; max-width: 230px; line-height: 1.4; }
+.bcol.side { border-top: 3px dashed #8b93a3; background: #0b0d12; }
+.ds-group.extra { margin-top: 6px; border-bottom-style: dashed; }
+.ds-row.is-extra { opacity: .85; border-style: dashed; }
+
+/* ================= Tier list styles (looks) =================
+ * rail: the original (colored rail, glows, rounded). The others drop the glow blobs, grid, rails and
+ * soft rounded cards. */
+.look-band .glow, .look-ledger .glow, .look-frame .glow { display: none; }
+.stage.look-band::before, .stage.look-ledger::before, .stage.look-frame::before { display: none; }
+.look-band, .look-ledger, .look-frame { background: #0b0c10; }
+.look-band .tier-row::before, .look-ledger .tier-row::before, .look-frame .tier-row::before { display: none; }
+.look-band .tier-name, .look-ledger .tier-name, .look-frame .tier-name { text-shadow: none; }
+.look-band .deck-tile, .look-ledger .deck-tile, .look-frame .deck-tile { border-radius: 3px; box-shadow: none; }
+.look-band .pill, .look-ledger .pill, .look-frame .pill { background: none; color: #c9d0dc; border-radius: 0; padding: 0; font-weight: 500; letter-spacing: .06em; }
+.look-band .pill::before, .look-ledger .pill::before, .look-frame .pill::before { content: "/ "; color: #5b6475; }
+.look-band .brandmark, .look-ledger .brandmark, .look-frame .brandmark { letter-spacing: .12em; }
+
+/* Band: classic tier-list blocks. Solid color label, flat dark lane, square edges. */
+.look-band .tiers { gap: 6px; }
+.look-band .tier-row { border-radius: 0; border: none; background: #14161c; }
+.look-band .tier-head { background: var(--t); }
+.look-band .tier-name { color: #0b0c10; }
+.look-band .tier-desc { color: #0b0c10b8; font-weight: 600; }
+
+/* Ledger: no boxes. A hairline above each tier, the name in its color, decks on the line. */
+.look-ledger .tiers { gap: 0; }
+.look-ledger .tier-row { border-radius: 0; background: none; border: none; border-top: 1px solid #ffffff24; }
+.look-ledger .tier-row:last-child { border-bottom: 1px solid #ffffff24; }
+.look-ledger .tier-head { padding-left: 0; }
+.look-ledger .tier-name { color: var(--t); }
+
+/* Frame: borrows the card frame: thin colored frame, the tier name in a tab on the top edge. */
+.look-frame .tiers { gap: 16px; }
+.look-frame .tier-row { border-radius: 0; background: #101217; border: 2px solid var(--t); }
+.look-frame .tier-head { padding-top: 54px; }
+.look-frame .tier-name { color: #eef1f6; }
+.look-frame .tier-name span { position: absolute; left: -2px; top: -2px; font-size: 30px; line-height: 1; letter-spacing: .06em; padding: 8px 40px 7px 16px; background: var(--t); color: #0b0c10;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
+.look-frame .tier-name { font-size: 0 !important; }
+
+/* ---------- De-templating pass (applies to every slide) ---------- */
+/* Flat background: no glow blobs, no grid. */
+.stage { background: #0b0c10; }
+.stage::before, .stage .glow { display: none !important; }
+/* Type counts as a plain line instead of stat boxes. */
+.ds-breakdown-line { display: flex; align-items: baseline; gap: 14px; font: 500 30px "Saira", sans-serif; color: #9aa3b5; white-space: nowrap; }
+.ds-breakdown-line b { font: 700 38px "Chakra Petch", sans-serif; color: #eef1f6; margin-right: 4px; }
+.ds-breakdown-line i { font-style: normal; color: #4a5263; }
+.ds-breakdown-line.compact { font-size: 22px; gap: 10px; }
+.ds-breakdown-line.compact b { font-size: 28px; }
+.fd-head .ds-breakdown-line { flex: none; }
+.ds-right .ds-breakdown-line { padding-bottom: 6px; border-bottom: 1px solid #ffffff14; }
+/* Plain text instead of pills and spaced-out eyebrows. */
+.pill { background: none !important; color: #c9d0dc; border-radius: 0; padding: 0; font-weight: 500; letter-spacing: .04em; text-transform: none; }
+.s-eyebrow .pill::before { content: "/ "; color: #5b6475; }
+.tier-pill { color: var(--t) !important; font-weight: 700; }
+.brandmark { letter-spacing: .08em; }
+.ds-meta { text-transform: none; letter-spacing: .02em; }
+
+/* Deck dragging on tier lists */
+.deck-tile.placeholder { opacity: .25; }
+.drag-ghost { position: fixed !important; z-index: 500; pointer-events: none; margin: 0; opacity: .95; box-shadow: 0 18px 40px #000c !important; transform: rotate(-2deg) !important; }
+body.dragging-deck, body.dragging-deck * { cursor: grabbing !important; }
+#stage-host .deck-tile, #pool .deck-tile { touch-action: pan-y; }
+
+/* =====================================================================
+ * Kiroshi Scan: the design system from cyberpunk-tcg-tracker/DESIGN.md.
+ * Flat charcoal, square geometry, cut corners on anything you press or that labels a state.
+ * Yellow only for identity, the active selection and the one primary action per view.
+ * Labels in sentence case with no tracking. No glow, gradients, dashed boxes, outlined pills or
+ * colored side stripes. This block comes last so it overrides the earlier styles.
+ * ===================================================================== */
+:root {
+  --bg: #0b0d10; --panel: #12151a; --panel-2: #191d24; --line: #232a33; --line-strong: #353f4c;
+  --text: #e8edf2; --muted: #8d98a7; --accent: #f4e34f; --accent-2: #4cf0e6; --danger: #ff5757;
+  --cut: 7px; --cut-s: 4px;
+  --mono: "Martian Mono", ui-monospace, monospace;
+}
+*, *::before, *::after { border-radius: 0 !important; }
+.art.full, .art.full img, .crop-src, .crop-src img { border-radius: 8px !important; } /* printed card corners */
+
+/* Labels: sentence case, no tracking, no yellow headings */
+h3 { color: var(--text); text-transform: none; letter-spacing: 0; font: 600 14px "Chakra Petch", sans-serif; display: flex; align-items: center; gap: 8px; }
+h3::before { content: ""; width: 5px; height: 5px; background: var(--accent-2); flex: none; }
+label { text-transform: none; letter-spacing: 0; font-size: 12.5px; }
+.brand { text-transform: none; letter-spacing: 0; }
+.bhead, .dgroup, .pg-label, .cm-title, .tag, .badge { text-transform: none !important; letter-spacing: 0 !important; }
+
+/* Pressable things: filled, cut corners, never outlined */
+button, .filebtn, .menu summary, .tag, .badge, .toast, .role, .seg button {
+  border: 1px solid transparent; clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+}
+.tag, .badge, .role, button.small { clip-path: polygon(var(--cut-s) 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%, 0 var(--cut-s)); }
+button, .filebtn, .menu summary { background: var(--panel-2); border-color: var(--panel-2); }
+button:hover, .filebtn:hover { background: #222833; border-color: #222833; }
+button.on, .seg button.on, .tabs button.active { background: #2a2a17; color: var(--accent); border-color: #2a2a17; }
+.tabs button.active { background: var(--panel-2); }
+.toast { border-color: var(--panel-2); background: var(--panel-2); border-left: none; }
+.role { border: none !important; text-transform: capitalize !important; letter-spacing: 0 !important; font-family: "Saira", sans-serif !important; font-weight: 600 !important; }
+.role.core { background: var(--text); color: #0b0d10; }
+.role.flex { background: #10393b !important; color: var(--accent-2); padding: 5px 8px 4px !important; }
+
+/* Numbers in Martian Mono */
+.ds-cost, .bq b, .ds-n, .fd-n, #deck-count, #pool-count, .bhead span, .dgroup b, .ds-breakdown-line b, .cm-row b { font-family: var(--mono) !important; font-weight: 600; }
+
+/* No colored side stripes: the card's game color fills its cost box instead */
+.bcard, .ds-row, .qa-hit, .tier-edit, .cm-title, .ds-key-cap, .card-cell { border-left: none !important; box-shadow: none !important; }
+.bcard .ds-cost, .ds-row .ds-cost, .qa-hit .ds-cost { background: var(--c) !important; color: #0b0d10; }
+.cm-title { padding-left: 0; }
+.tier-edit { border: none; background: var(--panel-2); }
+.tier-edit input[type=color] { border: none; }
+
+/* No dashed boxes: space and hairlines instead */
+.pool, .bempty, .slot, .bcol, .bcol.flex, .bcol.side, .bcol.core, .bcol.options { border: none !important; }
+.bcol { background: var(--panel); }
+.bcol .bhead { border-top: 1px solid var(--line); padding-top: 8px; position: relative; }
+.bcol .bhead::before { content: ""; position: absolute; left: 0; top: -1px; width: 28px; height: 2px; background: var(--accent-2); }
+.bempty { background: var(--bg); }
+.pool { padding: 0; }
+.pool.drop-hover, .tier-decks.drop-hover, .bcol.over { outline: none !important; background: rgba(76, 240, 230, .06) !important; }
+.empty-msg, .callout { border: none !important; background: var(--panel); }
+.callout.warn { box-shadow: inset 0 2px 0 var(--accent-2); }
+
+/* Panels open with a hairline and a cyan tick, not boxes */
+.panel, .inspector { border-color: var(--line); }
+
+/* =============== Slides =============== */
+.stage { background: #0b0d10; }
+.deck-tile { box-shadow: none !important; border-color: #ffffff1a; }
+.deck-tile.selected { border-color: var(--accent); box-shadow: none !important; outline: 3px solid var(--accent); }
+.tile-art::after { display: none; }                     /* no gradient fade */
+.tier-name { text-shadow: none !important; }
+.s-title, .tier-name { text-transform: none; }          /* as typed */
+.stage .brandmark { letter-spacing: 0 !important; text-transform: none; font-weight: 600; }
+/* Section labels on slides: sentence case with the section-opener tick */
+.fd-label, .ds-group { text-transform: none !important; letter-spacing: 0 !important; color: var(--text) !important; font-family: "Chakra Petch", sans-serif; }
+.fd-label { position: relative; border-top: 1px solid #ffffff1f; padding-top: 10px; font-size: 26px; }
+.fd-label::before { content: ""; position: absolute; left: 0; top: -1px; width: 40px; height: 3px; background: var(--accent-2); }
+.fd-section .fd-label { border-bottom: none; }
+.ds-group { font-size: 22px; border-bottom: none; border-top: 1px solid #ffffff1f; position: relative; padding-top: 10px; }
+.ds-group::before { content: ""; position: absolute; left: 0; top: -1px; width: 34px; height: 3px; background: var(--accent-2); }
+.ds-group.extra, .ds-row.is-extra { border-style: solid; }
+.ds-row { border: none; }
+.ds-row.is-key { outline: 2px solid var(--accent-2); }
+/* No glows on legends or key cards */
+.ds-legend, .fd-card, .fd-card.is-legend, .fd-card.is-key { box-shadow: none !important; }
+.ds-legend { border: none; }
+.fd-card.is-legend { outline: 2px solid var(--k); outline-offset: 0; }
+.fd-card.is-flex::after { display: none; }
+/* Key cards: target-lock corner brackets */
+.fd-card.is-key::before {
+  content: ""; position: absolute; inset: -9px; pointer-events: none; z-index: 2;
+  --b: 3px; --l: 26px; --k2: var(--accent-2);
+  background:
+    linear-gradient(var(--k2), var(--k2)) top left / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) top left / var(--b) var(--l) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) top right / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) top right / var(--b) var(--l) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom left / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom left / var(--b) var(--l) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom right / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom right / var(--b) var(--l) no-repeat;
+}
+.fd-key { background: var(--accent-2) !important; color: #0b0d10; letter-spacing: 0 !important; text-transform: none !important; font-family: "Saira", sans-serif !important; font-size: 15px !important; clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px); }
+/* Copy counts: filled, cut corner */
+.fd-n { border: none !important; background: #0b0d10 !important; color: var(--text) !important; box-shadow: none !important; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); }
+.fd-n small { color: var(--muted); }
+.ds-n { color: var(--text) !important; text-shadow: none; }
+.ds-key-cap span { color: var(--accent-2); letter-spacing: 0; text-transform: none; }
+.ds-key::after { background: rgba(11, 13, 16, .82); } /* flat scrim, not a gradient */
+.ds-row::after { background: rgba(16, 19, 26, .78); }
+.ds-row .ds-row-art { opacity: .35; }
+.ds-meta { color: var(--muted); }
+
+/* ---------- Progressive disclosure, getting started, help ---------- */
+details.more { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 8px; }
+details.more > summary { cursor: pointer; color: var(--muted); font-size: 13px; list-style: none; padding: 4px 0; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::before { content: "+ "; color: var(--accent-2); }
+details.more[open] > summary::before { content: "− "; }
+.guide { background: var(--panel-2); padding: 10px 12px; margin-bottom: 16px; }
+.guide[hidden] { display: none; }
+.guide-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.guide-head span { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.guide-head button { margin-left: auto; padding: 0 8px; }
+.guide ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.guide li button { width: 100%; text-align: left; background: none; border-color: transparent; padding: 4px 2px; clip-path: none; }
+.guide li button:hover { background: var(--panel); }
+.guide li.ok button { color: var(--muted); text-decoration: line-through; cursor: default; }
+.guide li:not(.ok) button { color: var(--text); }
+.linkish { background: none !important; border: none !important; clip-path: none !important; color: var(--accent-2); padding: 6px 2px 0; font-size: 13px; }
+#btn-help { width: 36px; padding: 6px 0; font-weight: 700; }
+.help { max-width: 640px; }
+.help-steps, .help-list { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; line-height: 1.45; color: #c9d0dc; }
+.help h3 + .help-steps, .help h3 + .help-list { margin-top: 4px; }
+.help h3:not(:first-child) { margin-top: 18px; }
+.deck-edit > div:nth-child(2) .previews .deck-tile { width: 170px; height: 230px; }
+
+/* Wordmark: one color, no highlighted word. */
+.brand span { color: inherit !important; font-weight: inherit; }
+
+/* Copy counts back in yellow, and Core / Flex tags as strong solid chips. */
+.fd-n { color: var(--accent) !important; background: #07080c !important; outline: 2px solid var(--accent); outline-offset: -2px; clip-path: none !important; }
+.fd-n small { color: var(--accent); }
+.ds-n { color: var(--accent) !important; }
+.role.core { background: var(--accent) !important; color: #0b0d10 !important; }
+.role.flex { background: var(--accent-2) !important; color: #0b0d10 !important; }
+.stage .role { font-size: 17px !important; padding: 5px 10px 4px !important; font-weight: 700 !important; }
+.fd-card .role { right: -8px; bottom: 12px; }
+.stage .fd-card .role { font-size: 19px !important; padding: 6px 12px 5px !important; text-transform: capitalize !important; right: -8px; bottom: 14px; }
+
+/* ---------- Share viewer ---------- */
+.viewer-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px; background: var(--panel-2); border-bottom: 1px solid var(--line); }
+.viewer-bar[hidden] { display: none; }
+.viewer-bar span { flex: 1; min-width: 200px; color: var(--muted); }
+body.viewing #app { height: calc(100% - 54px - 52px); }
+body.viewing .tabs, body.viewing .actions, body.viewing .inspector, body.viewing .pool-wrap, body.viewing #slide-board, body.viewing #guide,
+body.viewing .slide-list .row, body.viewing #slide-list button { display: none !important; }
+
+/* Keyboard focus and missing-card note */
+:focus-visible { outline: 2px solid var(--accent-2) !important; outline-offset: 2px; }
+.deck-tile:focus-visible { outline: 3px solid var(--accent-2) !important; outline-offset: 2px; }
+.missing-note { font: 600 20px "Saira", sans-serif; color: #0b0d10; background: var(--danger); padding: 3px 10px; margin-right: 14px; }
