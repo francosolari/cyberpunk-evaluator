@@ -8,7 +8,7 @@ const SIM_ORIGIN = 'https://cyberpunk-tcg-sim.online';
 const CATALOG_URL = `${SIM_ORIGIN}/api/cards/catalog`;
 const LEADERBOARD_URL = `${SIM_ORIGIN}/api/ranked/leaderboard`;
 const STAGE_W = 1920, STAGE_H = 1080;
-const CATALOG_SCHEMA = 2; // 2 added rules text; older saved catalogs are refreshed once
+const CATALOG_SCHEMA = 3; // 2 added rules text, 3 collector numbers; older saved catalogs are refreshed once
 const CARD_ASPECT = 0.716;          // card width / height
 const TILE_ASPECT = 0.74;           // deck tile width / height (art + caption)
 // Crop = the card's art window (top/bottom, % of card height) + focus point + extra zoom.
@@ -322,10 +322,54 @@ function parseCatalog(json, origin = SIM_ORIGIN) {
       img: !path ? '' : /^(https?:|data:)/.test(path) ? path : path.startsWith('/') ? origin + path : path,
       page: c.source?.card_page_url || '',
       text: typeof c.rules_text === 'string' ? c.rules_text.slice(0, 800) : '',
+      // Collector number and set, used to read the sim's compact deck codes (e.g. w32 = #110).
+      num: collectorNumber(c),
+      set: String(c.set_code || c.set || c.set_name || '').toLowerCase(),
       codes,
     });
   }
   return out;
+}
+
+function collectorNumber(c) {
+  for (const k of ['collector_number', 'collectorNumber', 'card_number', 'cardNumber', 'number', 'set_number', 'setNumber', 'collector_no', 'code']) {
+    const v = c?.[k];
+    const m = typeof v === 'number' ? [String(v), String(v)] : typeof v === 'string' && v.match(/(\d{1,4})[a-z]?$/i);
+    if (m) return parseInt(m[1], 10);
+  }
+  return null;
+}
+
+/* The sim's deck-image QR code links to its deck builder with a compact code:
+ *   …/deck-builder/?d=l.w2.w5-a.w32.d.3_w6.3_wt…s.3_w7.2_wv
+ * "l." Legends, "d." deck, "s." sideboard; entries are count_card, and a card is a set letter plus
+ * the collector number in base 36 (w32 = Welcome to Night City #110), "-a" marking alternate art.
+ * Returns sim text export lines with card ids, or null if the text isn't such a link. */
+function decodeSimDeckCode(text) {
+  const m = String(text).match(/[?&]d=([a-z0-9._\-]+)/i);
+  if (!m || !/(^|\.)l\./.test(m[1])) return null;
+  const byCode = new Map();
+  for (const c of allCards()) if (c.num != null) {
+    const letter = (c.set || '')[0] || '';
+    const key = letter + ':' + c.num;
+    if (!byCode.has(key)) byCode.set(key, c); // first printing wins; alternate arts share the number
+  }
+  const lookup = (code) => {
+    const mm = code.match(/^([a-z])([0-9a-z]+?)(?:-[a-z0-9]+)?$/i);
+    if (!mm) return code;
+    const n = parseInt(mm[2], 36);
+    const hit = byCode.get(mm[1].toLowerCase() + ':' + n) || [...byCode.entries()].find(([k]) => k.endsWith(':' + n))?.[1];
+    return hit ? hit.id : `${code} (#${n})`;
+  };
+  const out = { l: [], d: [], s: [] };
+  let section = null;
+  for (const tok of m[1].split('.')) {
+    if (tok === 'l' || tok === 'd' || tok === 's') { section = tok; continue; }
+    if (!section || !tok) continue;
+    const [, n, code] = tok.match(/^(?:(\d+)_)?(.+)$/);
+    out[section].push(`${section === 'l' ? 1 : n || 1}x ${lookup(code)}`);
+  }
+  return ['#L', ...out.l, '', '#D', ...out.d, ...(out.s.length ? ['', '#S', ...out.s] : [])].join('\n');
 }
 
 async function loadCatalogFromSim() {
@@ -395,7 +439,7 @@ function decodeB64Deck(text) {
 /** Accepts sim text exports (# Name / #L / #D / #S), official "Text List" style lists, import links, or JSON. */
 function parseDeckExport(raw) {
   let text = String(raw || '').trim();
-  const fromLink = decodeB64Deck(text);
+  const fromLink = decodeB64Deck(text) || decodeSimDeckCode(text);
   if (fromLink) text = fromLink.trim();
   const entries = [];
   let name = '';
@@ -1577,7 +1621,7 @@ function openImport(target = null) {
     try {
       const text = await readQrFromImage(file);
       if (!text) throw new Error('No QR code found in that image. Try a sharper or uncropped export.');
-      if (!decodeB64Deck(text) && !/#L|^\s*\d+\s*x?\s+\S/im.test(text)) throw new Error(`The QR code holds "${text.slice(0, 80)}", which isn't a deck export. Open it in the sim and use Export → Text instead.`);
+      if (!decodeB64Deck(text) && !decodeSimDeckCode(text) && !/#L|^\s*\d+\s*x?\s+\S/im.test(text)) throw new Error(`The QR code holds "${text.slice(0, 80)}", which isn't a deck export. Open it in the sim and use Export → Text instead.`);
       const box = $('#imp-text');
       box.value = (box.value.trim() ? box.value.trim() + '\n---\n' : '') + text;
       preview();

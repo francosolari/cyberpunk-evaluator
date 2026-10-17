@@ -36,7 +36,7 @@ A new visitor's studio starts from `data/seed-decks.txt`: deck exports separated
 - **Sim import links**, e.g. `…/import?svc=sim&b64deck=…`. The deck is decoded from the link.
 - **Text lists** from the official deck builder and other builders. These look like `3 Card Name`, `3x Card Name` or `Card Name x3`, with `Legends:`, `Main Deck:` and `Sideboard:` headers or `//` comments. Legends are detected from the card type even without a header.
 - **JSON decklists** with name/count fields.
-- **Deck images** from the sim's image export: **Scan deck image**, or paste or drop a screenshot. The QR code is read in the browser (the built-in reader where available, otherwise jsQR), and only the decoded deck is kept. The image is never uploaded or saved.
+- **Deck images** from the sim's image export (its QR code holds a compact deck-builder code like `?d=l.w2.w5-a…d.3_w6…s.3_w7…`: Legends, deck and sideboard, each card a set letter plus its collector number in base 36): **Scan deck image**, or paste or drop a screenshot. The QR code is read in the browser (the built-in reader where available, otherwise jsQR), and only the decoded deck is kept. The image is never uploaded or saved.
 
 To import several decks at once, separate them with a `---` line. Names are matched to the catalog without regard to case or punctuation. A short name like "Panam Palmer" matches "Panam Palmer, Nomad Cavalry" when only one card fits. Lines that match no card are listed so you can fix them.
 
