@@ -684,3 +684,13 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 #toast { display: flex; align-items: center; gap: 10px; }
 #toast[hidden] { display: none; }
 .toast-action { background: var(--accent) !important; color: #0b0d10; border-color: var(--accent) !important; }
+
+/* Import: deck image drop zone first */
+.dropzone { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 22px 16px; margin: 4px 0 6px;
+  background: var(--panel-2); cursor: pointer; text-transform: none; letter-spacing: 0; color: var(--text); font-size: 14px; }
+.dropzone:hover, .dropzone.over { background: rgba(76, 240, 230, .08); }
+.dropzone.done { background: rgba(61, 220, 151, .08); }
+.dropzone .dz-icon { font-size: 28px; color: var(--accent-2); line-height: 1; }
+.dropzone .hint { max-width: 460px; }
+.or-label { margin-top: 14px; }
+.import-sub { margin: 6px 2px 0; }
