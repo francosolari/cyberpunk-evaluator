@@ -493,6 +493,11 @@ function resolveCard(name, { legend = false } = {}) {
     const legends = hits.filter(([, id]) => isLegend(card(id)));
     if (legends.length) hits = legends.sort((a, b) => a[0].length - b[0].length).slice(0, 1);
   }
+  // In the deck itself, "Yorinobu Arasaka" means the unit, not the Legend.
+  if (!legend && hits.length > 1) {
+    const others = hits.filter(([, id]) => !isLegend(card(id)));
+    if (others.length === 1) hits = others;
+  }
   return hits.length === 1 ? hits[0][1] : null;
 }
 
