@@ -753,7 +753,8 @@ function extraRows(d, s = {}) {
   return rows.sort((a, b) => (a[0].cost ?? 99) - (b[0].cost ?? 99) || a[0].name.localeCompare(b[0].name));
 }
 const EXTRA_LABEL = 'Sideboard / Options';
-const roleTag = (s, d, id) => (s.showRoles !== false && d.roles?.[id] ? `<span class="role ${d.roles[id]}">${d.roles[id] === 'core' ? 'Core' : 'Flex'}</span>` : '');
+// A key card is Core by definition, so it only says Key.
+const roleTag = (s, d, id) => (s.showRoles !== false && d.roles?.[id] && !(d.roles[id] === 'core' && isKey(d, id)) ? `<span class="role ${d.roles[id]}">${d.roles[id] === 'core' ? 'Core' : 'Flex'}</span>` : '');
 /** Type counts as one plain line: "16 Units · 13 Gear · 7 Programs". */
 const breakdownHTML = (groups, cls = '') => `<div class="ds-breakdown-line ${cls}">${groups.map((g) => `<span><b>${g.count}</b> ${esc(g.label)}</span>`).join('<i>·</i>')}</div>`;
 const deckEyebrow = (d) => {
