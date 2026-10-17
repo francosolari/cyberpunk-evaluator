@@ -8,10 +8,10 @@
 // installed instead, it falls back to that package's own browser.
 //
 // Optional: put a deck export (text, import link or deck-builder link) in promo/hero-deck.txt to feature
-// that deck. Otherwise the seeded deck with the fullest list is used.
+// that deck. Otherwise the YYR seed deck is used.
 const pw = await import('playwright-core').catch(() => import('playwright'));
 const { chromium, devices } = pw;
-import { mkdirSync, existsSync, readFileSync, renameSync } from 'node:fs';
+import { mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -64,7 +64,8 @@ const hero = await page.evaluate((heroText) => {
     d = [].concat(parseDeckExport(heroText))[0];
     state.decks.unshift(d);
   } else {
-    d = state.decks.slice().sort((a, b) => deckCount(b) - deckCount(a))[0];
+    // The YYR seed, then the fullest list. Alternate Legends are added below.
+    d = state.decks.find((x) => x.name === 'YYR' && deckCount(x)) || state.decks.slice().sort((a, b) => deckCount(b) - deckCount(a))[0];
   }
   // Featured deck leads Tier 1.
   tierSlide.tiers.forEach((t) => (t.deckIds = t.deckIds.filter((x) => x !== d.id)));
@@ -189,28 +190,6 @@ await mp.waitForTimeout(600);
 await shot(mp, '19-phone-deck-page');
 await mp.click('[data-view=decks]');
 await shot(mp, '20-phone-decks');
-
-/* ---------- Short drag video ---------- */
-const vctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, recordVideo: { dir: OUT, size: { width: 1600, height: 1000 } } });
-await vctx.addInitScript((s) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('cp-tierlist-studio-v2', s); sessionStorage.setItem('seeded', '1'); } }, saved);
-const vp = await openStudio(vctx);
-await selectSlide(vp, 0);
-await settle(vp);
-for (const [fromIdx, toIdx] of [[1, 0], [2, 1]]) {
-  const t = await vp.$(`#stage-host [data-drop="${tiers[fromIdx]?.id}"] .deck-tile`);
-  const dst = await vp.$(`#stage-host [data-drop="${tiers[toIdx]?.id}"]`);
-  if (!t || !dst) continue;
-  const a = await t.boundingBox(), b = await dst.boundingBox();
-  await vp.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
-  await vp.mouse.down();
-  await vp.mouse.move(b.x + b.width - 80, b.y + b.height / 2, { steps: 40 });
-  await vp.waitForTimeout(300);
-  await vp.mouse.up();
-  await vp.waitForTimeout(900);
-}
-const video = vp.video();
-await vctx.close();
-if (video) { renameSync(await video.path(), join(OUT, '21-drag-demo.webm')); console.log('Drag video: 21-drag-demo.webm'); }
 
 /* ---------- Feature story: captioned 1600×1000 panels built from the screenshots ---------- */
 const STORY = join(dirname(OUT), 'story');

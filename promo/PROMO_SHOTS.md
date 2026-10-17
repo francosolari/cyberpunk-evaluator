@@ -35,7 +35,7 @@ Tier List Studio builds Cyberpunk TCG presentation slides: meta tier lists and d
 1. **`promo/story/`: the feature story to share.** Ten 1600×1000 images. Each is the screenshot itself, edge to edge, with one plain caption sentence underneath:
    01 overview · 02 dragging decks between tiers · 03 tile views · 04 full decklist · 05 key / core / flex · 06 alternate Legends · 07 editing under the slide · 08 import · 09 phone · 10 present and share.
    Open `promo/story.html` in a browser to see them in a row. Change a caption there and rerun the script.
-2. **`promo/shots/`: the raw screenshots** the story is built from, plus a short drag video. Use them for anything the story doesn't cover.
+2. **`promo/shots/`: the raw screenshots** the story is built from. Use them for anything the story doesn't cover.
 
 ## Shot list
 
@@ -62,7 +62,6 @@ The script names each file with its number. Slides are 1920×1080; interface sho
 | 16 | `16-ui-card-browser.png` | Card browser with art |
 | 17 | `17-ui-share-tier-list.png` | Share a tier list as a link |
 | 18–20 | `18-phone-*.png` … | The tier list, a deck page and the deck list on a phone |
-| 21 | `21-drag-demo.webm` | Two decks dragged up a tier (convert to GIF/MP4 for posts) |
 
 ## Capturing them
 
@@ -82,7 +81,7 @@ CHROME_PATH="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" node 
 
 The script starts with an empty browser, so it sees the same seeded decks and tier list a new visitor does. It then sets up one **featured deck** to show every deck feature: Core / Flex roles, two key cards, a few sideboard / options cards, and two alternate Legends on one slot. It makes three slides (the tier list, a names deck page and a full decklist deck page) and captures everything above.
 
-**Featuring a specific deck:** save its export (text, import link or deck-builder link) as `promo/hero-deck.txt`. It's added to Tier 1 and used for the deck pages. Without it, the seeded deck with the fullest list is used.
+**Featuring a specific deck:** save its export (text, import link or deck-builder link) as `promo/hero-deck.txt`. It's added to Tier 1 and used for the deck pages. Without it, the YYR seed deck is used.
 
 **Checking the results:** in the console output, `Featured deck` names the deck used and `Page errors` should be empty. Look over 09 and 14 in particular. The automatic Core / Flex roles, key cards and alternate Legends are picks for demo purposes, so swap in a real list with `hero-deck.txt` if they don't make sense for the deck.
 
