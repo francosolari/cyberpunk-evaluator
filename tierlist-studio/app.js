@@ -1590,16 +1590,18 @@ function bindDecks() {
 
 /* ---------------- Import modal ---------------- */
 function openImport(target = null) {
-  openModal(`<h3>${target ? 'Replace decklist from export' : 'Import deck export'}</h3>
-    <p class="hint">Paste a deck from the <b>Cyberpunk TCG Sim</b> (Export → Text, or an import link containing <code>b64deck=</code>),
-      or the <b>official deck builder's</b> text list. Paste several decks at once by separating them with a line of <code>---</code>.</p>
+  openModal(`<h3>${target ? 'Replace decklist' : 'Import deck'}</h3>
     ${state.catalog ? '' : '<div class="callout warn">Card data isn\'t loaded yet, so card names can\'t be matched to art. Load it in the <b>Card Data</b> tab first.</div>'}
-    <textarea id="imp-text" rows="12" placeholder="# Name: Geary Noble Safety&#10;#L&#10;1x Panam Palmer&#10;1x River Ward&#10;1x Muamar Reyes&#10;&#10;#D&#10;3x …"></textarea>
-    <div class="row gap" style="margin-top:8px">
-      <label class="filebtn">Scan deck image<input type="file" id="imp-image" accept="image/*" hidden></label>
-      <label class="filebtn">Load .txt file<input type="file" id="imp-file" accept=".txt,.json,text/plain" hidden></label>
-      <span class="hint" id="imp-scan">Or paste or drop a screenshot of the sim's deck image. It's read on this device and never uploaded or saved.</span>
-    </div>
+    <label class="dropzone" id="imp-drop">
+      <input type="file" id="imp-image" accept="image/*" hidden>
+      <span class="dz-icon" aria-hidden="true">▣</span>
+      <b>Drop the sim's deck image here, or tap to choose one</b>
+      <span class="hint" id="imp-scan">The QR code on the image is read on this device. The image is never uploaded or saved. You can also paste a screenshot.</span>
+    </label>
+    <label for="imp-text" class="or-label">or paste a deck export or link</label>
+    <p class="hint">A sim text export, a sim deck link, or the official deck builder's text list. Separate several decks with a line of <code>---</code>.</p>
+    <textarea id="imp-text" rows="7" placeholder="# Name: Geary Noble Safety&#10;#L&#10;1x Panam Palmer&#10;1x River Ward&#10;1x Muamar Reyes&#10;&#10;#D&#10;3x …"></textarea>
+    <div class="row gap" style="margin-top:8px"><label class="filebtn">Load .txt file<input type="file" id="imp-file" accept=".txt,.json,text/plain" hidden></label></div>
     <div id="imp-preview" style="margin-top:12px"></div>
     <div class="row gap" style="margin-top:14px"><button class="primary" id="imp-go" disabled>Import</button><button data-close>Cancel</button></div>`);
   let parsed = [];
@@ -1625,14 +1627,16 @@ function openImport(target = null) {
       const box = $('#imp-text');
       box.value = (box.value.trim() ? box.value.trim() + '\n---\n' : '') + text;
       preview();
-      $('#imp-scan').textContent = 'Deck read from the image. The image wasn\'t uploaded or kept.';
+      $('#imp-scan').textContent = 'Deck read from the image. The image wasn\'t uploaded or kept. Drop another to add more.';
+      $('#imp-drop').classList.add('done');
     } catch (err) { $('#imp-scan').textContent = err.message; }
   };
   $('#imp-image').onchange = (e) => { scan(e.target.files[0]); e.target.value = ''; };
   const card = $('#modal-body');
   card.addEventListener('paste', (e) => { const f = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith('image/')); if (f) { e.preventDefault(); scan(f); } });
-  card.addEventListener('dragover', (e) => e.preventDefault());
-  card.addEventListener('drop', (e) => { const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('image/')); if (f) { e.preventDefault(); scan(f); } });
+  card.addEventListener('dragover', (e) => { e.preventDefault(); $('#imp-drop')?.classList.add('over'); });
+  card.addEventListener('dragleave', (e) => { if (!card.contains(e.relatedTarget)) $('#imp-drop')?.classList.remove('over'); });
+  card.addEventListener('drop', (e) => { $('#imp-drop')?.classList.remove('over'); const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('image/')); if (f) { e.preventDefault(); scan(f); } });
   $('#imp-go').onclick = () => {
     if (target && parsed[0]) {
       const p = parsed[0];
@@ -1647,7 +1651,6 @@ function openImport(target = null) {
     save(); closeModal(); renderDecks();
     toast(target ? 'Decklist replaced.' : `Imported ${parsed.length} deck(s). They're in Unranked on your tier list.`);
   };
-  $('#imp-text').focus();
 }
 
 /* ---------------- Card picker ---------------- */
@@ -2004,7 +2007,7 @@ function guideSteps() {
   const g = prefs().guide;
   return [
     ['cards', 'Load the card data', !!state.catalog, () => setView('data')],
-    ['import', 'Import a deck export', !!g.imported, () => { setView('decks'); openImport(); }],
+    ['import', 'Import a deck (image or export)', !!g.imported, () => { setView('decks'); openImport(); }],
     ['rank', 'Drag decks into tiers', !!g.ranked, () => { ui.slideId = state.slides.find((x) => x.type === 'tier')?.id; setView('slides'); }],
     ['present', 'Present your slides', !!g.presented, () => $('#btn-present').click()],
   ];
@@ -2030,7 +2033,7 @@ function openHelp() {
     <h3>How Tier List Studio works</h3>
     <ol class="help-steps">
       <li><b>Card data</b> loads by itself. If it doesn't, the Card Data tab shows how to load it from a file.</li>
-      <li><b>Decks</b> come from deck exports. In the Decks tab, choose <i>Import deck export</i> and paste a list from the Cyberpunk TCG Sim or the official deck builder.</li>
+      <li><b>Decks:</b> in the Decks tab, choose <i>Import deck</i>. Drop the sim's deck image (its QR code is read on your device), or paste a deck export or link from the Cyberpunk TCG Sim or the official deck builder.</li>
       <li><b>Tier list:</b> drag decks from Unranked into tiers. Rename, recolor, add or remove tiers in the panel on the right.</li>
       <li><b>Deck pages:</b> add one with <i>+ Deck page</i> to show a deck's Legends, key cards and full list.</li>
       <li><b>Present</b> shows the slides full screen. Use ← → to move, Esc to exit.</li>
