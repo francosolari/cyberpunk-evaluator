@@ -8,7 +8,7 @@
 import { chromium, devices } from 'playwright';
 import { mkdirSync, existsSync, readFileSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SITE = process.argv[2] || 'https://francosolari.github.io/cyberpunk-evaluator/';
@@ -151,6 +151,15 @@ await page.click('[data-view=decks]');
 await page.evaluate((id) => { ui.deckId = id; renderDecks(); }, hero.id);
 await page.click('.alt-face').catch(() => {});
 await shot(page, '14-ui-deck-editor-alternate-legends');
+// Close-up for the story: the Legends with their alternate faces and the make-main / remove menu.
+const legBox = await page.evaluate(() => {
+  const els = [document.querySelector('.deck-edit .slots'), document.querySelector('.alt-menu') || document.querySelector('.slots.alts')].filter(Boolean);
+  const r = els.map((e) => e.getBoundingClientRect());
+  const x = Math.min(...r.map((b) => b.left)), y = Math.min(...r.map((b) => b.top));
+  return { x: x - 12, y: y - 12, width: Math.max(...r.map((b) => b.right)) - x + 24, height: Math.max(...r.map((b) => b.bottom)) - y + 24 };
+});
+await page.screenshot({ path: join(OUT, '14b-legend-alternates.png'), clip: legBox });
+shotsTaken.push('14b-legend-alternates');
 await page.click('#import-deck');
 await shot(page, '15-ui-import-scan-or-paste');
 await page.click('.modal [data-close]');
@@ -196,6 +205,18 @@ for (const [fromIdx, toIdx] of [[1, 0], [2, 1]]) {
 const video = vp.video();
 await vctx.close();
 if (video) { renameSync(await video.path(), join(OUT, '21-drag-demo.webm')); console.log('Drag video: 21-drag-demo.webm'); }
+
+/* ---------- Feature story: captioned 1080×1350 panels built from the screenshots ---------- */
+const STORY = join(dirname(OUT), 'story');
+mkdirSync(STORY, { recursive: true });
+const sp = await (await browser.newContext({ viewport: { width: 1160, height: 1400 } })).newPage();
+await sp.goto(pathToFileURL(join(here, 'story.html')).href + '?shots=' + encodeURIComponent(pathToFileURL(OUT).href));
+await sp.waitForFunction(() => [...document.images].every((i) => i.complete), null, { timeout: 30_000 }).catch(() => {});
+await sp.evaluate(() => document.fonts.ready);
+await sp.waitForTimeout(800);
+const panels = await sp.$$('.panel');
+for (const el of panels) await el.screenshot({ path: join(STORY, (await el.getAttribute('id')).slice(1) + '.png') });
+console.log(`Saved ${panels.length} story panels to ${STORY}`);
 
 await browser.close();
 console.log(`Saved ${shotsTaken.length} screenshots to ${OUT}`);

@@ -30,6 +30,13 @@ Tier List Studio builds Cyberpunk TCG presentation slides: meta tier lists and d
 - Import decks by scanning a deck image's QR code (read on your device; the image is never uploaded), or by pasting a text export or deck link.
 - Present full screen, export PNG, share a tier list as a link, and save or load a project file.
 
+## What you get
+
+1. **`promo/story/`: the feature story to share.** Ten 1080×1350 panels (portrait, sized for phones and social posts). Each one has a headline, a line of context and the screenshots that show the feature:
+   01 cover · 02 drag and drop tiers · 03 tile views · 04 full decklist · 05 Key / Core / Flex · 06 flexible Legends · 07 editing on the slide · 08 import by scanning · 09 on your phone · 10 present and share.
+   Open `promo/story.html` in a browser to see them all in a row. Edit its headlines and captions there, then rerun the script, or reload the page and screenshot it yourself.
+2. **`promo/shots/`: the raw screenshots** the story is built from, plus a short drag video. Use them for anything the story doesn't cover.
+
 ## Shot list
 
 The script names each file with its number. Slides are 1920×1080; interface shots are a 1600×1000 window or an iPhone 13.
@@ -50,6 +57,7 @@ The script names each file with its number. Slides are 1920×1080; interface sho
 | 12 | `12-ui-deck-page-editor.png` | The studio with a deck page open and its board below |
 | 13 | `13-ui-core-flex-board.png` | Core / Deck / Flex / Sideboard·Options board with a card picked up |
 | 14 | `14-ui-deck-editor-alternate-legends.png` | Deck editor: Legends with alternates, the make-main / remove menu, key cards |
+| 14b | `14b-legend-alternates.png` | Close-up of the Legends with their alternates (used in the story) |
 | 15 | `15-ui-import-scan-or-paste.png` | Import: scan a deck image or paste an export |
 | 16 | `16-ui-card-browser.png` | Card browser with art |
 | 17 | `17-ui-share-tier-list.png` | Share a tier list as a link |
@@ -63,7 +71,7 @@ Needs Node 18+ and network access to the site and its card images.
 ```sh
 npm i playwright
 npx playwright install chromium
-node promo/capture.mjs                                   # live site, saves to promo/shots/
+node promo/capture.mjs                                   # live site → promo/shots/ and promo/story/
 node promo/capture.mjs https://…/ ./my-shots             # another URL or folder
 ```
 
