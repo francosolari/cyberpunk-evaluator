@@ -12,9 +12,10 @@ const CARD_ASPECT = 0.716;          // card width / height
 const TILE_ASPECT = 0.74;           // deck tile width / height (art + caption)
 // Crop = the card's art window (top/bottom, % of card height) + focus point + extra zoom.
 // Layouts scale the card so only the art window is visible, so the rules text never shows.
-// Measured on the official card frame: the name bar covers the top ~21%, rules text starts near 62%.
-const DEFAULT_CROP = { top: 22, bottom: 62, x: 50, y: 40, zoom: 1 };
-const OLD_DEFAULT_CROPS = ['15/61'];
+// Card frame: name and subtitle lines sit in the top ~27% of the image (lower on some Legends),
+// rules text starts near 62%. The window keeps to the art between them.
+const DEFAULT_CROP = { top: 29, bottom: 62, x: 50, y: 42, zoom: 1 };
+const OLD_DEFAULT_CROPS = ['15/61', '22/62'];
 const COLORS = {
   R: { name: 'Red', hex: '#ff4655' },
   Y: { name: 'Yellow', hex: '#f7d046' },
