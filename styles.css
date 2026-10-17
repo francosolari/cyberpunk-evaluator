@@ -289,6 +289,9 @@ code { color: var(--accent); }
   #app { height: auto; }
   .view.active { flex-direction: column; }
   .panel, .inspector { width: 100%; border: none; border-bottom: 1px solid var(--line); }
-  .stage-wrap { min-height: 240px; }
+  .stage-wrap { flex: none; width: 100%; overflow: hidden; padding: 14px; }
+  .workspace { width: 100%; }
+  #view-slides .workspace { order: -1; }
+  .pool-wrap { max-height: none; }
   .deck-edit, .crop, .grid2 { grid-template-columns: 1fr; }
 }
