@@ -84,13 +84,13 @@ const hero = await page.evaluate((heroText) => {
     const inDeck = new Set(d.main.map(([id]) => id));
     d.options = allCards().filter((c) => !isLegend(c) && cols.has(c.color) && !inDeck.has(c.id)).slice(0, 4).map((c) => [c.id, 2]);
   }
-  // Alternate Legends: up to two same-color Legends for one slot, preferring ones other decks play.
+  // Alternate Legends: the deck's own (the YYR seed has Muamar for Viktor), else up to two same-color Legends.
   const main = legendsOf(d);
   const played = state.decks.flatMap((x) => x.legends);
   const pool = allCards().filter(isLegend).filter((c) => !main.includes(c.id))
     .sort((a, b) => played.filter((x) => x === b.id).length - played.filter((x) => x === a.id).length);
   const slot = main.find((id) => pool.some((c) => c.color === card(id)?.color)) || main[main.length - 1];
-  setAlts(d, slot, pool.filter((c) => c.color === card(slot)?.color).slice(0, 2).map((c) => c.id));
+  if (!allAlts(d).length) setAlts(d, slot, pool.filter((c) => c.color === card(slot)?.color).slice(0, 2).map((c) => c.id)); // only if the deck has none
   if (!d.notes) d.notes = 'Fast pressure with a flexible third Legend.';
   // Slides: tier list, deck page (names), deck page (full decklist).
   const deckSlide = (listStyle) => ({ id: uid(), type: 'deck', deckId: d.id, listStyle, name: 'Deck: ' + deckLabel(d) });
