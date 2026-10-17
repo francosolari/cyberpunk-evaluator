@@ -352,3 +352,13 @@ code { color: var(--accent); }
 .fd-card .role { position: absolute; right: -6px; bottom: 12px; font-size: 12px; padding: 4px 6px 3px; }
 .fd-card .role.flex { background: #07080c; }
 .fd-key { position: absolute; left: 50%; top: -11px; transform: translateX(-50%); font: 700 13px/1 "Chakra Petch", sans-serif; letter-spacing: .16em; text-transform: uppercase; color: #0a0b10; background: var(--accent); border-radius: 4px; padding: 4px 8px 3px; }
+
+/* Flex cards and options (cards outside the deck) */
+.fd-card.is-flex::after { content: ""; position: absolute; inset: -5px; border: 2px dashed var(--accent-2); border-radius: 13px; pointer-events: none; }
+.fd-card.is-option { opacity: .82; }
+.fd-card.is-option::after { content: ""; position: absolute; inset: -5px; border: 2px dashed #8b93a3; border-radius: 13px; pointer-events: none; }
+.fd-card.is-option .fd-n { color: var(--accent-2); border-color: var(--accent-2); }
+.fd-section.is-options { padding-left: 26px; border-left: 2px dashed #ffffff26; margin-left: -14px; }
+.fd-label i { font: 500 15px "Saira", sans-serif; letter-spacing: .02em; text-transform: none; color: #8b93a3; margin-left: 12px; }
+.fd-strip { position: absolute; display: flex; gap: 40px; }
+.fd-strip section.is-options { padding-right: 40px; border-right: 2px dashed #ffffff26; }
