@@ -74,6 +74,113 @@ function placeholderArt(name, color, kind) {
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 
+/* ---------------- sample decks ---------------- */
+// Real decks used to populate a fresh project once card data loads. The two starters are the
+// sim's public starter lists (as used by cyberpunk-tcg-tracker); entries may be card ids or names.
+const SAMPLE_DECKS = [
+  `# Name: Heist Tempo
+#L
+1x v_corporate_exile
+1x viktor_vektor_sit_down_and_relax
+1x jackie_welles_pour_one_out_for_me
+#D
+2x dexter_deshawn_one_last_chance
+2x heywood_ripperdoc
+2x offduty_malfini
+2x secondhand_bombus
+2x t_bug_amateur_philosopher
+3x kiroshi_optics
+3x mandibular_upgrade
+3x zetatech_faceplate
+2x afterparty_at_lizzie_s
+3x delamain_cab
+3x evelyn_parker_scheming_siren
+2x mt0d12_flathead
+2x psycho_squad
+2x dying_night_v_s_pistol
+2x tetratronic_rippler
+3x floor_it
+2x reboot_optics`,
+  `# Name: Arasaka Steel
+#L
+1x goro_takemura_hands_unclean
+1x yorinobu_arasaka_embracing_destruction
+1x saburo_arasaka_stubborn_patriarch
+#D
+2x chrome_fang
+2x minotaur
+3x ruthless_lowlife
+2x swordwise_huscle
+2x emergency_atlus
+2x field_operator
+2x goro_takemura_losing_his_way
+2x maxtac_av
+2x arasaka_emergency_radioport
+3x mantis_blades
+3x satori_sword_of_saburo
+2x industrial_assembly
+2x over_the_edge
+2x shattered_memories
+3x corpo_security
+3x sandevistan
+3x corporate_surveillance`,
+  `# Name: Geary Noble Safety
+#L
+1x Panam Palmer
+1x River Ward
+1x Muamar Reyes`,
+];
+const SAMPLE_NOTES = {
+  'Heist Tempo': 'Sample: the sim\'s public starter list.\nReplace with your own export any time.',
+  'Arasaka Steel': 'Sample: the sim\'s public starter list.',
+};
+
+/** Replaces the placeholder demo with real sample decks (and ranked meta trios, if reachable). */
+async function applySamples() {
+  if (!state.catalog || !state.decks.some(isDemoDeck)) return false;
+  const decks = SAMPLE_DECKS.map(parseDeckExport).filter((d) => d.legends.filter(Boolean).length === 3);
+  decks.forEach((d) => { d.notes = SAMPLE_NOTES[d.name] || ''; d.sample = true; });
+  try {
+    const r = await fetch(LEADERBOARD_URL, { credentials: 'omit' });
+    if (r.ok) {
+      for (const t of topTrios(await r.json(), 14)) {
+        if (decks.some((d) => d.legends.slice().sort().join('+') === t.key)) continue;
+        const d = newDeck({ legends: t.key.split('+'), notes: `${t.games} ranked games on the sim leaderboard`, sample: true });
+        if (d.legends.every(card)) { d.name = d.legends.map((id) => card(id).name.split(',')[0].split(' ')[0]).join(' · '); decks.push(d); }
+      }
+    }
+  } catch { /* leaderboard is optional */ }
+  if (!decks.length) return false;
+  const gone = new Set(state.decks.filter(isDemoDeck).map((d) => d.id));
+  state.decks = [...state.decks.filter((d) => !gone.has(d.id)), ...decks];
+  state.custom = state.custom.filter((c) => !c.demo);
+  rebuildIndex(); nameIndex = null;
+  // Spread the samples over the demo tier list so it opens fully populated.
+  const tierSlide = state.slides.find((x) => x.type === 'tier');
+  if (tierSlide) {
+    tierSlide.showNames = true;
+    const order = [...decks.slice(3), ...decks.slice(0, 3)]; // ranked trios first, starters lower
+    const sizes = [4, 5, 4];
+    let i = 0;
+    tierSlide.tiers.forEach((t, k) => { t.deckIds = order.slice(i, i + (sizes[k] ?? 4)).map((d) => d.id); i += sizes[k] ?? 4; });
+  }
+  state.slides = state.slides.filter((x) => x.type !== 'deck' || !gone.has(x.deckId));
+  const heist = decks.find((d) => d.name === 'Heist Tempo') || decks[0];
+  state.slides.push({ id: uid(), type: 'deck', name: 'Deck: ' + heist.name, deckId: heist.id });
+  save();
+  return true;
+}
+function topTrios(json, n) {
+  const trios = {};
+  for (const row of Array.isArray(json?.standings) ? json.standings : []) {
+    const ids = (row?.mostPlayedArchetype?.legends || []).map((l) => l?.id).filter((id) => typeof id === 'string');
+    if (ids.length !== 3) continue;
+    const key = [...new Set(ids)].sort().join('+');
+    trios[key] = (trios[key] || 0) + Math.max(1, row.mostPlayedArchetype.games || 1);
+  }
+  return Object.entries(trios).sort((a, b) => b[1] - a[1]).slice(0, n).map(([key, games]) => ({ key, games }));
+}
+
 /* ---------------- demo project ---------------- */
 function makeDemo() {
   const custom = [];
@@ -166,7 +273,7 @@ function parseCatalog(json, origin = SIM_ORIGIN) {
       color: colorCode(c.color),
       cost: Number.isFinite(c.cost) ? c.cost : null,
       ram: Number.isFinite(c.ram) ? c.ram : null,
-      img: path ? (/^https?:/.test(path) ? path : origin + path) : '',
+      img: !path ? '' : /^(https?:|data:)/.test(path) ? path : path.startsWith('/') ? origin + path : path,
       page: c.source?.card_page_url || '',
       codes,
     });
@@ -967,15 +1074,8 @@ function renderData() {
 }
 
 function addTrios(json) {
-  const trios = {};
-  for (const row of Array.isArray(json?.standings) ? json.standings : []) {
-    const ids = (row?.mostPlayedArchetype?.legends || []).map((l) => l?.id).filter((id) => typeof id === 'string');
-    if (ids.length !== 3) continue;
-    const key = [...new Set(ids)].sort().join('+');
-    trios[key] = (trios[key] || 0) + Math.max(1, row.mostPlayedArchetype.games || 1);
-  }
   const existing = new Set(state.decks.map((d) => d.legends.filter(Boolean).slice().sort().join('+')));
-  const top = Object.entries(trios).sort((a, b) => b[1] - a[1]).slice(0, 16).filter(([k]) => !existing.has(k));
+  const top = topTrios(json, 16).map((t) => [t.key, t.games]).filter(([k]) => !existing.has(k));
   for (const [k, games] of top) {
     const d = newDeck({ legends: k.split('+'), notes: `${games} ranked games on the leaderboard` });
     d.name = autoCode(d) || 'Ranked trio';
@@ -991,6 +1091,7 @@ function bindData() {
   const loaded = (json, from) => {
     try {
       const n = applyCatalog(json, from);
+      applySamples().then((did) => did && toast('Loaded sample decks with real cards.'));
       renderData(); updateBadge();
       $('#cat-status').textContent = `Loaded ${n} cards.`;
       toast(`Loaded ${n} cards.`);
@@ -1000,7 +1101,7 @@ function bindData() {
     const id = e.target.id;
     if (id === 'cat-fetch') {
       status('Loading…');
-      try { const n = await loadCatalogFromSim(); renderData(); updateBadge(); status(`Loaded ${n} cards.`); }
+      try { const n = await loadCatalogFromSim(); await applySamples(); renderData(); updateBadge(); status(`Loaded ${n} cards.`); }
       catch (err) { status(`Couldn't load (${err.message}). Use the save-as-file option below.`); }
     } else if (id === 'cat-paste-btn') $('#cat-paste').hidden = !$('#cat-paste').hidden;
     else if (id === 'meta-fetch') {
@@ -1160,6 +1261,7 @@ function bindGlobal() {
     rebuildIndex(); nameIndex = null;
     ui.slideId = state.slides[0].id; ui.deckId = state.decks[0].id;
     save(); render();
+    applySamples().then((did) => { if (did) { ui.slideId = state.slides[0].id; ui.deckId = state.decks[0].id; render(); } });
   };
 }
 
@@ -1170,4 +1272,19 @@ bindCards();
 bindData();
 render();
 // First run: try to pull real cards straight away (works when the sim allows cross-origin reads).
-if (!state.catalog) loadCatalogFromSim().then((n) => { toast(`Loaded ${n} cards from Cyberpunk TCG Sim.`); render(); }).catch(() => {});
+// First run: load card data (a bundled data/catalog.json when hosted with one, else the sim directly),
+// then swap the placeholder demo for real sample decks.
+(async () => {
+  if (!state.catalog) {
+    try {
+      const r = await fetch('data/catalog.json');
+      if (!r.ok) throw new Error();
+      applyCatalog(await r.json(), 'bundled snapshot of the Cyberpunk TCG Sim catalog');
+    } catch {
+      try { await loadCatalogFromSim(); } catch { return; }
+    }
+    toast(`Loaded ${state.catalog.cards.length} cards.`);
+  }
+  if (await applySamples()) { ui.slideId = state.slides[0]?.id; ui.deckId = state.decks[0]?.id; toast('Loaded sample decks with real cards.'); }
+  render();
+})();
