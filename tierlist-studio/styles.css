@@ -323,20 +323,27 @@ code { color: var(--accent); }
 .ds-breakdown.compact .ds-type-n { font-size: 34px; }
 .ds-breakdown.compact .ds-type-l { font-size: 13px; }
 
-/* ---------- Deck page: full decklist as card stacks ---------- */
-.dk-head { position: absolute; left: 70px; right: 70px; top: 46px; height: 140px; display: flex; align-items: center; justify-content: space-between; gap: 40px; }
-.dk-code { margin: 10px 0 0; font: 700 92px/.9 "Chakra Petch", sans-serif; }
-.dk-code span { font: 600 34px "Saira", sans-serif; color: #c9d0dc; margin-left: 14px; }
-.dk-head .ds-breakdown { width: 600px; }
-.dk-cols { position: absolute; left: 70px; right: 70px; top: 214px; bottom: 40px; display: flex; justify-content: center; gap: 30px; }
-.dk-col { flex: none; display: flex; flex-direction: column; gap: 10px; }
-.dk-label { height: 30px; font: 600 19px "Chakra Petch", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #9aa3b5; border-bottom: 3px solid var(--k); }
-.dk-label b { color: #eef1f6; }
-.dk-stack { position: relative; }
-.dk-card { position: absolute; left: 0; display: flex; border-radius: 12px; box-shadow: 0 -6px 18px #000000a8; }
-.dk-card .art { border-radius: 12px; }
-.dk-card.is-key { box-shadow: 0 0 0 4px var(--accent), 0 0 30px #f7d04666; }
-/* Badges hang off the card edges so they never cover the card's own name bar. */
-.dk-n { position: absolute; right: -12px; top: 6px; font: 700 24px/1 "Chakra Petch", sans-serif; background: #07080c; color: var(--accent); border: 2px solid var(--accent); border-radius: 6px; padding: 4px 8px 3px; }
-.dk-card .role { position: absolute; left: -12px; top: 8px; font-size: 12px; padding: 4px 6px 3px; }
-.dk-card .role.flex { background: #07080c; }
+/* ---------- Deck page: full decklist (modelled on the official deck builder's deck view) ---------- */
+.fd-head { position: absolute; left: 70px; right: 70px; top: 44px; height: 140px; display: flex; align-items: center; justify-content: space-between; gap: 40px; border-bottom: 1px solid #ffffff14; }
+.fd-title h1 { margin: 0; font: 700 76px/1 "Chakra Petch", sans-serif; letter-spacing: .01em; }
+.fd-meta { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
+.fd-code { font: 700 30px "Chakra Petch", sans-serif; color: #c9d0dc; letter-spacing: .04em; }
+.fd-head .ds-breakdown { width: 560px; flex: none; }
+.fd-label { white-space: nowrap; height: 44px; font: 700 22px "Chakra Petch", sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--accent-2); }
+.fd-label b { color: #eef1f6; font-weight: 600; margin-left: 4px; }
+.fd-legends, .fd-deck, .fd-side { position: absolute; }
+.fd-col { display: flex; flex-direction: column; gap: 14px; }
+.fd-rule { position: absolute; width: 1px; background: linear-gradient(#5ce1e655, #5ce1e600); }
+.fd-grid { display: grid; gap: 14px; }
+.fd-row { display: flex; gap: 12px; }
+.fd-card { position: relative; display: flex; border-radius: 10px; box-shadow: 0 10px 26px #000000a8, 0 3px 0 var(--k, transparent); }
+.fd-card .art { border-radius: 10px; }
+.fd-card.is-legend { box-shadow: 0 0 0 2px var(--k), 0 10px 30px #000000b0; }
+.fd-card.is-key { box-shadow: 0 0 0 3px var(--accent), 0 0 34px #f7d04670; }
+.fd-n { position: absolute; left: -6px; bottom: 10px; font: 700 34px/1 "Chakra Petch", sans-serif; color: var(--accent); background: #07080cf0; border: 2px solid var(--accent); border-radius: 6px; padding: 5px 10px 4px 8px; box-shadow: 0 4px 12px #000a; }
+.fd-n small { font-size: 22px; margin-right: 1px; }
+.fd-card.is-small .fd-n { font-size: 20px; padding: 3px 6px 2px 5px; bottom: 6px; }
+.fd-card.is-small .fd-n small { font-size: 14px; }
+.fd-card .role { position: absolute; right: -6px; bottom: 12px; font-size: 12px; padding: 4px 6px 3px; }
+.fd-card .role.flex { background: #07080c; }
+.fd-key { position: absolute; left: 50%; top: -11px; transform: translateX(-50%); font: 700 13px/1 "Chakra Petch", sans-serif; letter-spacing: .16em; text-transform: uppercase; color: #0a0b10; background: var(--accent); border-radius: 4px; padding: 4px 8px 3px; }

@@ -583,47 +583,59 @@ const deckEyebrow = (d) => {
   return `${tier ? `<span class="pill tier-pill" style="--t:${esc(tier.color)}">${esc(tier.name)}</span>` : ''}<span class="chips">${chips(deckColors(d), 'chip-lg')}</span>${d.main.length ? `<span class="ds-meta">${deckCount(d)} cards</span>` : ''}`;
 };
 
-/** Full decklist as cards: a Legends column, then a column per card type, cards overlapped so every
- * name bar shows and the last card of each column is fully visible (like a visual deck builder). */
+/** Full decklist as cards, modelled on the official deck builder's deck view: Legends in a column,
+ * the main deck as a grid of full cards (by type, then cost) with copy counts, sideboard along the bottom. */
 function deckStacksSlideHTML(s, d) {
   const groups = typeGroups(d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c));
-  const legends = d.legends.map(card).filter(Boolean).map((c) => [c, 0]);
-  const PEEK = 0.15; // visible share of each covered card: its name bar and cost
-  const W = 1780, H = 800, gap = 30;
-  // Try different maximum column lengths; keep the one that gives the largest cards.
-  let best = null;
-  for (let maxPer = 3; maxPer <= 12; maxPer++) {
-    const cols = [];
-    const push = (label, color, rows, count) => {
-      for (let i = 0; i < rows.length; i += maxPer) cols.push({ label: i ? '' : label, count: i ? '' : count, color, rows: rows.slice(i, i + maxPer) });
-    };
-    if (legends.length) push('Legends', '#eef1f6', legends, legends.length);
-    for (const g of groups) {
-      // Key card last so it shows in full; otherwise by cost.
-      const rows = g.rows.slice().sort((a, b) => isKey(d, a[0].id) - isKey(d, b[0].id));
-      push(g.label, g.color, rows, g.count);
-    }
-    const tallest = Math.max(...cols.map((c) => c.rows.length));
-    const h = Math.min((H - 40) / (1 + (tallest - 1) * PEEK), ((W - (cols.length - 1) * gap) / cols.length) / CARD_ASPECT);
-    if (!best || h > best.h) best = { h, cols };
+  const legends = d.legends.map(card).filter(Boolean);
+  const main = groups.flatMap((g) => g.rows.map((r) => [...r, g.color]));
+  const side = d.side.map(([id, n]) => [card(id), n]).filter(([c]) => c);
+  const X = 70, TOP = 214, BOTTOM = 1080 - 40, gap = 14, label = 44;
+  const sideH = side.length ? 190 : 0;
+  const bodyH = BOTTOM - TOP - sideH - label;
+  // Legends: stacked in one column running the full height (the sideboard sits under the deck grid).
+  const legH = BOTTOM - TOP - label;
+  const lh = legends.length ? Math.floor((legH - (legends.length - 1) * gap) / legends.length) : 0;
+  const lw = Math.floor(lh * CARD_ASPECT);
+  const deckX = X + (lw ? lw + 56 : 0);
+  const deckW = 1920 - X - deckX;
+  // Main deck: the column count that gives the biggest cards.
+  let best = { w: 0, cols: 1 };
+  for (let cols = 1; cols <= Math.max(1, main.length); cols++) {
+    const rows = Math.ceil(main.length / cols);
+    const w = Math.min((deckW - (cols - 1) * gap) / cols, ((bodyH - (rows - 1) * gap) / rows) * CARD_ASPECT);
+    if (w > best.w) best = { w, cols };
   }
-  const h = Math.floor(best.h), w = Math.floor(h * CARD_ASPECT), step = Math.round(h * PEEK);
-  const colHTML = (col) => `<div class="dk-col" style="width:${w}px">
-      <div class="dk-label" style="--k:${col.color}">${esc(col.label)}${col.count !== '' ? ` <b>${col.count}</b>` : ''}</div>
-      <div class="dk-stack" style="height:${h + step * (col.rows.length - 1)}px">${col.rows.map(([c, n], i) => `
-        <div class="dk-card ${isKey(d, c.id) ? 'is-key' : ''}" style="top:${i * step}px;width:${w}px;height:${h}px;z-index:${i + 1}">
-          ${artHTML(c, { full: true })}
-          ${roleTag(s, d, c.id)}${n ? `<span class="dk-n">${n}×</span>` : ''}
-        </div>`).join('')}</div>
-    </div>`;
-  return `<div class="stage deck-slide deck-stacks">
-    <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(d.legends[0]))}38, transparent)"></div><div class="glow g2"></div>
-    <header class="dk-head">
-      <div><div class="ds-eyebrow">${deckEyebrow(d)}</div>
-      <h1 class="dk-code">${esc(deckLabel(d))}${d.name && d.name !== deckLabel(d) ? ` <span>${esc(d.name)}</span>` : ''}</h1></div>
+  const w = Math.floor(best.w), h = Math.floor(w / CARD_ASPECT);
+  const gridH = Math.ceil(main.length / best.cols) * (h + gap) - gap;
+  const sideTop = Math.min(TOP + label + gridH + 28, BOTTOM - sideH + 10); // right under the grid
+  const sw = Math.floor((sideH - label - 6) * CARD_ASPECT);
+  const cardHTML = (c, n, width, height, extra = '', typeColor = '') => `<div class="fd-card ${isKey(d, c.id) ? 'is-key' : ''} ${extra}" style="width:${width}px;height:${height}px${typeColor ? `;--k:${typeColor}` : ''}">
+      ${artHTML(c, { full: true })}${n ? `<span class="fd-n"><small>×</small>${n}</span>` : ''}${roleTag(s, d, c.id)}${isKey(d, c.id) ? '<span class="fd-key">Key</span>' : ''}</div>`;
+  const total = deckCount(d);
+  return `<div class="stage deck-slide deck-full">
+    <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(legends[0])}38, transparent)"></div><div class="glow g2"></div>
+    <header class="fd-head">
+      <div class="fd-title">
+        <h1>${esc(d.name && d.name !== deckLabel(d) ? d.name : deckLabel(d))}</h1>
+        <div class="fd-meta">${(() => { const t = tierOf(d); return t ? `<span class="pill tier-pill" style="--t:${esc(t.color)}">${esc(t.name)}</span>` : ''; })()}
+          <span class="fd-code">${esc(deckLabel(d))}</span><span class="chips">${chips(deckColors(d), 'chip-lg')}</span>
+          <span class="ds-meta">${total} cards · ${legends.length} Legends${side.length ? ` · ${d.side.reduce((t, r) => t + r[1], 0)} side` : ''}</span></div>
+      </div>
       ${groups.length ? breakdownHTML(groups, 'compact') : ''}
     </header>
-    <div class="dk-cols">${best.cols.length ? best.cols.map(colHTML).join('') : '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}</div>
+    ${legends.length ? `<section class="fd-legends" style="left:${X}px;top:${TOP}px;width:${lw}px">
+      <div class="fd-label">Legends <b>${legends.length}</b></div>
+      <div class="fd-col">${legends.map((c) => cardHTML(c, 0, lw, lh, 'is-legend', hexOf(c))).join('')}</div></section>
+      <div class="fd-rule" style="left:${X + lw + 28}px;top:${TOP}px;height:${legH + label}px"></div>` : ''}
+    <section class="fd-deck" style="left:${deckX}px;top:${TOP}px;width:${deckW}px">
+      <div class="fd-label">Deck <b>${total}</b></div>
+      <div class="fd-grid" style="grid-template-columns:repeat(${best.cols}, ${w}px)">${main.map(([c, n, color]) => cardHTML(c, n, w, h, '', color)).join('')
+        || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}</div>
+    </section>
+    ${side.length ? `<section class="fd-side" style="left:${deckX}px;top:${sideTop}px">
+      <div class="fd-label">Sideboard <b>${d.side.reduce((t, r) => t + r[1], 0)}</b></div>
+      <div class="fd-row">${side.map(([c, n]) => cardHTML(c, n, sw, Math.floor(sw / CARD_ASPECT), 'is-small')).join('')}</div></section>` : ''}
   </div>`;
 }
 
