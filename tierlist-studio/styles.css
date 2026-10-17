@@ -678,3 +678,6 @@ details.more[open] > summary::before { content: "− "; }
 .help h3 + .help-steps, .help h3 + .help-list { margin-top: 4px; }
 .help h3:not(:first-child) { margin-top: 18px; }
 .deck-edit > div:nth-child(2) .previews .deck-tile { width: 170px; height: 230px; }
+
+/* Wordmark: one color, no highlighted word. */
+.brand span { color: inherit !important; font-weight: inherit; }
