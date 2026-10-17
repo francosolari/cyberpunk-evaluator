@@ -588,7 +588,6 @@ const deckEyebrow = (d) => {
 function deckStacksSlideHTML(s, d) {
   const groups = typeGroups(d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c));
   const legends = d.legends.map(card).filter(Boolean);
-  const main = groups.flatMap((g) => g.rows.map((r) => [...r, g.color]));
   const side = d.side.map(([id, n]) => [card(id), n]).filter(([c]) => c);
   const X = 70, TOP = 214, BOTTOM = 1080 - 40, gap = 14, label = 44;
   const sideH = side.length ? 190 : 0;
@@ -599,15 +598,26 @@ function deckStacksSlideHTML(s, d) {
   const lw = Math.floor(lh * CARD_ASPECT);
   const deckX = X + (lw ? lw + 56 : 0);
   const deckW = 1920 - X - deckX;
-  // Main deck: the column count that gives the biggest cards.
-  let best = { w: 0, cols: 1 };
-  for (let cols = 1; cols <= Math.max(1, main.length); cols++) {
-    const rows = Math.ceil(main.length / cols);
-    const w = Math.min((deckW - (cols - 1) * gap) / cols, ((bodyH - (rows - 1) * gap) / rows) * CARD_ASPECT);
-    if (w > best.w) best = { w, cols };
-  }
+  // Main deck: one section per type, side by side. Try every split of columns between the
+  // sections and keep the one that gives the biggest cards.
+  const SG = 40; // gap between sections
+  const counts = groups.map((g) => g.rows.length);
+  let best = { w: 0, cols: counts.map(() => 1) };
+  const tryCols = (cols) => {
+    const T = cols.reduce((a, b) => a + b, 0);
+    const maxRows = Math.max(...counts.map((n, i) => Math.ceil(n / cols[i])));
+    const byW = (deckW - (T - cols.length) * gap - (cols.length - 1) * SG) / T;
+    const byH = ((bodyH - (maxRows - 1) * gap) / maxRows) * CARD_ASPECT;
+    const w = Math.min(byW, byH);
+    if (w > best.w) best = { w, cols: cols.slice() };
+  };
+  const walk = (i, cols) => {
+    if (i === counts.length) return counts.length && tryCols(cols);
+    for (let c = 1; c <= counts[i]; c++) { cols[i] = c; walk(i + 1, cols); }
+  };
+  walk(0, []);
   const w = Math.floor(best.w), h = Math.floor(w / CARD_ASPECT);
-  const gridH = Math.ceil(main.length / best.cols) * (h + gap) - gap;
+  const gridH = Math.max(0, ...counts.map((n, i) => Math.ceil(n / best.cols[i]))) * (h + gap) - gap;
   const sideTop = Math.min(TOP + label + gridH + 28, BOTTOM - sideH + 10); // right under the grid
   const sw = Math.floor((sideH - label - 6) * CARD_ASPECT);
   const cardHTML = (c, n, width, height, extra = '', typeColor = '') => `<div class="fd-card ${isKey(d, c.id) ? 'is-key' : ''} ${extra}" style="width:${width}px;height:${height}px${typeColor ? `;--k:${typeColor}` : ''}">
@@ -628,11 +638,12 @@ function deckStacksSlideHTML(s, d) {
       <div class="fd-label">Legends <b>${legends.length}</b></div>
       <div class="fd-col">${legends.map((c) => cardHTML(c, 0, lw, lh, 'is-legend', hexOf(c))).join('')}</div></section>
       <div class="fd-rule" style="left:${X + lw + 28}px;top:${TOP}px;height:${legH + label}px"></div>` : ''}
-    <section class="fd-deck" style="left:${deckX}px;top:${TOP}px;width:${deckW}px">
-      <div class="fd-label">Deck <b>${total}</b></div>
-      <div class="fd-grid" style="grid-template-columns:repeat(${best.cols}, ${w}px)">${main.map(([c, n, color]) => cardHTML(c, n, w, h, '', color)).join('')
-        || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}</div>
-    </section>
+    <div class="fd-deck" style="left:${deckX}px;top:${TOP}px;width:${deckW}px">
+      ${groups.map((g, i) => `<section class="fd-section">
+        <div class="fd-label" style="--k:${g.color}">${esc(g.label)} <b>${g.count}</b></div>
+        <div class="fd-grid" style="grid-template-columns:repeat(${best.cols[i]}, ${w}px)">${g.rows.map(([c, n]) => cardHTML(c, n, w, h, '', g.color)).join('')}</div>
+      </section>`).join('') || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}
+    </div>
     ${side.length ? `<section class="fd-side" style="left:${deckX}px;top:${sideTop}px">
       <div class="fd-label">Sideboard <b>${d.side.reduce((t, r) => t + r[1], 0)}</b></div>
       <div class="fd-row">${side.map(([c, n]) => cardHTML(c, n, sw, Math.floor(sw / CARD_ASPECT), 'is-small')).join('')}</div></section>` : ''}
