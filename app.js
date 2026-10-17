@@ -480,7 +480,7 @@ function deckTileHTML(d, mode, { style = '', selectable = true, showName = false
   const label = deckLabel(d);
   const sel = selectable && ui.selectedDeck === d.id ? 'selected' : '';
   const sub = showName && d.name && d.name !== label ? d.name : d.subtitle;
-  return `<div class="deck-tile ${sel}" draggable="true" data-deck="${d.id}" title="${esc(d.name || label)}" style="${style}">
+  return `<div class="deck-tile ${sel}" draggable="false" data-deck="${d.id}" title="${esc(d.name || label)}" style="${style}">
     <div class="tile-art">${art}</div>
     <div class="tile-cap">
       <div class="segs">${cols.map((c) => `<span style="background:${COLORS[c].hex}"></span>`).join('') || '<span style="background:#8b93a3"></span>'}</div>
@@ -506,12 +506,15 @@ function fitTiles(n, w, h, gap) {
 /* ---------------- rendering: slides ---------------- */
 const TL = { x: 80, top: 236, bottom: 76, head: 290, rowGap: 14, pad: 14, tileGap: 14 };
 
+function tierGeom(s) {
+  const tableH = STAGE_H - TL.top - (s.footnote ? TL.bottom + 20 : TL.bottom - 20);
+  const rowH = (tableH - (s.tiers.length - 1) * TL.rowGap) / Math.max(1, s.tiers.length);
+  return { tableH, rowH, areaW: STAGE_W - TL.x * 2 - TL.head - TL.pad * 2, areaH: rowH - TL.pad * 2 };
+}
+const tileSize = (n, g) => { const w = Math.min(fitTiles(n, g.areaW, g.areaH, TL.tileGap), 250); return [w, Math.floor(w / TILE_ASPECT)]; };
 function tierSlideHTML(s, editing) {
   const tiers = s.tiers;
-  const tableH = STAGE_H - TL.top - (s.footnote ? TL.bottom + 20 : TL.bottom - 20);
-  const rowH = (tableH - (tiers.length - 1) * TL.rowGap) / Math.max(1, tiers.length);
-  const areaW = STAGE_W - TL.x * 2 - TL.head - TL.pad * 2;
-  const areaH = rowH - TL.pad * 2;
+  const { tableH, rowH, areaW, areaH } = tierGeom(s);
   const rows = tiers.map((t) => {
     const ds = t.deckIds.map(deck).filter(Boolean);
     const w = Math.min(fitTiles(ds.length, areaW, areaH, TL.tileGap), 250);
@@ -898,45 +901,151 @@ function bindSlides() {
     save(); renderSlides();
   });
 
-  // drag & drop, plus tap-to-move for touch screens
-  let dragId = null;
+  // Deck tiles: drag with mouse or finger (see enableDeckDrag). Tap selects a deck to edit its list.
   for (const z of [$('#stage-host'), $('#pool')]) {
-    z.addEventListener('dragstart', (e) => {
-      const t = e.target.closest('.deck-tile');
-      if (!t) return;
-      dragId = t.dataset.deck;
-      e.dataTransfer.setData('text/plain', dragId);
-      e.dataTransfer.effectAllowed = 'move';
-      t.classList.add('dragging');
-    });
-    z.addEventListener('dragend', () => { dragId = null; $$('.dragging, .drop-hover').forEach((x) => x.classList.remove('dragging', 'drop-hover')); });
-    z.addEventListener('dragover', (e) => {
-      const dz = e.target.closest('[data-drop]');
-      if (!dz || !dragId) return;
-      e.preventDefault();
-      $$('.drop-hover').forEach((x) => x !== dz && x.classList.remove('drop-hover'));
-      dz.classList.add('drop-hover');
-    });
-    z.addEventListener('drop', (e) => {
-      const dz = e.target.closest('[data-drop]');
-      if (!dz) return;
-      e.preventDefault();
-      const id = e.dataTransfer.getData('text/plain') || dragId;
-      const before = e.target.closest('.deck-tile')?.dataset.deck;
-      moveDeck(id, dz.dataset.drop, before !== id ? before : null);
-    });
     z.addEventListener('click', (e) => {
       const cardEl = e.target.closest('[data-card]');
       if (cardEl && slide()?.type === 'deck') { e.stopPropagation(); openCardMenu(deck(slide().deckId), cardEl.dataset.card, e.clientX, e.clientY, cardEl.dataset.zone); return; }
       const tile = e.target.closest('.deck-tile');
-      const dz = e.target.closest('[data-drop]') || e.target.closest('[data-tier]')?.querySelector('[data-drop]');
-      if (tile && (!ui.selectedDeck || ui.selectedDeck === tile.dataset.deck)) {
-        ui.selectedDeck = ui.selectedDeck === tile.dataset.deck ? null : tile.dataset.deck;
-        renderPool(); renderStage(); renderSlideBoard();
-      } else if (ui.selectedDeck && dz) moveDeck(ui.selectedDeck, dz.dataset.drop, tile?.dataset.deck);
+      if (!tile) return;
+      selectDeck(ui.selectedDeck === tile.dataset.deck ? null : tile.dataset.deck);
     });
   }
 }
+/** Selecting only toggles a class: rebuilding the slide would reload every card image. */
+function selectDeck(id) {
+  ui.selectedDeck = id;
+  $$('#stage-host .deck-tile, #pool .deck-tile').forEach((t) => t.classList.toggle('selected', t.dataset.deck === id));
+  syncStageCache();
+  renderSlideBoard();
+}
+/** After changing the slide's DOM in place, record its HTML so the next render doesn't rebuild it. */
+function syncStageCache() {
+  const s = slide();
+  if (s) $('#stage-host')._html = slideHTML(s, true);
+}
+/** Resize tiles in each tier row to fit their count (same rule as tierSlideHTML). */
+function relayoutTiers() {
+  const s = slide();
+  if (!s || s.type !== 'tier') return;
+  const g = tierGeom(s);
+  $$('#stage-host .tier-decks').forEach((row) => {
+    const tiles = $$('.deck-tile', row);
+    const [w, h] = tileSize(tiles.length, g);
+    tiles.forEach((t) => { t.style.width = w + 'px'; t.style.height = h + 'px'; });
+    row.querySelector('.drop-hint')?.remove();
+    if (!tiles.length) row.insertAdjacentHTML('beforeend', '<span class="drop-hint">Drop decks here</span>');
+  });
+}
+/** Writes tier order back from the DOM after a drag. */
+function commitTiersFromDom() {
+  const s = slide();
+  for (const t of s.tiers) {
+    const row = $(`#stage-host [data-drop="${t.id}"]`);
+    if (row) t.deckIds = $$('.deck-tile', row).map((x) => x.dataset.deck);
+  }
+  save();
+  syncStageCache();
+  $('#pool-count').textContent = (() => { const r = new Set(s.tiers.flatMap((t) => t.deckIds)); const n = state.decks.filter((d) => !r.has(d.id)).length; return n ? `(${n})` : ''; })();
+}
+
+/* Dragging deck tiles on a tier list: the tile follows the pointer and the other tiles slide
+ * aside to show where it will land. Mouse starts after a small move; touch after a short hold. */
+function enableDeckDrag() {
+  let st = null;
+  let lastDrop = 0;
+  const scale = () => $('#stage-host').getBoundingClientRect().width / STAGE_W;
+  // FLIP: record positions, change the DOM, then animate every tile from its old spot.
+  const flip = (change) => {
+    const tiles = $$('#stage-host .deck-tile, #pool .deck-tile').filter((t) => t !== st?.el);
+    const before = new Map(tiles.map((t) => [t, t.getBoundingClientRect()]));
+    change();
+    const k = scale() || 1;
+    for (const t of tiles) {
+      const a = before.get(t), b = t.getBoundingClientRect();
+      const dx = a.left - b.left, dy = a.top - b.top;
+      if (!dx && !dy) continue;
+      const inStage = !!t.closest('#stage-host');
+      t.style.transition = 'none';
+      t.style.transform = `translate(${inStage ? dx / k : dx}px, ${inStage ? dy / k : dy}px)`;
+      requestAnimationFrame(() => { t.style.transition = 'transform .18s ease'; t.style.transform = ''; });
+    }
+  };
+  const start = () => {
+    st.active = true;
+    clearTimeout(st.timer);
+    const r = st.el.getBoundingClientRect();
+    st.ghost = st.el.cloneNode(true);
+    st.ghost.classList.add('drag-ghost');
+    st.ghost.classList.remove('selected');
+    Object.assign(st.ghost.style, { width: r.width + 'px', height: r.height + 'px', transform: 'none' });
+    st.ox = st.x - r.left; st.oy = st.y - r.top;
+    document.body.appendChild(st.ghost);
+    st.el.classList.add('placeholder');
+    document.body.classList.add('dragging-deck');
+    navigator.vibrate?.(8);
+    move(st.x, st.y);
+  };
+  const move = (x, y) => {
+    st.ghost.style.left = x - st.ox + 'px';
+    st.ghost.style.top = y - st.oy + 'px';
+    const under = document.elementFromPoint(x, y);
+    const row = under?.closest('#stage-host [data-drop]') || under?.closest('#stage-host .tier-row')?.querySelector('[data-drop]');
+    const pool = !row && under?.closest('.pool-wrap');
+    $$('.drop-hover').forEach((z) => z !== row && z !== $('#pool') && z.classList.remove('drop-hover'));
+    if (pool) {
+      $('#pool').classList.add('drop-hover');
+      if (!st.el.closest('#pool')) flip(() => { st.el.style.width = st.el.style.height = ''; ($('#pool .pgroup') || $('#pool')).prepend(st.el); relayoutTiers(); });
+      return;
+    }
+    $('#pool').classList.remove('drop-hover');
+    if (!row) return;
+    row.classList.add('drop-hover');
+    // Insert before the first tile whose center is past the pointer (reading order).
+    const others = $$('.deck-tile', row).filter((t) => t !== st.el);
+    const before = others.find((t) => { const b = t.getBoundingClientRect(); return y < b.top + b.height / 2 ? x < b.right || y < b.top : false; })
+      || others.find((t) => { const b = t.getBoundingClientRect(); return y < b.bottom && x < b.left + b.width / 2; });
+    if (st.el.parentElement === row && (before ? st.el.nextElementSibling === before : st.el === row.lastElementChild)) return;
+    flip(() => { row.insertBefore(st.el, before || null); relayoutTiers(); });
+  };
+  const end = () => {
+    if (!st) return;
+    clearTimeout(st.timer);
+    if (st.active) {
+      st.ghost.remove();
+      st.el.classList.remove('placeholder');
+      document.body.classList.remove('dragging-deck');
+      $$('.drop-hover').forEach((z) => z.classList.remove('drop-hover'));
+      commitTiersFromDom();
+      lastDrop = Date.now();
+    }
+    st = null;
+  };
+  document.addEventListener('pointerdown', (e) => {
+    if (e.button > 0) return;
+    const el = e.target.closest('#stage-host .tier-slide .deck-tile, #pool .deck-tile');
+    if (!el || slide()?.type !== 'tier') return;
+    st = { el, x: e.clientX, y: e.clientY, touch: e.pointerType === 'touch', active: false };
+    if (st.touch) st.timer = setTimeout(() => st && start(), 200);
+  });
+  document.addEventListener('pointermove', (e) => {
+    if (!st) return;
+    const far = Math.hypot(e.clientX - st.x, e.clientY - st.y) > 6;
+    if (!st.active) {
+      if (st.touch) { if (far) { clearTimeout(st.timer); st = null; } return; } // swipe = scroll
+      if (!far) return;
+      start();
+    }
+    e.preventDefault();
+    move(e.clientX, e.clientY);
+  });
+  document.addEventListener('pointerup', end);
+  document.addEventListener('pointercancel', end);
+  document.addEventListener('touchmove', (e) => { if (st?.active) e.preventDefault(); }, { passive: false });
+  document.addEventListener('contextmenu', (e) => { if (st) e.preventDefault(); });
+  document.addEventListener('click', (e) => { if (Date.now() - lastDrop < 350) { e.stopPropagation(); e.preventDefault(); } }, true);
+}
+
 /* Tap a card on a deck slide (in the editor) for quick changes. */
 function openCardMenu(d, id, x, y, zone = zoneOf(d, id)) {
   closeCardMenu();
@@ -1618,7 +1727,7 @@ function enableTouchDrag() {
   };
   document.addEventListener('pointerdown', (e) => {
     if (e.pointerType !== 'touch' || e.target.closest('button')) return;
-    const el = e.target.closest('.bcard, #stage-host .deck-tile, #pool .deck-tile');
+    const el = e.target.closest('.bcard');
     if (!el) return;
     const kind = el.matches('.bcard') ? 'card' : 'deck';
     st = { el, kind, x: e.clientX, y: e.clientY, active: false };
@@ -1768,7 +1877,7 @@ function bindGlobal() {
       else if (['ArrowLeft', 'PageUp'].includes(e.key)) stepPresent(-1);
       return;
     }
-    if (e.key === 'Escape') { if (!$('#modal').hidden) closeModal(); else if (ui.selectedDeck) { ui.selectedDeck = null; render(); } }
+    if (e.key === 'Escape') { if (!$('#modal').hidden) closeModal(); else if (ui.selectedDeck) selectDeck(null); }
   });
   document.addEventListener('fullscreenchange', () => { if (!$('#present').hidden) drawPresent(); });
   // Resizing only rescales the slide. On phones, scrolling shows/hides the address bar, which fires
@@ -1820,6 +1929,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCardM
 bindQuickAdd(refreshBoards);
 bindBoards();
 enableTouchDrag();
+enableDeckDrag();
 bindGlobal();
 bindSlides();
 bindDecks();
