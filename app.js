@@ -558,13 +558,19 @@ function deckSlideHTML(s) {
   const groups = typeGroups(rows);
   const total = rows.reduce((t, [, n]) => t + n, 0);
   // Compact rows when the grouped list wouldn't fit under the notes and breakdown.
-  const lines = groups.reduce((t, g) => t + Math.ceil(g.rows.length / 2), 0);
-  const many = lines * 66 + groups.length * 48 > (d.notes ? 640 : 770);
+  const extras = extraRows(d, s);
+  const lines = groups.reduce((t, g) => t + Math.ceil(g.rows.length / 2), 0) + Math.ceil(extras.length / 2);
+  const many = lines * 66 + (groups.length + (extras.length ? 1 : 0)) * 48 > (d.notes ? 640 : 770);
   const rowHTML = ([c, n]) => `<div data-card="${c.id}" data-zone="${d.roles?.[c.id] || 'deck'}" class="ds-row ${isKey(d, c.id) ? 'is-key' : ''}" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
       ${artHTML(c, { cls: 'ds-row-art' })}
       <span class="ds-cost">${c.cost ?? '·'}</span><span class="ds-name">${esc(c.name)}</span>${roleTag(s, d, c.id)}<span class="ds-n">${n}×</span>
     </div>`;
-  const list = groups.map((g) => `<div class="ds-group"><span>${esc(g.label)}</span><b>${g.count}</b></div>${g.rows.map(rowHTML).join('')}`).join('');
+  const extraHTML = ([c, n, zone]) => `<div data-card="${c.id}" data-zone="${zone}" class="ds-row is-extra" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
+      ${artHTML(c, { cls: 'ds-row-art' })}
+      <span class="ds-cost">${c.cost ?? '·'}</span><span class="ds-name">${esc(c.name)}</span><span class="ds-n">${n}×</span>
+    </div>`;
+  const list = groups.map((g) => `<div class="ds-group"><span>${esc(g.label)}</span><b>${g.count}</b></div>${g.rows.map(rowHTML).join('')}`).join('') +
+    (extras.length ? `<div class="ds-group extra"><span>${EXTRA_LABEL}</span><b>${extras.reduce((t, r) => t + r[1], 0)}</b></div>${extras.map(extraHTML).join('')}` : '');
   const breakdown = total ? breakdownHTML(groups) : '';
   return `<div class="stage deck-slide">
     <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(legendsOf(d)[0]))}38, transparent)"></div><div class="glow g2"></div>
@@ -584,6 +590,13 @@ function deckSlideHTML(s) {
 }
 
 const ROLES = ['', 'core', 'flex'];
+/** Sideboard and options shown together as one "Sideboard / Options" section. Rows: [card, n, zone]. */
+function extraRows(d, s = {}) {
+  if (s.showOptions === false) return [];
+  const rows = [...(d.side || []).map(([id, n]) => [card(id), n, 'side']), ...(d.options || []).map(([id, n]) => [card(id), n, 'options'])].filter(([c]) => c);
+  return rows.sort((a, b) => (a[0].cost ?? 99) - (b[0].cost ?? 99) || a[0].name.localeCompare(b[0].name));
+}
+const EXTRA_LABEL = 'Sideboard / Options';
 const roleTag = (s, d, id) => (s.showRoles !== false && d.roles?.[id] ? `<span class="role ${d.roles[id]}">${d.roles[id]}</span>` : '');
 const breakdownHTML = (groups, cls = '') => `<div class="ds-breakdown ${cls}">${groups.map((g) => `<div class="ds-type" style="flex-grow:${g.count};--k:${g.color}">
   <div class="ds-type-n">${g.count}</div><div class="ds-type-l">${esc(g.label)}</div></div>`).join('')}</div>`;
@@ -597,25 +610,14 @@ const deckEyebrow = (d) => {
  * Sections are card types (Core cards first, Flex last) or, with groupBy 'role', Core / Flex / Options. */
 function deckStacksSlideHTML(s, d) {
   const rowsOf = (list) => (list || []).map(([id, n]) => [card(id), n]).filter(([c]) => c);
-  const mainRows = rowsOf(d.main), optRows = s.showOptions === false ? [] : rowsOf(d.options), side = rowsOf(d.side);
+  const mainRows = rowsOf(d.main);
   const typeSecs = typeGroups(mainRows);
   const roleOf = (c) => d.roles?.[c.id] || '';
+  // Always split by card type; within a type, Core cards first and Flex cards last.
   const byRole = (rows) => rows.slice().sort((a, b) => ({ core: 0, '': 1, flex: 2 }[roleOf(a[0])]) - ({ core: 0, '': 1, flex: 2 }[roleOf(b[0])]));
-  const ordered = (rows) => typeGroups(rows).flatMap((g) => g.rows); // by type, then cost
-  let sections, strip;
-  if (s.groupBy === 'role') {
-    const core = mainRows.filter(([c]) => roleOf(c) !== 'flex'), flex = mainRows.filter(([c]) => roleOf(c) === 'flex');
-    const anyCore = mainRows.some(([c]) => roleOf(c) === 'core');
-    sections = [
-      { label: anyCore ? 'Core' : 'Deck', color: TYPE_INK, rows: ordered(core) },
-      { label: 'Flex', color: TYPE_INK, rows: ordered(flex) },
-      { label: 'Options', color: TYPE_INK, rows: ordered(optRows), option: true, note: 'not in the deck' },
-    ].filter((x) => x.rows.length);
-    strip = side.length ? [{ label: 'Sideboard', rows: side }] : [];
-  } else {
-    sections = typeSecs.map((g) => ({ ...g, rows: byRole(g.rows) }));
-    strip = [...(optRows.length ? [{ label: 'Options', rows: ordered(optRows), option: true, note: 'not in the deck' }] : []), ...(side.length ? [{ label: 'Sideboard', rows: side }] : [])];
-  }
+  const sections = typeSecs.map((g) => ({ ...g, rows: byRole(g.rows) }));
+  const extras = extraRows(d, s);
+  const strip = extras.length ? [{ label: EXTRA_LABEL, rows: extras }] : [];
   sections.forEach((x) => (x.count = x.rows.reduce((t, r) => t + r[1], 0)));
   const legends = legendsOf(d).map(card).filter(Boolean);
   const X = 70, TOP = 214, BOTTOM = 1080 - 40, gap = 14, label = 44;
@@ -626,7 +628,7 @@ function deckStacksSlideHTML(s, d) {
   const lh = legends.length ? Math.floor((legH - (legends.length - 1) * gap) / legends.length) : 0;
   const lw = Math.floor(lh * CARD_ASPECT);
   const deckX = X + (lw ? lw + 56 : 0);
-  const deckW = 1920 - X - deckX - (sections.some((x) => x.option) ? 12 : 0); // the options divider takes a little room
+  const deckW = 1920 - X - deckX;
   // Sections side by side. Try every split of columns between them; keep the biggest cards.
   const SG = 40; // gap between sections
   const counts = sections.map((g) => g.rows.length);
@@ -648,10 +650,9 @@ function deckStacksSlideHTML(s, d) {
   const gridH = Math.max(0, ...counts.map((n, i) => Math.ceil(n / best.cols[i]))) * (h + gap) - gap;
   const stripTop = Math.min(TOP + label + gridH + 28, BOTTOM - stripH + 10); // right under the grid
   const sw = Math.floor((stripH - label - 6) * CARD_ASPECT);
-  const cardHTML = (c, n, width, height, extra = '', typeColor = '', option = false, zone = option ? 'options' : d.roles?.[c.id] || 'deck') => `<div ${n ? `data-card="${c.id}" data-zone="${zone}"` : ''} class="fd-card ${isKey(d, c.id) ? 'is-key' : ''} ${!option && roleOf(c) === 'flex' ? 'is-flex' : ''} ${option ? 'is-option' : ''} ${extra}" style="width:${width}px;height:${height}px${typeColor ? `;--k:${typeColor}` : ''}">
-      ${artHTML(c, { full: true })}${n ? `<span class="fd-n">${option ? '<small>+</small>' : '<small>×</small>'}${n}</span>` : ''}${option ? '' : roleTag(s, d, c.id)}${isKey(d, c.id) ? '<span class="fd-key">Key</span>' : ''}</div>`;
+  const cardHTML = (c, n, width, height, extra = '', typeColor = '', option = false, zone = d.roles?.[c.id] || 'deck') => `<div ${n ? `data-card="${c.id}" data-zone="${zone}"` : ''} class="fd-card ${MAIN_ZONES.includes(zone) && isKey(d, c.id) ? 'is-key' : ''} ${MAIN_ZONES.includes(zone) && roleOf(c) === 'flex' ? 'is-flex' : ''} ${extra}" style="width:${width}px;height:${height}px${typeColor ? `;--k:${typeColor}` : ''}">
+      ${artHTML(c, { full: true })}${n ? `<span class="fd-n"><small>×</small>${n}</span>` : ''}${n && MAIN_ZONES.includes(zone) ? roleTag(s, d, c.id) : ''}${n && MAIN_ZONES.includes(zone) && isKey(d, c.id) ? '<span class="fd-key">Key</span>' : ''}</div>`;
   const total = deckCount(d);
-  const optCount = optRows.reduce((t, r) => t + r[1], 0);
   return `<div class="stage deck-slide deck-full">
     <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(legends[0])}38, transparent)"></div><div class="glow g2"></div>
     <header class="fd-head">
@@ -659,7 +660,7 @@ function deckStacksSlideHTML(s, d) {
         <h1>${esc(d.name && d.name !== deckLabel(d) ? d.name : deckLabel(d))}</h1>
         <div class="fd-meta">${(() => { const t = tierOf(d); return t ? `<span class="pill tier-pill" style="--t:${esc(t.color)}">${esc(t.name)}</span>` : ''; })()}
           <span class="fd-code">${esc(deckLabel(d))}</span><span class="chips">${chips(deckColors(d), 'chip-lg')}</span>
-          <span class="ds-meta">${total} cards · ${legends.length} Legends${optCount ? ` · +${optCount} options` : ''}${side.length ? ` · ${d.side.reduce((t, r) => t + r[1], 0)} side` : ''}</span></div>
+          <span class="ds-meta">${total} cards · ${legends.length} Legends${extras.length ? ` · ${extras.reduce((t, r) => t + r[1], 0)} sideboard / options` : ''}</span></div>
       </div>
       ${typeSecs.length ? breakdownHTML(typeSecs, 'compact') : ''}
     </header>
@@ -668,14 +669,14 @@ function deckStacksSlideHTML(s, d) {
       <div class="fd-col">${legends.map((c) => cardHTML(c, 0, lw, lh, 'is-legend', hexOf(c))).join('')}</div></section>
       <div class="fd-rule" style="left:${X + lw + 28}px;top:${TOP}px;height:${legH + label}px"></div>` : ''}
     <div class="fd-deck" style="left:${deckX}px;top:${TOP}px;width:${deckW}px">
-      ${sections.map((g, i) => `<section class="fd-section ${g.option ? 'is-options' : ''}">
-        <div class="fd-label" style="--k:${g.color}">${esc(g.label)} <b>${g.option ? '+' : ''}${g.count}</b>${g.note ? `<i>${g.note}</i>` : ''}</div>
-        <div class="fd-grid" style="grid-template-columns:repeat(${best.cols[i]}, ${w}px)">${g.rows.map(([c, n]) => cardHTML(c, n, w, h, '', '', g.option)).join('')}</div>
+      ${sections.map((g, i) => `<section class="fd-section">
+        <div class="fd-label" style="--k:${g.color}">${esc(g.label)} <b>${g.count}</b></div>
+        <div class="fd-grid" style="grid-template-columns:repeat(${best.cols[i]}, ${w}px)">${g.rows.map(([c, n]) => cardHTML(c, n, w, h)).join('')}</div>
       </section>`).join('') || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}
     </div>
-    ${strip.length ? `<div class="fd-strip" style="left:${deckX}px;top:${stripTop}px">${strip.map((x) => `<section class="${x.option ? 'is-options' : ''}">
-      <div class="fd-label">${x.label} <b>${x.option ? '+' : ''}${x.rows.reduce((t, r) => t + r[1], 0)}</b>${x.note ? `<i>${x.note}</i>` : ''}</div>
-      <div class="fd-row">${x.rows.map(([c, n]) => cardHTML(c, n, sw, Math.floor(sw / CARD_ASPECT), 'is-small', '', x.option, x.option ? 'options' : 'side')).join('')}</div></section>`).join('')}</div>` : ''}
+    ${strip.length ? `<div class="fd-strip" style="left:${deckX}px;top:${stripTop}px">${strip.map((x) => `<section>
+      <div class="fd-label">${x.label} <b>${x.rows.reduce((t, r) => t + r[1], 0)}</b></div>
+      <div class="fd-row">${x.rows.map(([c, n, zone]) => cardHTML(c, n, sw, Math.floor(sw / CARD_ASPECT), 'is-small', '', false, zone)).join('')}</div></section>`).join('')}</div>` : ''}
   </div>`;
 }
 
@@ -758,10 +759,8 @@ function renderSlideInspector() {
       <label>Deck</label><select data-s="deckId">${state.decks.map((d) => `<option value="${d.id}" ${d.id === s.deckId ? 'selected' : ''}>${esc(deckLabel(d))}${d.name && d.name !== deckLabel(d) ? ' — ' + esc(d.name) : ''}</option>`).join('')}</select>
       <label>Decklist shows</label>
       <select data-s="listStyle">${[['list', 'Names'], ['cards', 'Full decklist (cards)']].map(([k, v]) => `<option value="${k}" ${(s.listStyle === 'cards' ? 'cards' : 'list') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
-      <label>Full decklist sections</label>
-      <select data-s="groupBy"><option value="type" ${s.groupBy !== 'role' ? 'selected' : ''}>By type (Core first, Flex last)</option><option value="role" ${s.groupBy === 'role' ? 'selected' : ''}>Core / Flex / Options</option></select>
       <label class="check"><input type="checkbox" data-s="showRoles" ${s.showRoles !== false ? 'checked' : ''}> Show Core / Flex tags</label>
-      <label class="check"><input type="checkbox" data-s="showOptions" ${s.showOptions !== false ? 'checked' : ''}> Show options (cards outside the deck)</label>
+      <label class="check"><input type="checkbox" data-s="showOptions" ${s.showOptions !== false ? 'checked' : ''}> Show sideboard / options</label>
       <p class="hint">Mark cards as Core or Flex, and pick up to 3 key cards, in the deck editor.</p>
       ${deck(s.deckId) ? `<label>Quick add</label>${quickAddHTML(deck(s.deckId))}<p class="hint">Tap any card on the slide to move it between Core, Flex and Options, star it, or change its count.</p>` : ''}
       <button data-edit-deck="${s.deckId}" class="block">Edit this deck</button>`;
@@ -938,7 +937,7 @@ function openCardMenu(d, id, x, y, zone = zoneOf(d, id)) {
   const m = document.createElement('div');
   m.className = 'card-menu';
   m.innerHTML = `<div class="cm-title" style="--c:${hexOf(c)}">${esc(c?.name || id)}</div>
-    <div class="cm-zones">${ZONES.map(([z, label]) => `<button data-cm-zone="${z}" class="${zone === z ? 'on' : ''}">${label}</button>`).join('')}</div>
+    <div class="cm-zones">${ZONES.map(([z, label]) => `<button data-cm-zone="${z}" class="${(zone === 'options' ? 'side' : zone) === z ? 'on' : ''}">${z === 'side' ? 'Side / Opt' : label}</button>`).join('')}</div>
     <div class="cm-row"><button data-cm-bump="-1" aria-label="One fewer">−</button><b>${zone === 'options' ? '+' : '×'}${n}</b><button data-cm-bump="1" aria-label="One more">+</button>
       <button data-cm-key class="${isKey(d, id) ? 'on' : ''}">★ Key</button><button data-cm-remove class="danger">Remove</button></div>`;
   document.body.appendChild(m);
@@ -1059,7 +1058,7 @@ function renderDecks() {
       <div class="previews">${Object.entries(DISPLAY_MODES).map(([k, v]) => `<figure>${deckTileHTML({ ...d, display: k }, k, { selectable: false, showName: true })}<figcaption>${v}</figcaption></figure>`).join('')}</div>
     </div>
     <div class="dl-full">
-      <h3>Decklist <span class="hint">${deckCount(d)} in the deck${(d.options || []).length ? ` · +${d.options.reduce((t, r) => t + r[1], 0)} options` : ''}${d.side.length ? ` · ${d.side.reduce((n, r) => n + r[1], 0)} side` : ''}</span></h3>
+      <h3>Decklist <span class="hint">${deckCount(d)} in the deck${extraRows(d).length ? ` · ${extraRows(d).reduce((t, r) => t + r[1], 0)} sideboard / options` : ''}</span></h3>
       ${d.unmatched?.length ? `<div class="callout warn">${d.unmatched.length} line(s) didn't match a card${state.catalog ? '' : ' (load the card data first)'}: ${d.unmatched.map((u) => esc(u.name)).join(', ')}</div>` : ''}
       ${quickAddHTML(d)}
       ${boardHTML(d)}
@@ -1094,7 +1093,7 @@ function setRole(d, id, zone) {
 }
 /** Moves a card (all its copies in `from`) to another zone. */
 function moveCard(d, id, to, from = zoneOf(d, id)) {
-  if (from === to) return;
+  if (from === to || (from === 'options' && to === 'side')) return; // same visual section
   if (MAIN_ZONES.includes(from) && MAIN_ZONES.includes(to)) return setRole(d, id, to);
   const row = takeRow(listOf(d, from), id);
   if (!row) return;
@@ -1136,7 +1135,7 @@ function toggleKey(d, id) {
 function quickAddHTML(d) {
   return `<div class="qa" data-qa-deck="${d.id}">
     <input class="qa-input" type="search" placeholder="Quick add a card…" autocomplete="off" aria-label="Quick add a card">
-    <select class="qa-zone" aria-label="Add to"><option value="deck">to Deck</option><option value="core">to Core</option><option value="flex">to Flex</option><option value="side">to Sideboard</option><option value="options">to Options</option></select>
+    <select class="qa-zone" aria-label="Add to"><option value="deck">to Deck</option><option value="core">to Core</option><option value="flex">to Flex</option><option value="side">to Sideboard / Options</option></select>
     <div class="qa-results" hidden></div>
   </div>`;
 }
@@ -1169,17 +1168,19 @@ function bindQuickAdd(onChange) {
   });
 }
 
-const ZONES = [['core', 'Core', 'always in the list'], ['deck', 'Deck', 'untagged'], ['flex', 'Flex', 'slots that change'], ['side', 'Sideboard', 'registered, up to 7'], ['options', 'Options', 'not registered']];
+// Sideboard and options share one column ('side'); each card keeps its own list underneath so
+// exports still contain only the real sideboard.
+const ZONES = [['core', 'Core', 'always in the list'], ['deck', 'Deck', 'untagged'], ['flex', 'Flex', 'slots that change'], ['side', 'Sideboard / Options', 'outside the main deck']];
 let boardPick = null; // tap-to-move on touch screens: the card picked up, then tap a column
 function boardHTML(d) {
-  const rowsIn = (zone) => (MAIN_ZONES.includes(zone) ? d.main.filter(([id]) => (d.roles?.[id] || 'deck') === zone) : listOf(d, zone))
-    .map(([id, n]) => [card(id), n, id]).sort((a, b) => (a[0]?.cost ?? 99) - (b[0]?.cost ?? 99) || (a[0]?.name || '').localeCompare(b[0]?.name || ''));
+  const rowsIn = (zone) => (MAIN_ZONES.includes(zone) ? d.main.filter(([id]) => (d.roles?.[id] || 'deck') === zone).map(([id, n]) => [card(id), n, id, zone])
+    : [...(d.side || []).map(([id, n]) => [card(id), n, id, 'side']), ...(d.options || []).map(([id, n]) => [card(id), n, id, 'options'])]).sort((a, b) => (a[0]?.cost ?? 99) - (b[0]?.cost ?? 99) || (a[0]?.name || '').localeCompare(b[0]?.name || ''));
   return `<div class="board" data-board-deck="${d.id}">${ZONES.map(([zone, label, hint]) => {
     const rows = rowsIn(zone);
     const n = rows.reduce((t, r) => t + r[1], 0);
     return `<div class="bcol ${zone}" data-zone="${zone}">
-      <div class="bhead"><b>${label}</b> <span class="${zone === 'side' && n > 7 ? 'over-limit' : ''}">${zone === 'options' && n ? '+' : ''}${n}${zone === 'side' && n > 7 ? ' / 7' : ''}</span><small>${hint}</small></div>
-      ${rows.map(([c, n, id]) => `<div class="bcard ${boardPick?.card === id && boardPick?.zone === zone ? 'picked' : ''}" draggable="true" data-card="${id}" data-zone="${zone}" style="--c:${hexOf(c)}">
+      <div class="bhead"><b>${label}</b> <span>${n}</span><small>${hint}</small></div>
+      ${rows.map(([c, n, id, cz]) => `<div class="bcard ${boardPick?.card === id && boardPick?.zone === cz ? 'picked' : ''}" draggable="true" data-card="${id}" data-zone="${cz}" style="--c:${hexOf(c)}">
         <span class="ds-cost">${c?.cost ?? '·'}</span><span class="nm">${esc(c?.name || id)}</span>
         <span class="bq"><button class="small" data-bump="-1" aria-label="One fewer">−</button><b>${n}</b><button class="small" data-bump="1" aria-label="One more">+</button></span>
         ${MAIN_ZONES.includes(zone) ? `<button class="small key ${isKey(d, id) ? 'on' : ''}" data-key aria-label="Key card">★</button>` : ''}
@@ -1243,7 +1244,7 @@ function renderSlideBoard() {
   wrap.hidden = !d;
   if (!d) return;
   const tip = s.type === 'tier' ? 'Tap a tier to move this deck, or edit its list here.' : 'Changes show on the slide right away.';
-  wrap.innerHTML = `<div class="pool-head"><h3>${esc(deckLabel(d))} decklist</h3><span class="hint">${esc(d.name && d.name !== deckLabel(d) ? d.name + ' · ' : '')}${deckCount(d)} in the deck${(d.options || []).length ? ` · +${d.options.reduce((t, r) => t + r[1], 0)} options` : ''}. ${tip}</span></div>
+  wrap.innerHTML = `<div class="pool-head"><h3>${esc(deckLabel(d))} decklist</h3><span class="hint">${esc(d.name && d.name !== deckLabel(d) ? d.name + ' · ' : '')}${deckCount(d)} in the deck${extraRows(d).length ? ` · ${extraRows(d).reduce((t, r) => t + r[1], 0)} sideboard / options` : ''}. ${tip}</span></div>
     ${quickAddHTML(d)}${boardHTML(d)}`;
 }
 
