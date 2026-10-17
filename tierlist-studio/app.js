@@ -1551,7 +1551,11 @@ function openImport(target = null) {
       or the <b>official deck builder's</b> text list. Paste several decks at once by separating them with a line of <code>---</code>.</p>
     ${state.catalog ? '' : '<div class="callout warn">Card data isn\'t loaded yet, so card names can\'t be matched to art. Load it in the <b>Card Data</b> tab first.</div>'}
     <textarea id="imp-text" rows="12" placeholder="# Name: Geary Noble Safety&#10;#L&#10;1x Panam Palmer&#10;1x River Ward&#10;1x Muamar Reyes&#10;&#10;#D&#10;3x …"></textarea>
-    <div class="row gap" style="margin-top:8px"><label class="filebtn">Load .txt file<input type="file" id="imp-file" accept=".txt,.json,text/plain" hidden></label></div>
+    <div class="row gap" style="margin-top:8px">
+      <label class="filebtn">Scan deck image<input type="file" id="imp-image" accept="image/*" hidden></label>
+      <label class="filebtn">Load .txt file<input type="file" id="imp-file" accept=".txt,.json,text/plain" hidden></label>
+      <span class="hint" id="imp-scan">Or paste or drop a screenshot of the sim's deck image. It's read on this device and never uploaded or saved.</span>
+    </div>
     <div id="imp-preview" style="margin-top:12px"></div>
     <div class="row gap" style="margin-top:14px"><button class="primary" id="imp-go" disabled>Import</button><button data-close>Cancel</button></div>`);
   let parsed = [];
@@ -1566,6 +1570,25 @@ function openImport(target = null) {
   };
   $('#imp-text').oninput = preview;
   $('#imp-file').onchange = async (e) => { if (e.target.files[0]) { $('#imp-text').value = await e.target.files[0].text(); preview(); } };
+  // Deck images: read the QR code locally, add the deck it holds, and let go of the image.
+  const scan = async (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    $('#imp-scan').textContent = 'Reading the QR code…';
+    try {
+      const text = await readQrFromImage(file);
+      if (!text) throw new Error('No QR code found in that image. Try a sharper or uncropped export.');
+      if (!decodeB64Deck(text) && !/#L|^\s*\d+\s*x?\s+\S/im.test(text)) throw new Error(`The QR code holds "${text.slice(0, 80)}", which isn't a deck export. Open it in the sim and use Export → Text instead.`);
+      const box = $('#imp-text');
+      box.value = (box.value.trim() ? box.value.trim() + '\n---\n' : '') + text;
+      preview();
+      $('#imp-scan').textContent = 'Deck read from the image. The image wasn\'t uploaded or kept.';
+    } catch (err) { $('#imp-scan').textContent = err.message; }
+  };
+  $('#imp-image').onchange = (e) => { scan(e.target.files[0]); e.target.value = ''; };
+  const card = $('#modal-body');
+  card.addEventListener('paste', (e) => { const f = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith('image/')); if (f) { e.preventDefault(); scan(f); } });
+  card.addEventListener('dragover', (e) => e.preventDefault());
+  card.addEventListener('drop', (e) => { const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('image/')); if (f) { e.preventDefault(); scan(f); } });
   $('#imp-go').onclick = () => {
     if (target && parsed[0]) {
       const p = parsed[0];
@@ -1980,6 +2003,42 @@ function openHelp() {
     <p class="hint">Fan-made, not affiliated with CD PROJEKT or WeirdCo. Cyberpunk and all card images © CD PROJEKT S.A. Card data comes from the Cyberpunk TCG Sim.</p>
     <div class="row gap" style="margin-top:14px"><button class="primary" data-close>Got it</button>${prefs().guide.dismissed ? '<button data-guide-reset>Show getting started again</button>' : ''}</div>
   </div>`);
+}
+
+/* ---------------- QR codes in deck images ----------------
+ * Everything happens in this browser: the image is decoded into pixels, scanned, and dropped.
+ * Uses the built-in BarcodeDetector where it exists (Chrome, Android), otherwise jsQR from a CDN,
+ * loaded only the first time a scan is needed. */
+let jsQRReady = null;
+const loadJsQR = () => (jsQRReady ||= loadScript('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js'));
+async function readQrFromImage(file) {
+  const bmp = await createImageBitmap(file);
+  try {
+    if ('BarcodeDetector' in window) {
+      try {
+        const hits = await new BarcodeDetector({ formats: ['qr_code'] }).detect(bmp);
+        if (hits[0]?.rawValue) return hits[0].rawValue;
+      } catch { /* fall through to jsQR */ }
+    }
+    await loadJsQR();
+    // Try the whole image, then each corner enlarged (export QR codes are usually small and in a corner).
+    const W = bmp.width, H = bmp.height;
+    const regions = [[0, 0, W, H], [W / 2, H / 2, W / 2, H / 2], [0, H / 2, W / 2, H / 2], [W / 2, 0, W / 2, H / 2], [0, 0, W / 2, H / 2]];
+    for (const [x, y, w, h] of regions) {
+      const scale = Math.min(2, 1600 / Math.max(w, h));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(w * scale); cv.height = Math.round(h * scale);
+      const ctx = cv.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(bmp, x, y, w, h, 0, 0, cv.width, cv.height);
+      const px = ctx.getImageData(0, 0, cv.width, cv.height);
+      const hit = window.jsQR(px.data, px.width, px.height, { inversionAttempts: 'attemptBoth' });
+      cv.width = cv.height = 0; // release the pixels right away
+      if (hit?.data) return hit.data;
+    }
+    return null;
+  } finally {
+    bmp.close();
+  }
 }
 
 /* ---------------- images ---------------- */
