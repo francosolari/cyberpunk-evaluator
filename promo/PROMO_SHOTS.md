@@ -32,9 +32,9 @@ Tier List Studio builds Cyberpunk TCG presentation slides: meta tier lists and d
 
 ## What you get
 
-1. **`promo/story/`: the feature story to share.** Ten 1600×1000 panels. Each one has a headline, a line of context and the screenshots that show the feature:
-   01 cover · 02 drag and drop tiers · 03 tile views · 04 full decklist · 05 Key / Core / Flex · 06 flexible Legends · 07 editing on the slide · 08 import by scanning · 09 on your phone · 10 present and share.
-   Open `promo/story.html` in a browser to see them all in a row. Edit its headlines and captions there, then rerun the script, or reload the page and screenshot it yourself.
+1. **`promo/story/`: the feature story to share.** Ten 1600×1000 images. Each is the screenshot itself, edge to edge, with one plain caption sentence underneath:
+   01 overview · 02 dragging decks between tiers · 03 tile views · 04 full decklist · 05 key / core / flex · 06 alternate Legends · 07 editing under the slide · 08 import · 09 phone · 10 present and share.
+   Open `promo/story.html` in a browser to see them in a row. Change a caption there and rerun the script.
 2. **`promo/shots/`: the raw screenshots** the story is built from, plus a short drag video. Use them for anything the story doesn't cover.
 
 ## Shot list

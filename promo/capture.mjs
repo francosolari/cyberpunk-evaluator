@@ -180,7 +180,7 @@ await selectSlide(mp, 0);
 await shot(mp, '18-phone-tier-list');
 await selectSlide(mp, 2);
 await mp.waitForTimeout(600);
-await shot(mp, '19-phone-deck-page', { fullPage: true });
+await shot(mp, '19-phone-deck-page');
 await mp.click('[data-view=decks]');
 await shot(mp, '20-phone-decks');
 
