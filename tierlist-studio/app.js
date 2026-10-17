@@ -12,7 +12,9 @@ const CARD_ASPECT = 0.716;          // card width / height
 const TILE_ASPECT = 0.74;           // deck tile width / height (art + caption)
 // Crop = the card's art window (top/bottom, % of card height) + focus point + extra zoom.
 // Layouts scale the card so only the art window is visible, so the rules text never shows.
-const DEFAULT_CROP = { top: 15, bottom: 61, x: 50, y: 38, zoom: 1 };
+// Measured on the official card frame: the name bar covers the top ~21%, rules text starts near 62%.
+const DEFAULT_CROP = { top: 22, bottom: 62, x: 50, y: 40, zoom: 1 };
+const OLD_DEFAULT_CROPS = ['15/61'];
 const COLORS = {
   R: { name: 'Red', hex: '#ff4655' },
   Y: { name: 'Yellow', hex: '#f7d046' },
@@ -213,7 +215,7 @@ function makeDemo() {
     catalog: null,
     custom,
     crops: {},
-    legendCrop: { ...DEFAULT_CROP },
+    legendCrop: {},
     decks,
     slides: [
       { id: uid(), type: 'tier', name: 'Weekly Tier List', title: 'Weekly Tier List', eyebrow: 'Plus Two', pill: 'Beta Format · Oct 2026', footnote: '', logo: '', display: 'legends', showNames: false, tiers },
@@ -229,6 +231,8 @@ function newDeck(p = {}) {
 let state = load() || makeDemo();
 const ui = { view: 'slides', slideId: state.slides[0]?.id, deckId: state.decks[0]?.id, selectedDeck: null };
 let cardIndex = new Map();
+// Projects saved with an earlier default crop pick up the current one.
+if (state.legendCrop && OLD_DEFAULT_CROPS.includes(`${state.legendCrop.top}/${state.legendCrop.bottom}`)) state.legendCrop = {};
 rebuildIndex();
 
 function load() {
@@ -576,8 +580,10 @@ function renderSlideList() {
     </li>`).join('');
 }
 function renderStage() {
-  const r = $('#stage-wrap').getBoundingClientRect();
-  mountScaled($('#stage-host'), slideHTML(slide(), true), Math.max(200, r.width - 28), Math.max(120, r.height - 28));
+  const wrap = $('#stage-wrap');
+  const narrow = window.innerWidth <= 900; // stacked layout: fit to width, let the page scroll
+  const w = Math.max(200, wrap.clientWidth - 28);
+  mountScaled($('#stage-host'), slideHTML(slide(), true), w, narrow ? Infinity : Math.max(120, wrap.clientHeight - 28));
 }
 function renderPool() {
   const s = slide();
