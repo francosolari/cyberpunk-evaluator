@@ -1819,7 +1819,8 @@ function openPicker(kind, onPick, onlyIds = null) {
   $('#picker-q').oninput = (e) => { q = e.target.value; draw(); };
   $('#picker-f').onchange = (e) => { filter = e.target.value; draw(); };
   if ($('#picker-limit')) $('#picker-limit').onchange = (e) => { limit = e.target.checked; draw(); };
-  $('#picker-q').focus();
+  // On phones, opening the picker shouldn't pop the keyboard over the Legends; tap the box to search.
+  if (!matchMedia('(pointer: coarse)').matches) $('#picker-q').focus();
   $('#picker-grid').onclick = (e) => {
     const p = e.target.closest('[data-pick]');
     if (!p) return;

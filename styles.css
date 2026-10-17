@@ -775,3 +775,8 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 .alt-menu span { flex: 1 1 100%; font-size: 13px; color: var(--muted); }
 .alt-menu button { font-size: 13px; padding: 5px 10px; }
 .alt-hint { margin: 6px 0 0; }
+
+/* Phones zoom into any text field under 16px when it's focused; 16px keeps the whole screen in view. */
+@media (pointer: coarse) {
+  input[type=text], input[type=url], input[type=search], input:not([type]), select, textarea { font-size: 16px !important; }
+}
