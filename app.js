@@ -544,14 +544,18 @@ function parseDeckExport(raw) {
   const d = newDeck({ name: name || '' });
   const add = (list, id, qty) => { const row = list.find((r) => r[0] === id); if (row) row[1] += qty; else list.push([id, qty]); };
   const legends = [];
+  const altIds = [];
   d.unmatched = [];
   for (const e of entries) {
     const id = resolveCard(e.name, { legend: e.section === 'legend' });
     if (!id) { d.unmatched.push(e); continue; }
+    if (isLegend(card(id)) && (e.section === 'side' || e.section === 'options')) { if (!altIds.includes(id)) altIds.push(id); continue; }
     if (e.section === 'legend' || isLegend(card(id))) { if (!legends.includes(id)) legends.push(id); continue; }
     add(e.section === 'side' ? d.side : e.section === 'options' ? d.options : d.main, id, e.qty);
   }
   d.legends = [0, 1, 2].map((i) => legends[i] || null);
+  // A 4th Legend, or Legends listed under sideboard / options, are alternates for a slot.
+  for (const id of [...legends.slice(3), ...altIds]) assignAlt(d, id);
   d.keyCard = suggestKeyCard(d);
   if (!d.name) d.name = autoCode(d) || 'Imported deck';
   return d;
@@ -570,6 +574,18 @@ function legendsOf(d) {
   const rank = (id) => { const c = card(id)?.color || '?'; return [-count[c], COLOR_ORDER.indexOf(c) < 0 ? 9 : COLOR_ORDER.indexOf(c)]; };
   return ids.map((id, i) => [id, i]).sort((a, b) => { const x = rank(a[0]), y = rank(b[0]); return x[0] - y[0] || x[1] - y[1] || a[1] - b[1]; }).map(([id]) => id);
 }
+/* Flex Legends: a slot can name an alternate ("Viktor, or Muamar"). Same deck, same tier spot. */
+const altOf = (d, id) => (id && d.altLegends?.[id] && card(d.altLegends[id]) ? d.altLegends[id] : null);
+function assignAlt(d, id) {
+  // Attach to the Legend of the same color without an alternate yet, else the last open slot.
+  const main = legendsOf(d);
+  if (!main.length || main.includes(id)) return;
+  d.altLegends = d.altLegends || {};
+  const open = main.filter((m) => !d.altLegends[m]);
+  const pick = open.find((m) => card(m)?.color === card(id)?.color) || open[open.length - 1];
+  if (pick) d.altLegends[pick] = id;
+}
+const altInset = (d, id, cls = '') => { const a = card(altOf(d, id)); return a ? `<span class="alt-leg ${cls}" style="--c:${hexOf(a)}" title="or ${esc(a.name)}">${artHTML(a)}<i>or</i></span>` : ''; };
 function deckColors(d) {
   const cols = legendsOf(d).map((id) => card(id)?.color).filter(Boolean);
   if (cols.length) return cols;
@@ -620,7 +636,7 @@ function deckTileHTML(d, mode, { style = '', selectable = true, showName = false
   if (d.display && d.display !== 'inherit') mode = d.display;
   const key = card(d.keyCard);
   const legends = legendsOf(d).map(card);
-  const strips = `<div class="strips">${legends.map((c) => `<div class="strip" style="--c:${hexOf(c)}">${artHTML(c)}</div>`).join('')}</div>`;
+  const strips = `<div class="strips">${legends.map((c) => `<div class="strip" style="--c:${hexOf(c)}">${artHTML(c)}${altInset(d, c?.id)}</div>`).join('')}</div>`;
   let art;
   if (mode === 'legends') art = strips;
   else if (mode === 'legends-bands') art = strips.replace('class="strips"', 'class="strips bands"');
@@ -705,7 +721,8 @@ function deckSlideHTML(s) {
   const legends = legendsOf(d).map((id) => {
     const c = card(id);
     const [main, ...rest] = (c?.name || '—').split(/,\s*|\s+[—–-]\s+/);
-    return `<figure class="ds-legend" style="--c:${hexOf(c)};--ca:${hexOf(c)}66">${artHTML(c)}<figcaption><b>${esc(main)}</b><span>${esc(rest.join(', '))}</span></figcaption></figure>`;
+    const alt = card(altOf(d, id));
+    return `<figure class="ds-legend" style="--c:${hexOf(c)};--ca:${hexOf(c)}66"><div class="ds-legend-art">${artHTML(c)}${altInset(d, id, 'lg')}</div><figcaption><b>${esc(main)}</b><span>${esc(alt ? 'or ' + alt.name.split(',')[0] : rest.join(', '))}</span></figcaption></figure>`;
   }).join('');
   const rows = d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c);
   const groups = typeGroups(rows);
@@ -825,7 +842,7 @@ function deckStacksSlideHTML(s, d) {
     </header>
     ${legends.length ? `<section class="fd-legends" style="left:${X}px;top:${TOP}px;width:${lw}px">
       <div class="fd-label">Legends <b>${legends.length}</b></div>
-      <div class="fd-col">${legends.map((c) => cardHTML(c, 0, lw, lh, 'is-legend', hexOf(c))).join('')}</div></section>
+      <div class="fd-col">${legends.map((c) => cardHTML(c, 0, lw, lh, 'is-legend', hexOf(c)).replace(/<\/div><\/div>$/, `${(() => { const a = card(altOf(d, c.id)); return a ? `<div class="fd-alt" style="--c:${hexOf(a)}">${artHTML(a, { full: true })}<span>or</span></div>` : ''; })()}</div></div>`)).join('')}</div></section>
       <div class="fd-rule" style="left:${X + lw + 28}px;top:${TOP}px;height:${legH + label}px"></div>` : ''}
     <div class="fd-deck" style="left:${deckX}px;top:${TOP}px;width:${deckW}px">
       ${sections.map((g, i) => `<section class="fd-section">
@@ -1298,7 +1315,7 @@ function mainColor(d) {
 }
 function deckMatches(d, q) {
   q = norm(q);
-  return !q || norm([deckLabel(d), d.name, ...legendsOf(d).map((id) => card(id)?.name || '')].join(' ')).includes(q);
+  return !q || norm([deckLabel(d), d.name, ...legendsOf(d).map((id) => card(id)?.name || ''), ...Object.values(d.altLegends || {}).map((id) => card(id)?.name || '')].join(' ')).includes(q);
 }
 function sortDecks(list, how) {
   const at = (d) => d.createdAt || state.decks.indexOf(d);
@@ -1356,6 +1373,9 @@ function renderDecks() {
       <label>Deck name</label><input data-d="name" value="${esc(d.name)}" placeholder="e.g. Geary Noble Safety">
       <label>Legends</label>
       <div class="slots">${d.legends.map((id, i) => slot(id, 'legend', i)).join('')}</div>
+      <div class="slots alts">${d.legends.map((id, i) => { const a = card(altOf(d, id)); return !id ? '<span></span>' : a
+        ? `<span class="alt-pick"><button data-alt="${i}" title="Change alternate">or ${esc(a.name.split(',')[0])}</button><button data-alt-clear="${i}" aria-label="Remove alternate">×</button></span>`
+        : `<button class="alt-add" data-alt="${i}" title="A Legend that can take this slot in the same deck">+ Alternate</button>`; }).join('')}</div>
       <label>Key cards (up to 3)</label>
       <div class="slots">${[...keysOf(d), null].slice(0, 3).map((id, i) => slot(id, 'key', i)).join('')}</div>
       <label>Notes (shown on the deck page)</label>
@@ -1608,11 +1628,19 @@ function bindDecks() {
     const d = deck(ui.deckId);
     const b = e.target.closest('button');
     if (!b) return;
+    if (b.dataset.alt || b.dataset.altClear) {
+      const id = d.legends[Number(b.dataset.alt ?? b.dataset.altClear)];
+      d.altLegends = d.altLegends || {};
+      if (b.dataset.altClear) { delete d.altLegends[id]; save(); renderDecks(); return; }
+      openPicker('legend', (alt) => { if (alt !== id) d.altLegends[id] = alt; save(); renderDecks(); });
+      return;
+    }
     if (b.dataset.slot) {
       const role = b.dataset.slot;
       const onlyDeck = role === 'key' && d.main.length ? d.main.map((r) => r[0]) : null;
       openPicker(role === 'key' ? 'all' : 'legend', (id) => {
-        if (role === 'key') { const ks = keysOf(d).slice(); ks[Number(b.dataset.i)] = id; setKeys(d, ks); } else d.legends[Number(b.dataset.i)] = id;
+        if (role === 'key') { const ks = keysOf(d).slice(); ks[Number(b.dataset.i)] = id; setKeys(d, ks); }
+        else { const old = d.legends[Number(b.dataset.i)]; d.legends[Number(b.dataset.i)] = id; if (d.altLegends?.[old]) { if (d.altLegends[old] !== id) d.altLegends[id] = d.altLegends[old]; delete d.altLegends[old]; } }
         save(); renderDecks();
       }, onlyDeck);
       return;
@@ -2000,8 +2028,8 @@ function shareSnapshot(slides) {
   // Tier lists only, and for each deck only what its tile shows: no decklists (plenty of tools share those).
   slides = slides.filter((x) => x.type === 'tier');
   const ids = new Set(slides.flatMap((x) => x.tiers.flatMap((t) => t.deckIds)));
-  const decks = state.decks.filter((d) => ids.has(d.id)).map((d) => ({ id: d.id, name: d.name, label: d.label, legends: d.legends, keyCards: keysOf(d).slice(0, 1), display: d.display }));
-  return { v: 1, slides, decks, legendCrop: state.legendCrop, crops: Object.fromEntries(Object.entries(state.crops).filter(([id]) => decks.some((d) => d.legends.includes(id) || keysOf(d).includes(id)))) };
+  const decks = state.decks.filter((d) => ids.has(d.id)).map((d) => ({ id: d.id, name: d.name, label: d.label, legends: d.legends, altLegends: d.altLegends, keyCards: keysOf(d).slice(0, 1), display: d.display }));
+  return { v: 1, slides, decks, legendCrop: state.legendCrop, crops: Object.fromEntries(Object.entries(state.crops).filter(([id]) => decks.some((d) => d.legends.includes(id) || Object.values(d.altLegends || {}).includes(id) || keysOf(d).includes(id)))) };
 }
 async function shareLink(slides) {
   const bytes = new TextEncoder().encode(JSON.stringify(shareSnapshot(slides)));

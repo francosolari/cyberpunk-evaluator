@@ -746,3 +746,24 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 .fd-curve span { font: 600 14px/1 var(--mono); color: #6f7787; }
 /* Key label matches the tag bar (yellow on black); cyan stays on the Key brackets only. */
 .fd-tags .fd-key { color: var(--accent) !important; box-shadow: inset 0 0 0 2px var(--accent) !important; margin-left: -2px !important; }
+
+/* Alternate (flex) Legends: a small inset of the other Legend on the slot it can take. */
+.strip, .ds-legend-art { position: relative; }
+.ds-legend-art { flex: 1; display: flex; min-height: 0; }
+.alt-leg { position: absolute; right: 6%; bottom: 4%; width: 52%; aspect-ratio: 1; display: flex; outline: 2px solid var(--c); background: #000; box-shadow: 0 4px 12px #000c; z-index: 2; }
+.alt-leg .art { flex: 1; }
+.alt-leg i { position: absolute; left: 0; top: 0; font: 600 9px/1 var(--mono); font-style: normal; background: #07080c; color: var(--accent); padding: 2px 3px; }
+.stage .alt-leg i { font-size: 13px; padding: 3px 5px; }
+.alt-leg.lg { width: 38%; right: 5%; bottom: 5%; }
+.stage .alt-leg.lg i { font-size: 18px; padding: 4px 7px; }
+.fd-alt { position: absolute; right: -14px; bottom: -10px; width: 46%; aspect-ratio: .716; display: flex; outline: 2px solid var(--c); border-radius: 6px; background: #000; box-shadow: 0 6px 16px #000d; z-index: 3; }
+.fd-alt .art { flex: 1; border-radius: 6px; }
+.fd-alt span { position: absolute; left: -2px; top: -14px; font: 600 16px/1 var(--mono); background: #07080c; color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); padding: 5px 7px 4px; }
+.slots.alts { margin-top: 6px; }
+.alt-add { font-size: 12px; padding: 4px 6px; color: var(--muted); }
+.alt-pick { display: flex; min-width: 0; }
+.alt-pick button { font-size: 12px; padding: 4px 6px; }
+.alt-pick button:first-child { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--accent); }
+.fd-alt { right: 8px; bottom: 8px; width: 44%; }
+.strip > .alt-leg { width: 70%; right: 15%; bottom: 5%; }
+.strip > .alt-leg i { top: auto; bottom: 100%; left: -2px; }
