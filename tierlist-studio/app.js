@@ -636,7 +636,7 @@ function deckTileHTML(d, mode, { style = '', selectable = true, showName = false
   if (d.display && d.display !== 'inherit') mode = d.display;
   const key = card(d.keyCard);
   const legends = legendsOf(d).map(card);
-  const strips = `<div class="strips">${legends.map((c) => `<div class="strip" style="--c:${hexOf(c)}">${artHTML(c)}${altInset(d, c?.id)}</div>`).join('')}</div>`;
+  const strips = `<div class="strips">${legends.map((c) => `<div class="strip" style="--c:${hexOf(c)}">${artHTML(c)}</div>`).join('')}</div>`; // alternate Legends belong on deck slides, not tier tiles
   let art;
   if (mode === 'legends') art = strips;
   else if (mode === 'legends-bands') art = strips.replace('class="strips"', 'class="strips bands"');

@@ -52,7 +52,7 @@ The **Decks** list has search (deck code, name or Legend), grouping (by main col
 
 **Sideboard / Options** is one section everywhere you look at it (board, deck pages): cards around the deck that aren't in the main list, whether that's the registered sideboard or fringe cards you're discussing for the archetype. Underneath, imports keep `#S` / `Sideboard:` cards as the sideboard and `Options:` / `Considering:` / `#O` cards as options, so **Copy deck export** still contains only the real sideboard. Cards you drag into the section from the deck go to the sideboard.
 
-**Alternate Legends**: when one slot can be filled by either of two Legends (YYR with Viktor or Muamar), it's still one deck. In the deck editor, **+ Alternate** under a Legend names the other option. It shows as a small inset marked "or" on that Legend's art on tier tiles and deck pages, and as "or Muamar Reyes" under the Legend's name. Imports pick alternates up automatically: a 4th Legend, or a Legend listed under sideboard or options, becomes the alternate for the Legend of its color. Exports keep the 3 main Legends.
+**Alternate Legends**: when one slot can be filled by either of two Legends (YYR with Viktor or Muamar), it's still one deck. In the deck editor, **+ Alternate** under a Legend names the other option. Tier tiles show only the 3 main Legends. Deck pages show the alternate as a small inset on that Legend's art, and as "or Muamar Reyes" under the Legend's name. Imports pick alternates up automatically: a 4th Legend, or a Legend listed under sideboard or options, becomes the alternate for the Legend of its color. Exports keep the 3 main Legends.
 
 Legends and color strips always list the doubled color first, together: Yellow, Yellow, Blue, never Yellow, Blue, Yellow.
 
