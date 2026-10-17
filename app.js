@@ -529,8 +529,7 @@ function tierOf(d) {
 function deckSlideHTML(s) {
   const d = deck(s.deckId);
   if (!d) return `<div class="stage deck-slide"><div class="ds-empty">Pick a deck in the panel →</div></div>`;
-  if (s.listStyle === 'text') return deckTextSlideHTML(s, d);
-  if (s.listStyle === 'cards') return deckCardsSlideHTML(s, d);
+  if (s.listStyle && s.listStyle !== 'list') return deckFeaturedSlideHTML(s, d); // 'featured' (older 'text'/'cards' too)
   const tier = tierOf(d);
   const key = card(d.keyCard);
   const cols = deckColors(d);
@@ -577,23 +576,35 @@ const deckEyebrow = (d) => {
   return `${tier ? `<span class="pill tier-pill" style="--t:${esc(tier.color)}">${esc(tier.name)}</span>` : ''}<span class="chips">${chips(deckColors(d), 'chip-lg')}</span>${d.main.length ? `<span class="ds-meta">${deckCount(d)} cards</span>` : ''}`;
 };
 
-/** Deck page with each card's rules text, one column per card type (like a deck builder). */
-function deckTextSlideHTML(s, d) {
-  const groups = typeGroups(d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c));
-  const cols = Math.max(1, groups.length);
-  const colW = (1300 - (cols - 1) * 22) / cols;
-  // Largest text size at which the tallest column still fits.
-  const fit = [17, 15.5, 14, 12.5].find((fs) => Math.max(0, ...groups.map((g) => 52 + g.rows.reduce((h, [c]) =>
-    h + 46 + Math.ceil(((c.text || '').length + 1) / (colW / (fs * 0.52))) * fs * 1.32 + 10, 0))) <= 950) || 12;
-  const block = ([c, n]) => `<div class="dt-card ${c.id === d.keyCard ? 'is-key' : ''}" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
-      <div class="dt-top"><span class="ds-cost">${c.cost ?? '·'}</span><span class="dt-name">${esc(c.name)}</span>${roleTag(s, d, c.id)}<span class="ds-n">${n}×</span></div>
-      ${c.text ? `<div class="dt-text">${esc(c.text)}</div>` : ''}
-    </div>`;
+/** Deck page that shows the deck's Core cards (or its key and most-played cards) large enough to
+ * read, with the rest of the decklist as a compact list. */
+function deckFeaturedSlideHTML(s, d) {
+  const rows = d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c);
+  const groups = typeGroups(rows);
+  const ordered = groups.flatMap((g) => g.rows);
+  let featured = ordered.filter(([c]) => d.roles?.[c.id] === 'core');
+  if (!featured.length) {
+    featured = ordered.slice().sort((a, b) => (b[0].id === d.keyCard) - (a[0].id === d.keyCard) || b[1] - a[1]).slice(0, 6);
+    featured = ordered.filter((r) => featured.includes(r));
+  }
+  featured = featured.slice(0, 8);
+  const rest = groups.map((g) => ({ ...g, rows: g.rows.filter((r) => !featured.includes(r)) })).filter((g) => g.rows.length);
+  // Fit the featured cards into the area left above the compact list.
+  const W = 1300, H = 960 - (rest.length ? 200 : 0), gap = 16;
+  let best = { w: 0, cols: 1 };
+  for (let cols = 1; cols <= Math.max(1, featured.length); cols++) {
+    const lines = Math.ceil(featured.length / cols);
+    const w = Math.min((W - (cols - 1) * gap) / cols, ((H - (lines - 1) * gap) / lines) * CARD_ASPECT);
+    if (w > best.w) best = { w, cols };
+  }
+  const w = Math.floor(best.w);
+  const cardHTML = ([c, n]) => `<div class="df-card ${c.id === d.keyCard ? 'is-key' : ''}" style="width:${w}px;height:${Math.floor(w / CARD_ASPECT)}px">
+      ${artHTML(c, { full: true })}<span class="df-badge">${n}×</span>${roleTag(s, d, c.id)}</div>`;
   const legends = d.legends.map((id) => {
     const c = card(id);
     return `<div class="dt-legend" style="--c:${hexOf(c)}">${artHTML(c)}<span>${esc(c?.name || '—')}</span></div>`;
   }).join('');
-  return `<div class="stage deck-slide deck-text">
+  return `<div class="stage deck-slide deck-featured">
     <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(d.legends[0]))}38, transparent)"></div><div class="glow g2"></div>
     <aside class="dt-left">
       <div class="ds-eyebrow">${deckEyebrow(d)}</div>
@@ -603,36 +614,11 @@ function deckTextSlideHTML(s, d) {
       <div class="dt-legends">${legends}</div>
       ${card(d.keyCard) ? `<div class="dt-key"><span>Key card</span><b>${esc(card(d.keyCard).name)}</b></div>` : ''}
     </aside>
-    <div class="dt-cols" style="--fs:${fit}px;grid-template-columns:repeat(${cols}, 1fr)">
-      ${groups.map((g) => `<section class="dt-col"><div class="ds-group" style="border-color:${g.color}"><span>${esc(g.label)}</span><b>${g.count}</b></div>${g.rows.map(block).join('')}</section>`).join('')
-        || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}
+    <div class="df-main">
+      <div class="df-grid" style="width:${best.cols * w + (best.cols - 1) * gap}px">${featured.map(cardHTML).join('') || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}</div>
+      ${rest.length ? `<div class="df-rest">${rest.map((g) => `<div class="df-rest-group"><span class="df-rest-label" style="--k:${g.color}">${esc(g.label)}</span>${g.rows.map(([c, n]) =>
+        `<span class="df-chip" style="--c:${hexOf(c)}"><b>${n}×</b> ${esc(c.name)}${roleTag(s, d, c.id)}</span>`).join('')}</div>`).join('')}</div>` : ''}
     </div>
-  </div>`;
-}
-
-/** Deck page showing every card in full (Legends first, then by type), sized so the whole deck fits. */
-function deckCardsSlideHTML(s, d) {
-  const groups = typeGroups(d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c));
-  const items = [...d.legends.map(card).filter(Boolean).map((c) => [c, 0]), ...groups.flatMap((g) => g.rows)];
-  const W = 1780, H = 790, gap = 14;
-  let best = { w: 0, cols: 1 };
-  for (let cols = 1; cols <= items.length; cols++) {
-    const rows = Math.ceil(items.length / cols);
-    const w = Math.min((W - (cols - 1) * gap) / cols, ((H - (rows - 1) * gap) / rows) * CARD_ASPECT);
-    if (w > best.w) best = { w, cols };
-  }
-  const w = Math.floor(best.w);
-  const cell = ([c, n]) => `<div class="dc-card ${c.id === d.keyCard ? 'is-key' : ''} ${n ? '' : 'is-legend'}" style="width:${w}px;height:${Math.floor(w / CARD_ASPECT)}px">
-      ${artHTML(c, { full: true })}<span class="dc-badge">${n ? n + '×' : 'Legend'}</span>${roleTag(s, d, c.id)}
-    </div>`;
-  return `<div class="stage deck-slide deck-cards">
-    <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(d.legends[0]))}38, transparent)"></div><div class="glow g2"></div>
-    <header class="dc-head">
-      <div><div class="ds-eyebrow">${deckEyebrow(d)}</div>
-      <h1 class="dc-code">${esc(deckLabel(d))}${d.name && d.name !== deckLabel(d) ? ` <span>${esc(d.name)}</span>` : ''}</h1></div>
-      ${groups.length ? breakdownHTML(groups, 'compact') : ''}
-    </header>
-    <div class="dc-grid" style="width:${best.cols * w + (best.cols - 1) * gap}px">${items.map(cell).join('')}</div>
   </div>`;
 }
 
@@ -704,9 +690,9 @@ function renderSlideInspector() {
     el.innerHTML = `<h3>Deck page</h3>
       <label>Deck</label><select data-s="deckId">${state.decks.map((d) => `<option value="${d.id}" ${d.id === s.deckId ? 'selected' : ''}>${esc(deckLabel(d))}${d.name && d.name !== deckLabel(d) ? ' — ' + esc(d.name) : ''}</option>`).join('')}</select>
       <label>Decklist shows</label>
-      <select data-s="listStyle">${[['list', 'Names'], ['text', 'Card text'], ['cards', 'Full cards']].map(([k, v]) => `<option value="${k}" ${(s.listStyle || 'list') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <select data-s="listStyle">${[['list', 'Names'], ['featured', 'Featured cards']].map(([k, v]) => `<option value="${k}" ${((s.listStyle || 'list') === 'list' ? 'list' : 'featured') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
       <label class="check"><input type="checkbox" data-s="showRoles" ${s.showRoles !== false ? 'checked' : ''}> Show Core / Flex tags</label>
-      <p class="hint">Mark cards as Core or Flex in the deck editor. The page shows the deck's Legends, key card, notes and decklist from its export.</p>
+      <p class="hint">Featured cards shows the deck's Core cards large enough to read (or its key and most-played cards when nothing is marked Core). Mark cards as Core or Flex in the deck editor. The page shows the deck's Legends, key card, notes and decklist from its export.</p>
       <button data-edit-deck="${s.deckId}" class="block">Edit this deck</button>`;
     return;
   }
