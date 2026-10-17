@@ -2,7 +2,7 @@
 name: Publish Tier List Studio
 on:
   push:
-    branches: [main, claude/tierlist-studio]
+    branches: [main]
     paths: ['tierlist-studio/**']
   workflow_dispatch:
 permissions:
