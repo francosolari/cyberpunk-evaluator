@@ -1825,6 +1825,7 @@ function enableTouchDrag() {
  * a compressed snapshot of the shared slides and only the decks they use (cards by catalog id).
  * Opening it shows a read-only viewer; "Add to my studio" copies it in with fresh ids. */
 const SHARE_PREFIX = '#s=';
+// Older links may include deck pages; the viewer only shows tier lists.
 const b64url = {
   encRaw: (bytes) => { let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(bin); },
   enc: (bytes) => b64url.encRaw(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
@@ -1834,13 +1835,10 @@ async function pipe(bytes, Stream) {
   return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new Stream('deflate-raw'))).arrayBuffer());
 }
 function shareSnapshot(slides) {
-  const ids = new Set(slides.flatMap((x) => (x.type === 'tier' ? x.tiers.flatMap((t) => t.deckIds) : [x.deckId])));
-  const decks = state.decks.filter((d) => ids.has(d.id)).map((d) => {
-    const out = { id: d.id, name: d.name, label: d.label, legends: d.legends, keyCards: keysOf(d), roles: d.roles, notes: d.notes, display: d.display };
-    // Tier tiles only need Legends and key cards; full lists ride along only for decks with a deck page.
-    if (slides.some((x) => x.type === 'deck' && x.deckId === d.id)) Object.assign(out, { main: d.main, side: d.side, options: d.options });
-    return out;
-  });
+  // Tier lists only, and for each deck only what its tile shows: no decklists (plenty of tools share those).
+  slides = slides.filter((x) => x.type === 'tier');
+  const ids = new Set(slides.flatMap((x) => x.tiers.flatMap((t) => t.deckIds)));
+  const decks = state.decks.filter((d) => ids.has(d.id)).map((d) => ({ id: d.id, name: d.name, label: d.label, legends: d.legends, keyCards: keysOf(d).slice(0, 1), display: d.display }));
   return { v: 1, slides, decks, legendCrop: state.legendCrop, crops: Object.fromEntries(Object.entries(state.crops).filter(([id]) => decks.some((d) => d.legends.includes(id) || keysOf(d).includes(id)))) };
 }
 async function shareLink(slides) {
@@ -1855,22 +1853,25 @@ async function readShare(hash) {
   const bytes = data[0] === 'z' ? await pipe(raw, DecompressionStream) : raw;
   const snap = JSON.parse(new TextDecoder().decode(bytes));
   if (snap.v !== 1 || !Array.isArray(snap.slides)) throw new Error('unknown link format');
-  snap.decks = snap.decks.map((d) => newDeck({ ...d, keyCard: d.keyCards?.[0] || null }));
+  snap.slides = snap.slides.filter((x) => x.type === 'tier');
+  snap.decks = snap.decks.map((d) => newDeck({ ...d, main: [], side: [], options: [], keyCard: d.keyCards?.[0] || null }));
   return snap;
 }
 function openShare() {
-  const s = slide();
-  openModal(`<h3>Share</h3>
-    <p class="hint">The link contains the slides and the decks on them, so anyone can open it. It doesn't change when you edit; share again after changes.</p>
-    <label class="check"><input type="radio" name="share-scope" value="one" checked> This slide${s ? ` (${esc(s.name || '')})` : ''}</label>
-    <label class="check"><input type="radio" name="share-scope" value="all"> All ${state.slides.length} slides</label>
+  const tierSlides = state.slides.filter((x) => x.type === 'tier');
+  if (!tierSlides.length) return toast('Add a tier list slide to share.');
+  const s = slide()?.type === 'tier' ? slide() : tierSlides[0];
+  openModal(`<h3>Share tier list</h3>
+    <p class="hint">Anyone with the link sees the tier list as it is now; decklists aren't included. Share again after changes.</p>
+    ${tierSlides.length > 1 ? `<label class="check"><input type="radio" name="share-scope" value="one" checked> ${esc(s.name || 'This tier list')}</label>
+    <label class="check"><input type="radio" name="share-scope" value="all"> All ${tierSlides.length} tier lists</label>` : ''}
     <div class="row gap" style="margin-top:12px"><input id="share-url" readonly placeholder="Making link…" style="flex:1"><button class="primary" id="share-copy">Copy link</button></div>
     <p class="hint" id="share-note"></p>`);
   const make = async () => {
-    const all = $('input[name=share-scope]:checked').value === 'all';
-    const url = await shareLink(all ? state.slides : [s]);
+    const all = $('input[name=share-scope]:checked')?.value === 'all';
+    const url = await shareLink(all ? tierSlides : [s]);
     $('#share-url').value = url;
-    $('#share-note').textContent = url.length > 8000 ? `This link is long (${Math.round(url.length / 1000)}k characters). Some chat apps cut long links; share fewer slides if it doesn't open.` : '';
+    $('#share-note').textContent = url.length > 8000 ? `This link is long (${Math.round(url.length / 1000)}k characters). Some chat apps cut long links.` : '';
   };
   $$('input[name=share-scope]').forEach((r) => (r.onchange = make));
   $('#share-copy').onclick = () => {
