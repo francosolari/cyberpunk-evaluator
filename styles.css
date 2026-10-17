@@ -693,3 +693,11 @@ details.more[open] > summary::before { content: "− "; }
 .role-btn.core { background: var(--accent); color: #0b0d10; border-color: var(--accent); }
 .role-btn.flex { background: var(--accent-2); color: #0b0d10; border-color: var(--accent-2); }
 .stage .fd-card .role { font-size: 19px !important; padding: 6px 12px 5px !important; text-transform: capitalize !important; right: -8px; bottom: 14px; }
+
+/* ---------- Share viewer ---------- */
+.viewer-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px; background: var(--panel-2); border-bottom: 1px solid var(--line); }
+.viewer-bar[hidden] { display: none; }
+.viewer-bar span { flex: 1; min-width: 200px; color: var(--muted); }
+body.viewing #app { height: calc(100% - 54px - 52px); }
+body.viewing .tabs, body.viewing .actions, body.viewing .inspector, body.viewing .pool-wrap, body.viewing #slide-board, body.viewing #guide,
+body.viewing .slide-list .row, body.viewing #slide-list button { display: none !important; }
