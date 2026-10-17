@@ -18,4 +18,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git subtree split --prefix=tierlist-studio -b pages-tmp
+          git checkout pages-tmp
+          # Stamp the build so browsers fetch fresh app.js/styles.css after every deploy.
+          sed -i "s/v=dev/v=${GITHUB_SHA::7}/g; s/content=\"dev\"/content=\"build ${GITHUB_SHA::7}\"/" index.html
+          git commit -am "Build ${GITHUB_SHA::7}"
           git push -f origin pages-tmp:gh-pages

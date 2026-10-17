@@ -1272,6 +1272,7 @@ function bindGlobal() {
   };
 }
 
+$('#build').textContent = document.querySelector('meta[name=build]')?.content || '';
 bindGlobal();
 bindSlides();
 bindDecks();
