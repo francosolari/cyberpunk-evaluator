@@ -151,6 +151,8 @@ code { color: var(--accent); }
 
 .strips { display: flex; flex: 1; gap: 1cqw; background: #000; }
 .strip { flex: 1; min-width: 0; display: flex; }
+.strips.bands { flex-direction: column; }
+.strips.bands .strip { min-height: 0; }
 .split { display: flex; flex-direction: column; flex: 1; gap: 1cqw; background: #000; }
 .split > .art { flex: 1.4; }
 .split > .strips { flex: 1; }
