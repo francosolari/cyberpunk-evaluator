@@ -8,21 +8,21 @@ Open `index.html` in a browser, or serve this folder (`python3 -m http.server`).
 
 ## Card data
 
-Cards come from the **Cyberpunk TCG Sim public catalog** at `https://cyberpunk-tcg-sim.online/api/cards/catalog`. It's the same endpoint the sim's deck builder and `cyberpunk-tcg-tracker` use. Each card's `id`, `display_name`, `card_type`, `color`, `cost` and `assets.image_url` are read, and images load from the sim's `/media/…` paths.
+Card names, types, colors, costs, rules text, collector numbers and art come from a public card catalog (`CATALOG_URL` in `app.js`, the same catalog `cyberpunk-tcg-tracker` reads). The app loads it on first run and keeps a copy in the browser; **Card Data → Refresh** reloads it after a set release.
 
-The app tries to load the catalog on first run. If the browser blocks the request (CORS), open the catalog URL, save it as `catalog.json`, and use **Card Data → Load catalog .json**.
+**Card Data → Add top ranked Legend trios** reads the public ranked ladder and creates a Legends-only deck for each popular trio, ready to rank.
 
-**Card Data → Add top ranked Legend trios** reads the sim's public ranked leaderboard and creates a Legends-only deck for each popular trio, ready to rank.
+The interface doesn't name the card data source, so slides and screens are fine for official content creation.
 
 ## Seed decks
 
-A new visitor's studio starts from `data/seed-decks.txt`: deck exports separated by `---` lines, each with an optional `# Tier: Tier 1` line (where it starts on the tier list) and `# Notes: …` line. A deck with only Legends shows as an archetype. Edit that file to change what everyone starts with; it doesn't touch anyone's saved decks. Popular trios from the sim's ranked leaderboard are added to Unranked.
+A new visitor's studio starts from `data/seed-decks.txt`: deck exports separated by `---` lines, each with an optional `# Tier: Tier 1` line (where it starts on the tier list) and `# Notes: …` line. A deck with only Legends shows as an archetype. Edit that file to change what everyone starts with; it doesn't touch anyone's saved decks. Popular trios from the ranked ladder are added to Unranked.
 
 ## Decks from exports
 
 **Decks → Import deck export** accepts:
 
-- **Sim text export**:
+- **Deck text export**:
   ```
   # Name: Heist Tempo
   #L
@@ -33,14 +33,14 @@ A new visitor's studio starts from `data/seed-decks.txt`: deck exports separated
   #S
   …
   ```
-- **Sim import links**, e.g. `…/import?svc=sim&b64deck=…`. The deck is decoded from the link.
+- **Deck import links**, e.g. `…/import?…&b64deck=…`. The deck is decoded from the link.
 - **Text lists** from the official deck builder and other builders. These look like `3 Card Name`, `3x Card Name` or `Card Name x3`, with `Legends:`, `Main Deck:` and `Sideboard:` headers or `//` comments. Legends are detected from the card type even without a header.
 - **JSON decklists** with name/count fields.
-- **Deck images** from the sim's image export (its QR code holds a compact deck-builder code like `?d=l.w2.w5-a…d.3_w6…s.3_w7…`: Legends, deck and sideboard, each card a set letter plus its collector number in base 36): **Scan deck image**, or paste or drop a screenshot. The QR code is read in the browser (the built-in reader where available, otherwise jsQR), and only the decoded deck is kept. The image is never uploaded or saved.
+- **Deck images** with a QR code (deck builder image exports): **Scan deck image**, or paste or drop a screenshot. The QR code holds a compact deck code (`?d=l.w2.w5-a…d.3_w6…s.3_w7…`: Legends, deck and sideboard, each card a set letter plus its collector number in base 36). It's read in the browser (the built-in reader where available, otherwise jsQR), only the decoded deck is kept, and the image is never uploaded or saved.
 
 To import several decks at once, separate them with a `---` line. Names are matched to the catalog without regard to case or punctuation. A short name like "Panam Palmer" matches "Panam Palmer, Nomad Cavalry" when only one card fits. Lines that match no card are listed so you can fix them.
 
-Each deck gets a **tile code** from its Legends' colors, majority color first (2 Red + 1 Green → `RRG`). You can override the code. The deck also gets a **key card**, suggested from the decklist; change it with ★. **Copy sim export** writes the deck back out in sim text format.
+Each deck gets a **tile code** from its Legends' colors, majority color first (2 Red + 1 Green → `RRG`). You can override the code. The deck also gets a **key card**, suggested from the decklist; change it with ★. **Copy deck export** writes the deck back out as a text export.
 
 ### Editing a decklist
 
@@ -50,7 +50,7 @@ On phones, **press and hold** a card or deck, then drag it. A quick swipe still 
 
 The **Decks** list has search (deck code, name or Legend), grouping (by main color or tier, collapsible) and sorting (newest, name, most cards). The **Unranked** area on a tier list has its own filter and groups by main color once it holds more than 8 decks.
 
-**Sideboard / Options** is one section everywhere you look at it (board, deck pages): cards around the deck that aren't in the main list, whether that's the registered sideboard or fringe cards you're discussing for the archetype. Underneath, imports keep `#S` / `Sideboard:` cards as the sideboard and `Options:` / `Considering:` / `#O` cards as options, so **Copy sim export** still contains only the real sideboard. Cards you drag into the section from the deck go to the sideboard.
+**Sideboard / Options** is one section everywhere you look at it (board, deck pages): cards around the deck that aren't in the main list, whether that's the registered sideboard or fringe cards you're discussing for the archetype. Underneath, imports keep `#S` / `Sideboard:` cards as the sideboard and `Options:` / `Considering:` / `#O` cards as options, so **Copy deck export** still contains only the real sideboard. Cards you drag into the section from the deck go to the sideboard.
 
 Legends and color strips always list the doubled color first, together: Yellow, Yellow, Blue, never Yellow, Blue, Yellow.
 
