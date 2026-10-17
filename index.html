@@ -20,6 +20,7 @@
       <button data-view="data">Card Data <span id="data-badge" class="badge"></span></button>
     </nav>
     <div class="actions">
+      <button id="btn-help" aria-label="How it works" title="How it works">?</button>
       <button id="btn-present" class="primary">▶ Present</button>
       <button id="btn-png">Export PNG</button>
       <details class="menu">
@@ -37,6 +38,7 @@
   <main id="app">
     <section id="view-slides" class="view active">
       <aside class="panel slide-list">
+        <div id="guide" class="guide" hidden></div>
         <h3>Slides</h3>
         <ol id="slide-list"></ol>
         <div class="row gap">
@@ -50,7 +52,7 @@
           <div class="pool-head">
             <h3>Unranked decks <span id="pool-count" class="hint"></span></h3>
             <input type="search" id="pool-q" placeholder="Filter…" aria-label="Filter unranked decks">
-            <span class="hint">Drag onto a tier, or tap a deck and then a tier. Tap a deck to edit its list below.</span>
+            <span class="hint">Drag a deck onto a tier. Tap a deck to edit its list below.</span>
           </div>
           <div id="pool" class="pool" data-drop="pool"></div>
         </div>

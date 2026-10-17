@@ -720,6 +720,7 @@ function scaleStage(host, boxW, boxH) {
 /* ---------------- Slides view ---------------- */
 function renderSlides() {
   if (!slide()) ui.slideId = state.slides[0]?.id;
+  renderGuide();
   renderSlideList();
   renderPool();
   renderSlideBoard();
@@ -768,28 +769,27 @@ function renderSlideInspector() {
       <label>Deck</label><select data-s="deckId">${state.decks.map((d) => `<option value="${d.id}" ${d.id === s.deckId ? 'selected' : ''}>${esc(deckLabel(d))}${d.name && d.name !== deckLabel(d) ? ' — ' + esc(d.name) : ''}</option>`).join('')}</select>
       <label>Decklist shows</label>
       <select data-s="listStyle">${[['list', 'Names'], ['cards', 'Full decklist (cards)']].map(([k, v]) => `<option value="${k}" ${(s.listStyle === 'cards' ? 'cards' : 'list') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <p class="hint">Tap a card on the slide to change it, or edit the list below the slide.</p>
+      <details class="more" data-more="deckpage" ${prefs().open?.['deckpage'] ? 'open' : ''}><summary>More options</summary>
       <label class="check"><input type="checkbox" data-s="showRoles" ${s.showRoles !== false ? 'checked' : ''}> Show Core / Flex tags</label>
       <label class="check"><input type="checkbox" data-s="showOptions" ${s.showOptions !== false ? 'checked' : ''}> Show sideboard / options</label>
-      <p class="hint">Mark cards as Core or Flex, and pick up to 3 key cards, in the deck editor.</p>
-      ${deck(s.deckId) ? `<label>Quick add</label>${quickAddHTML(deck(s.deckId))}<p class="hint">Tap any card on the slide to move it between Core, Flex and Options, star it, or change its count.</p>` : ''}
-      <button data-edit-deck="${s.deckId}" class="block">Edit this deck</button>`;
+      <button data-edit-deck="${s.deckId}" class="block">Open in the Decks tab</button></details>`;
     return;
   }
   el.innerHTML = `<h3>Tier list</h3>
     <label>Title</label><input data-s="title" value="${esc(s.title)}">
-    <div class="grid2">
-      <div><label>Brand</label><input data-s="eyebrow" value="${esc(s.eyebrow)}" placeholder="Plus Two"></div>
-      <div><label>Format pill</label><input data-s="pill" value="${esc(s.pill)}" placeholder="Beta · Oct 2026"></div>
-    </div>
+    <label>Subtitle</label><input data-s="pill" value="${esc(s.pill)}" placeholder="e.g. Beta format · Oct 2026">
+    <label>Deck tiles show</label>
+    <select data-s="display">${Object.entries(DISPLAY_MODES).map(([k, v]) => `<option value="${k}" ${k === s.display ? 'selected' : ''}>${v}</option>`).join('')}</select>
+    <details class="more" data-more="tierlist" ${prefs().open?.['tierlist'] ? 'open' : ''}><summary>More options</summary>
+    <label>Brand</label><input data-s="eyebrow" value="${esc(s.eyebrow)}" placeholder="Plus Two">
     <label>Footnote</label><input data-s="footnote" value="${esc(s.footnote)}" placeholder="optional">
     <label>Style</label>
     <select data-s="look">${[['ledger', 'Ledger'], ['band', 'Band'], ['frame', 'Frame'], ['rail', 'Rail']].map(([k, v]) => `<option value="${k}" ${(s.look || 'ledger') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
-    <label>Deck tiles show</label>
-    <select data-s="display">${Object.entries(DISPLAY_MODES).map(([k, v]) => `<option value="${k}" ${k === s.display ? 'selected' : ''}>${v}</option>`).join('')}</select>
     <label class="check"><input type="checkbox" data-s="showNames" ${s.showNames ? 'checked' : ''}> Show deck names under codes</label>
     <label>Logo</label>
     <div class="row gap"><input data-s="logo" value="${esc(s.logo?.startsWith('data:') ? '(uploaded)' : s.logo)}" placeholder="https://…" style="flex:1">
-      <label class="filebtn">Upload<input type="file" accept="image/*" data-upload-logo hidden></label></div>
+      <label class="filebtn">Upload<input type="file" accept="image/*" data-upload-logo hidden></label></div></details>
     <h3 style="margin-top:20px">Tiers <span class="hint">(${s.tiers.length})</span></h3>
     <div id="tier-edits">${s.tiers.map((t) => `<div class="tier-edit" data-tier-edit="${t.id}" style="--t:${esc(t.color)}">
       <div class="row gap"><input type="color" data-t="color" value="${esc(t.color)}"><input data-t="name" value="${esc(t.name)}" style="flex:1">
@@ -797,9 +797,10 @@ function renderSlideInspector() {
       <textarea data-t="desc" rows="2" placeholder="Description (optional)">${esc(t.desc)}</textarea>
     </div>`).join('')}</div>
     <button data-tadd class="block">+ Add tier</button>
+    <details class="more" data-more="presets" ${prefs().open?.['presets'] ? 'open' : ''}><summary>Tier presets</summary>
     <label>Start from a preset</label>
     <div class="row gap">${Object.keys(TIER_PRESETS).map((k) => `<button class="small" data-preset="${esc(k)}">${esc(k)}</button>`).join('')}</div>
-    <p class="hint">Presets keep your rankings in order and only rename or recolor the tiers. Decks in removed tiers go back to Unranked.</p>`;
+    <p class="hint">Presets rename and recolor tiers and keep your rankings in order. Decks in removed tiers go back to Unranked.</p></details>`;
 }
 
 function moveDeck(deckId, toTierId, beforeDeckId = null) {
@@ -940,6 +941,7 @@ function relayoutTiers() {
 /** Writes tier order back from the DOM after a drag. */
 function commitTiersFromDom() {
   const s = slide();
+  markGuide('ranked');
   for (const t of s.tiers) {
     const row = $(`#stage-host [data-drop="${t.id}"]`);
     if (row) t.deckIds = $$('.deck-tile', row).map((x) => x.dataset.deck);
@@ -1083,7 +1085,7 @@ function addDeckSlide(d) {
 
 /* ---------------- deck search, grouping and sorting ---------------- */
 function prefs() {
-  state.prefs = { deckGroup: 'color', deckSort: 'new', deckQuery: '', poolQuery: '', collapsed: {}, ...state.prefs };
+  state.prefs = { deckGroup: 'color', deckSort: 'new', deckQuery: '', poolQuery: '', collapsed: {}, open: {}, guide: {}, ...state.prefs };
   return state.prefs;
 }
 const COLOR_GROUPS = [['R', 'Red'], ['Y', 'Yellow'], ['G', 'Green'], ['B', 'Blue'], ['multi', 'Three colors'], ['none', 'No Legends yet']];
@@ -1150,29 +1152,27 @@ function renderDecks() {
   };
   ed.innerHTML = `<div class="deck-edit">
     <div>
-      <div class="grid2">
-        <div><label>Tile code</label><input data-d="label" value="${esc(d.label)}" placeholder="${esc(autoCode(d) || 'auto')}"></div>
-        <div><label>Deck name</label><input data-d="name" value="${esc(d.name)}" placeholder="e.g. Geary Noble Safety"></div>
-      </div>
+      <label>Deck name</label><input data-d="name" value="${esc(d.name)}" placeholder="e.g. Geary Noble Safety">
       <label>Legends</label>
       <div class="slots">${d.legends.map((id, i) => slot(id, 'legend', i)).join('')}</div>
       <label>Key cards (up to 3)</label>
       <div class="slots">${[...keysOf(d), null].slice(0, 3).map((id, i) => slot(id, 'key', i)).join('')}</div>
-      <p class="hint">Up to 3 cards that define the deck. Pick them here, or press ★ on cards in the decklist. The first one is used on tier list tiles.</p>
-      <label>Tile display</label>
-      <div class="seg">${[['inherit', 'Slide default'], ...Object.entries(DISPLAY_MODES)].map(([k, v]) => `<button data-display="${k}" class="${(d.display || 'inherit') === k ? 'on' : ''}">${v}</button>`).join('')}</div>
       <label>Notes (shown on the deck page)</label>
       <textarea data-d="notes" rows="3">${esc(d.notes)}</textarea>
       <div class="row gap" style="margin-top:14px">
         <button data-deckpage class="primary">+ Deck page slide</button>
         <button data-reimport>Replace from export…</button>
-        <button data-copy-export>Copy sim export</button>
-        <button data-del-deck class="danger">Delete</button>
       </div>
+      <details class="more" data-more="deck" ${prefs().open?.['deck'] ? 'open' : ''}><summary>More options</summary>
+      <label>Tile code</label><input data-d="label" value="${esc(d.label)}" placeholder="${esc(autoCode(d) || 'auto')}">
+      <p class="hint">Made from the Legends' colors, e.g. RRG. Type to override it.</p>
+      <label>Tile display for this deck</label>
+      <div class="seg">${[['inherit', 'Slide default'], ...Object.entries(DISPLAY_MODES)].map(([k, v]) => `<button data-display="${k}" class="${(d.display || 'inherit') === k ? 'on' : ''}">${v}</button>`).join('')}</div>
+      <div class="row gap" style="margin-top:14px"><button data-copy-export>Copy sim export</button><button data-del-deck class="danger">Delete deck</button></div></details>
     </div>
     <div>
-      <h3>Preview</h3>
-      <div class="previews">${Object.entries(DISPLAY_MODES).map(([k, v]) => `<figure>${deckTileHTML({ ...d, display: k }, k, { selectable: false, showName: true })}<figcaption>${v}</figcaption></figure>`).join('')}</div>
+      <h3>On the tier list</h3>
+      <div class="previews">${deckTileHTML(d, d.display && d.display !== 'inherit' ? d.display : (state.slides.find((x) => x.type === 'tier')?.display || 'legends'), { selectable: false, showName: true })}</div>
     </div>
     <div class="dl-full">
       <h3>Decklist <span class="hint">${deckCount(d)} in the deck${extraRows(d).length ? ` · ${extraRows(d).reduce((t, r) => t + r[1], 0)} sideboard / options` : ''}</span></h3>
@@ -1360,7 +1360,7 @@ function renderSlideBoard() {
   const d = s?.type === 'deck' ? deck(s.deckId) : s?.type === 'tier' && ui.selectedDeck ? deck(ui.selectedDeck) : null;
   wrap.hidden = !d;
   if (!d) return;
-  const tip = s.type === 'tier' ? 'Tap a tier to move this deck, or edit its list here.' : 'Changes show on the slide right away.';
+  const tip = s.type === 'tier' ? 'Drag the deck to move it, or edit its list here.' : 'Changes show on the slide right away.';
   wrap.innerHTML = `<div class="pool-head"><h3>${esc(deckLabel(d))} decklist</h3><span class="hint">${esc(d.name && d.name !== deckLabel(d) ? d.name + ' · ' : '')}${deckCount(d)} in the deck${extraRows(d).length ? ` · ${extraRows(d).reduce((t, r) => t + r[1], 0)} sideboard / options` : ''}. ${tip}</span></div>
     ${quickAddHTML(d)}${boardHTML(d)}`;
 }
@@ -1495,6 +1495,7 @@ function openImport(target = null) {
       if (!target.name || target.name === 'New deck') target.name = p.name;
     } else {
       for (const d of parsed) state.decks.push(d);
+      markGuide('imported');
       ui.deckId = parsed[0].id;
     }
     save(); closeModal(); renderDecks();
@@ -1778,6 +1779,55 @@ function enableTouchDrag() {
   document.addEventListener('click', (e) => { if (Date.now() - lastDrop < 400) { e.stopPropagation(); e.preventDefault(); } }, true);
 }
 
+/* ---------------- getting started + help ---------------- */
+// A short checklist that ticks itself off; hidden once finished or dismissed.
+function guideSteps() {
+  const g = prefs().guide;
+  return [
+    ['cards', 'Load the card data', !!state.catalog, () => setView('data')],
+    ['import', 'Import a deck export', !!g.imported, () => { setView('decks'); openImport(); }],
+    ['rank', 'Drag decks into tiers', !!g.ranked, () => { ui.slideId = state.slides.find((x) => x.type === 'tier')?.id; setView('slides'); }],
+    ['present', 'Present your slides', !!g.presented, () => $('#btn-present').click()],
+  ];
+}
+function renderGuide() {
+  const box = $('#guide');
+  const g = prefs().guide;
+  const steps = guideSteps();
+  const done = steps.filter((x) => x[2]).length;
+  box.hidden = g.dismissed || done === steps.length;
+  if (box.hidden) return;
+  box.innerHTML = `<div class="guide-head"><b>Getting started</b><span>${done}/${steps.length}</span><button class="small" data-guide-close aria-label="Hide getting started">×</button></div>
+    <ol>${steps.map(([key, label, ok]) => `<li class="${ok ? 'ok' : ''}"><button data-guide="${key}" ${ok ? 'disabled' : ''}>${ok ? '✓' : '○'} ${label}</button></li>`).join('')}</ol>
+    <button class="linkish" data-help>How it works</button>`;
+}
+function markGuide(key) {
+  const g = prefs().guide;
+  if (g[key]) return;
+  g[key] = true; save(); renderGuide();
+}
+function openHelp() {
+  openModal(`<div class="help">
+    <h3>How Tier List Studio works</h3>
+    <ol class="help-steps">
+      <li><b>Card data</b> loads by itself. If it doesn't, the Card Data tab shows how to load it from a file.</li>
+      <li><b>Decks</b> come from deck exports. In the Decks tab, choose <i>Import deck export</i> and paste a list from the Cyberpunk TCG Sim or the official deck builder.</li>
+      <li><b>Tier list:</b> drag decks from Unranked into tiers. Rename, recolor, add or remove tiers in the panel on the right.</li>
+      <li><b>Deck pages:</b> add one with <i>+ Deck page</i> to show a deck's Legends, key cards and full list.</li>
+      <li><b>Present</b> shows the slides full screen. Use ← → to move, Esc to exit.</li>
+    </ol>
+    <h3>Gestures</h3>
+    <ul class="help-list">
+      <li><b>Move a deck or card:</b> drag it. On a phone, press and hold first.</li>
+      <li><b>Edit a deck's list:</b> tap the deck; its list opens below the slide.</li>
+      <li><b>Change one card:</b> on a deck page, tap the card.</li>
+      <li><b>Core, Flex, key cards:</b> drag cards between columns in the list; ★ marks a key card (up to 3).</li>
+    </ul>
+    <p class="hint">Everything saves in this browser. Use Project → Save project to back up or move to another device.</p>
+    <div class="row gap" style="margin-top:14px"><button class="primary" data-close>Got it</button>${prefs().guide.dismissed ? '<button data-guide-reset>Show getting started again</button>' : ''}</div>
+  </div>`);
+}
+
 /* ---------------- images ---------------- */
 function fileToDataURL(file, maxW) {
   return new Promise((resolve, reject) => {
@@ -1808,6 +1858,7 @@ function closeModal() { $('#modal').hidden = true; $('#modal-body').innerHTML = 
 let presentIdx = 0;
 function present(start) {
   if (!state.slides.length) return;
+  markGuide('presented');
   presentIdx = Math.max(0, start);
   $('#present').hidden = false;
   document.documentElement.requestFullscreen?.().catch(() => {});
@@ -1927,6 +1978,18 @@ $('#build').textContent = document.querySelector('meta[name=build]')?.content ||
 document.addEventListener('click', (e) => { if (!e.target.closest('.card-menu')) closeCardMenu(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCardMenu(); });
 bindQuickAdd(refreshBoards);
+document.addEventListener('toggle', (e) => {
+  const d = e.target.closest?.('details.more');
+  if (d) { prefs().open[d.dataset.more] = d.open; save(); }
+}, true);
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-guide], [data-guide-close], [data-help], [data-guide-reset], #btn-help');
+  if (!b) return;
+  if (b.id === 'btn-help' || 'help' in b.dataset) return openHelp();
+  if ('guideClose' in b.dataset) { prefs().guide.dismissed = true; save(); return renderGuide(); }
+  if ('guideReset' in b.dataset) { prefs().guide.dismissed = false; save(); closeModal(); return renderGuide(); }
+  guideSteps().find((x) => x[0] === b.dataset.guide)?.[3]();
+});
 bindBoards();
 enableTouchDrag();
 enableDeckDrag();

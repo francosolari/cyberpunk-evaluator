@@ -654,3 +654,27 @@ button.on, .seg button.on, .tabs button.active { background: #2a2a17; color: var
 .ds-row::after { background: rgba(16, 19, 26, .78); }
 .ds-row .ds-row-art { opacity: .35; }
 .ds-meta { color: var(--muted); }
+
+/* ---------- Progressive disclosure, getting started, help ---------- */
+details.more { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 8px; }
+details.more > summary { cursor: pointer; color: var(--muted); font-size: 13px; list-style: none; padding: 4px 0; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::before { content: "+ "; color: var(--accent-2); }
+details.more[open] > summary::before { content: "− "; }
+.guide { background: var(--panel-2); padding: 10px 12px; margin-bottom: 16px; }
+.guide[hidden] { display: none; }
+.guide-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.guide-head span { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.guide-head button { margin-left: auto; padding: 0 8px; }
+.guide ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.guide li button { width: 100%; text-align: left; background: none; border-color: transparent; padding: 4px 2px; clip-path: none; }
+.guide li button:hover { background: var(--panel); }
+.guide li.ok button { color: var(--muted); text-decoration: line-through; cursor: default; }
+.guide li:not(.ok) button { color: var(--text); }
+.linkish { background: none !important; border: none !important; clip-path: none !important; color: var(--accent-2); padding: 6px 2px 0; font-size: 13px; }
+#btn-help { width: 36px; padding: 6px 0; font-weight: 700; }
+.help { max-width: 640px; }
+.help-steps, .help-list { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; line-height: 1.45; color: #c9d0dc; }
+.help h3 + .help-steps, .help h3 + .help-list { margin-top: 4px; }
+.help h3:not(:first-child) { margin-top: 18px; }
+.deck-edit > div:nth-child(2) .previews .deck-tile { width: 170px; height: 230px; }
