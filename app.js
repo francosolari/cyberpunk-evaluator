@@ -702,10 +702,14 @@ function typeGroups(rows) {
 const slideHTML = (s, editing = false) => (!s ? '<div class="stage"></div>' : s.type === 'deck' ? deckSlideHTML(s) : tierSlideHTML(s, editing));
 
 function mountScaled(host, html, boxW, boxH) {
+  // Only rebuild when the slide actually changed; rebuilding reloads every card image (flicker).
+  if (host._html !== html) { host.innerHTML = html; host._html = html; }
+  scaleStage(host, boxW, boxH);
+}
+function scaleStage(host, boxW, boxH) {
   const scale = Math.min(boxW / STAGE_W, boxH / STAGE_H);
   host.style.width = STAGE_W * scale + 'px';
   host.style.height = STAGE_H * scale + 'px';
-  host.innerHTML = html;
   const st = host.firstElementChild;
   if (st) st.style.transform = `scale(${scale})`;
 }
@@ -726,11 +730,13 @@ function renderSlideList() {
       <button data-move="-1" title="Move up">↑</button><button data-move="1" title="Move down">↓</button><button data-del-slide title="Delete">×</button>
     </li>`).join('');
 }
-function renderStage() {
+function stageBox() {
   const wrap = $('#stage-wrap');
   const narrow = window.innerWidth <= 900; // stacked layout: fit to width, let the page scroll
-  const w = Math.max(200, wrap.clientWidth - 28);
-  mountScaled($('#stage-host'), slideHTML(slide(), true), w, narrow ? Infinity : Math.max(120, wrap.clientHeight - 28));
+  return [Math.max(200, wrap.clientWidth - 28), narrow ? Infinity : Math.max(120, wrap.clientHeight - 28)];
+}
+function renderStage() {
+  mountScaled($('#stage-host'), slideHTML(slide(), true), ...stageBox());
 }
 function renderPool() {
   const s = slide();
@@ -1763,7 +1769,18 @@ function bindGlobal() {
     if (e.key === 'Escape') { if (!$('#modal').hidden) closeModal(); else if (ui.selectedDeck) { ui.selectedDeck = null; render(); } }
   });
   document.addEventListener('fullscreenchange', () => { if (!$('#present').hidden) drawPresent(); });
-  window.addEventListener('resize', () => { if (!$('#present').hidden) drawPresent(); else if (ui.view === 'slides') renderStage(); });
+  // Resizing only rescales the slide. On phones, scrolling shows/hides the address bar, which fires
+  // height-only resizes; those don't affect the width-fitted slide, so they're ignored.
+  let lastW = window.innerWidth, frame = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      if (!$('#present').hidden) return scaleStage($('#present-host'), window.innerWidth, window.innerHeight);
+      if (window.innerWidth <= 900 && window.innerWidth === lastW) return;
+      lastW = window.innerWidth;
+      if (ui.view === 'slides') scaleStage($('#stage-host'), ...stageBox());
+    });
+  });
 
   $('#btn-export').onclick = () => {
     const a = document.createElement('a');
