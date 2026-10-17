@@ -701,3 +701,8 @@ details.more[open] > summary::before { content: "− "; }
 body.viewing #app { height: calc(100% - 54px - 52px); }
 body.viewing .tabs, body.viewing .actions, body.viewing .inspector, body.viewing .pool-wrap, body.viewing #slide-board, body.viewing #guide,
 body.viewing .slide-list .row, body.viewing #slide-list button { display: none !important; }
+
+/* Keyboard focus and missing-card note */
+:focus-visible { outline: 2px solid var(--accent-2) !important; outline-offset: 2px; }
+.deck-tile:focus-visible { outline: 3px solid var(--accent-2) !important; outline-offset: 2px; }
+.missing-note { font: 600 20px "Saira", sans-serif; color: #0b0d10; background: var(--danger); padding: 3px 10px; margin-right: 14px; }
