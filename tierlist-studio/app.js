@@ -12,10 +12,10 @@ const CARD_ASPECT = 0.716;          // card width / height
 const TILE_ASPECT = 0.74;           // deck tile width / height (art + caption)
 // Crop = the card's art window (top/bottom, % of card height) + focus point + extra zoom.
 // Layouts scale the card so only the art window is visible, so the rules text never shows.
-// Card frame: the name and subtitle lines end around 22% of the image height, and rules
-// text starts near 62%. The window keeps to the art between them.
-const DEFAULT_CROP = { top: 23, bottom: 62, x: 50, y: 40, zoom: 1 };
-const OLD_DEFAULT_CROPS = ['15/61', '22/62', '29/62'];
+// Card frame: the name and subtitle end around 17% of the image height and rules text starts
+// near 62%; faces usually sit at 22–30%, so the focus aims there.
+const DEFAULT_CROP = { top: 18, bottom: 62, x: 50, y: 28, zoom: 1 };
+const OLD_DEFAULT_CROPS = ['15/61', '22/62', '29/62', '23/62'];
 const COLORS = {
   R: { name: 'Red', hex: '#ff4655' },
   Y: { name: 'Yellow', hex: '#f7d046' },
@@ -30,7 +30,8 @@ const TIER_PRESETS = {
   'Tier 0 – 3': [['Tier 0', 'Best deck'], ['Tier 1', 'Top threats'], ['Tier 2', 'Contenders'], ['Tier 3', 'Playable']],
 };
 const DISPLAY_MODES = {
-  legends: 'Legends (art)',
+  legends: 'Legends (strips)',
+  'legends-bands': 'Legends (bands)',
   'key-art': 'Key card (art)',
   split: 'Key card + Legends',
   'key-full': 'Key card (full card)',
@@ -454,6 +455,7 @@ function deckTileHTML(d, mode, { style = '', selectable = true, showName = false
   const strips = `<div class="strips">${legends.map((c) => `<div class="strip" style="--c:${hexOf(c)}">${artHTML(c)}</div>`).join('')}</div>`;
   let art;
   if (mode === 'legends') art = strips;
+  else if (mode === 'legends-bands') art = strips.replace('class="strips"', 'class="strips bands"');
   else if (mode === 'split') art = `<div class="split">${artHTML(key)}${strips}</div>`;
   else art = artHTML(key, { full: mode === 'key-full' });
   const cols = deckColors(d);
