@@ -549,6 +549,8 @@ function parseDeckExport(raw) {
       const m = line.match(/^(\d+)\s*[x×]?\s+(.+)$/i) || line.match(/^(.+?)\s+[x×]\s*(\d+)$/i) || line.match(/^(.+?)\s+(\d+)$/);
       let qty = 1, nmText = line;
       if (m) { if (/^\d+$/.test(m[1])) { qty = +m[1]; nmText = m[2]; } else { nmText = m[1]; qty = +m[2]; } }
+      // Some lists put the collector number before the name ("3x 131 Chrome Reverie") and a dash before the subtitle.
+      nmText = nmText.replace(/^\d{1,3}\s+(?=\D)/, '').replace(/\s+[—–]\s+/, ', ');
       entries.push({ section, qty, name: nmText.replace(/\s*\[[^\]]*\]\s*$/, '').trim() });
     }
   }

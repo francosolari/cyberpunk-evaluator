@@ -10,13 +10,32 @@
 # Top trios below are from October 2026 meta coverage (cyberpunk-tcg-news.de, TCG Contender);
 # replace them with real lists when you have them.
 
-# Name: BBG Control
+# Name: BBG
 # Tier: Tier 1
-# Notes: The deck people are planning around before the first tournaments.
-#L
-1x Alt Cunningham
-1x Hanako Arasaka
-1x Jackie Welles, Pour One Out for Me
+
+# Legends
+1x 106 Alt Cunningham — Soulkiller Architect
+1x 072 Hanako Arasaka — Daughter of the Emperor
+1x 011 Jackie Welles — Pour One Out For Me
+
+# Main Deck
+3x 131 Chrome Reverie
+2x 132 Floor It
+3x 115 Jacked-In Voodoo Boy
+3x 133 Les Élémens
+2x 117 Lizzy Wizzy — Delicate Weapon
+1x 118 Maman Brigitte — Spirit of Death
+2x 100 Memory Relapse
+3x 134 Nocturne OP55 N1
+3x 101 Peace Offering
+2x 086 Pepe Najarro — Working Doubles
+1x 123 Placide — Voodoo Sentinel
+3x 135 Pyramid Song
+2x 103 Take Control
+3x 137 Three Mouths, One Desire
+2x 138 Towerfall
+3x 139 Trust No One
+2x 091 Valentino Street Racer
 ---
 # Name: Alt Jackie Judy
 # Tier: Tier 1
