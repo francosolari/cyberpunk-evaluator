@@ -332,6 +332,11 @@ code { color: var(--accent); }
 .fd-label { white-space: nowrap; height: 44px; font: 700 22px "Chakra Petch", sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--accent-2); }
 .fd-label b { color: #eef1f6; font-weight: 600; margin-left: 4px; }
 .fd-legends, .fd-deck, .fd-side { position: absolute; }
+.fd-deck { display: flex; gap: 40px; }
+.fd-section { flex: none; }
+.fd-section .fd-label { color: #eef1f6; }
+.fd-section .fd-label { border-bottom: 3px solid var(--k); height: 34px; margin-bottom: 10px; }
+.fd-section .fd-label b { color: var(--k); }
 .fd-col { display: flex; flex-direction: column; gap: 14px; }
 .fd-rule { position: absolute; width: 1px; background: linear-gradient(#5ce1e655, #5ce1e600); }
 .fd-grid { display: grid; gap: 14px; }
