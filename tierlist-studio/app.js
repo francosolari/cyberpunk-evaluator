@@ -776,6 +776,7 @@ function deckStacksSlideHTML(s, d) {
   sections.forEach((x) => (x.count = x.rows.reduce((t, r) => t + r[1], 0)));
   const legends = legendsOf(d).map(card).filter(Boolean);
   const X = 70, TOP = 214, BOTTOM = 1080 - 40, gap = 14, label = 44;
+  const FOOT = 40, FOOT_S = 30; // label row under each card: copies, Key, Core / Flex
   const stripH = strip.length ? 190 : 0;
   const bodyH = BOTTOM - TOP - stripH - label;
   // Legends: stacked in one column running the full height (the bottom strip sits under the deck grid).
@@ -792,7 +793,7 @@ function deckStacksSlideHTML(s, d) {
     const T = cols.reduce((a, b) => a + b, 0);
     const maxRows = Math.max(...counts.map((n, i) => Math.ceil(n / cols[i])));
     const byW = (deckW - (T - cols.length) * gap - (cols.length - 1) * SG) / T;
-    const byH = ((bodyH - (maxRows - 1) * gap) / maxRows) * CARD_ASPECT;
+    const byH = ((bodyH - (maxRows - 1) * gap) / maxRows - FOOT) * CARD_ASPECT;
     const w = Math.min(byW, byH);
     if (w > best.w) best = { w, cols: cols.slice() };
   };
@@ -802,11 +803,11 @@ function deckStacksSlideHTML(s, d) {
   };
   walk(0, []);
   const w = Math.floor(best.w), h = Math.floor(w / CARD_ASPECT);
-  const gridH = Math.max(0, ...counts.map((n, i) => Math.ceil(n / best.cols[i]))) * (h + gap) - gap;
+  const gridH = Math.max(0, ...counts.map((n, i) => Math.ceil(n / best.cols[i]))) * (h + FOOT + gap) - gap;
   const stripTop = Math.min(TOP + label + gridH + 28, BOTTOM - stripH + 10); // right under the grid
-  const sw = Math.floor((stripH - label - 6) * CARD_ASPECT);
-  const cardHTML = (c, n, width, height, extra = '', typeColor = '', option = false, zone = d.roles?.[c.id] || 'deck') => `<div ${n ? `data-card="${c.id}" data-zone="${zone}"` : ''} class="fd-card ${MAIN_ZONES.includes(zone) && isKey(d, c.id) ? 'is-key' : ''} ${MAIN_ZONES.includes(zone) && roleOf(c) === 'flex' ? 'is-flex' : ''} ${extra}" style="width:${width}px;height:${height}px${typeColor ? `;--k:${typeColor}` : ''}">
-      ${artHTML(c, { full: true })}${n ? `<span class="fd-n"><small>×</small>${n}</span>` : ''}${n && MAIN_ZONES.includes(zone) ? roleTag(s, d, c.id) : ''}${n && MAIN_ZONES.includes(zone) && isKey(d, c.id) ? '<span class="fd-key">Key</span>' : ''}</div>`;
+  const sw = Math.floor((stripH - label - 6 - FOOT_S) * CARD_ASPECT);
+  const cardHTML = (c, n, width, height, extra = '', typeColor = '', option = false, zone = d.roles?.[c.id] || 'deck') => `<div ${n ? `data-card="${c.id}" data-zone="${zone}"` : ''} class="fd-card ${MAIN_ZONES.includes(zone) && isKey(d, c.id) ? 'is-key' : ''} ${MAIN_ZONES.includes(zone) && roleOf(c) === 'flex' ? 'is-flex' : ''} ${extra}" style="width:${width}px${typeColor ? `;--k:${typeColor}` : ''}">
+      <div class="fd-face" style="height:${height}px">${artHTML(c, { full: true })}</div>${n ? `<div class="fd-foot"><span class="fd-n"><small>×</small>${n}</span>${MAIN_ZONES.includes(zone) && isKey(d, c.id) ? '<span class="fd-key">★ Key</span>' : ''}${MAIN_ZONES.includes(zone) ? roleTag(s, d, c.id) : ''}</div>` : ''}</div>`;
   const total = deckCount(d);
   return `<div class="stage deck-slide deck-full">
     <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(legends[0])}38, transparent)"></div><div class="glow g2"></div>
