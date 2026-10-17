@@ -760,8 +760,8 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 .alt-chip .art { flex: none; width: 30px; height: 30px; outline: 2px solid var(--c); outline-offset: -2px; }
 .ds-legend figcaption .ds-alts span { color: #d6dbe4; min-height: 0; font-size: 17px; }
 /* Full decklist: a panel holding the main Legend and a row of its alternates. */
-.fd-flex { display: flex; flex-direction: column; align-items: center; background: #11141b; box-shadow: inset 0 0 0 1px #ffffff14; }
-.fd-flex-alts { display: flex; align-self: stretch; }
+.fd-flex { display: flex; align-items: flex-start; }
+.fd-flex-alts { display: flex; flex-direction: column; gap: 8px; }
 .fd-card.is-alt .fd-face { outline-width: 1.5px; }
 /* Deck editor: alternates as faces under each Legend, then +. */
 .slots.alts { margin-top: 6px; }
