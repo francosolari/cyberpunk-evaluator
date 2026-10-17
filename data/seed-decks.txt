@@ -3,6 +3,7 @@
 # Paste deck exports here (a deck text export, an official deck builder text list,
 # or a deck link), separated by a line containing only ---
 # A 4th Legend (or one under #S / #O) becomes an alternate for the Legend of its color.
+# Or name the slot: # Alternates: Viktor Vektor = Muamar Reyes   (several: separate with ;)
 # Optional lines in each deck:
 #   # Tier: Tier 1        which tier on the starting tier list (Tier 1, Tier 2 or Rogue)
 #   # Notes: ...          shown on the deck page
@@ -61,6 +62,7 @@
 1x V
 ---
 # Name: YYR
+# Alternates: Viktor Vektor, Sit Down and Relax = Muamar Reyes
 #L
 1x River Ward, Detective on the Hunt
 1x Adam Smasher, Ender of Legends
