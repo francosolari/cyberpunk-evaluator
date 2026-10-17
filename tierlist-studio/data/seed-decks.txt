@@ -98,3 +98,88 @@
 3x corpo_security
 3x sandevistan
 3x corporate_surveillance
+---
+# Name: YYR
+#L
+1x River Ward, Detective on the Hunt
+1x Adam Smasher, Ender of Legends
+1x Viktor Vektor, Sit Down and Relax
+#D
+2x Secondhand Bombus
+3x Sketchy Ripper
+2x Dexter DeShawn, One Last Chance
+3x 6th Street Recruits
+3x Rockn' Rockerboy
+3x Johnny Silverhand, Never Stop Fighting
+3x Mandibular Upgrade
+3x Mantis Blades
+3x Adrenaline Converter
+2x Arasaka Emergency Radioport
+3x Satori, Sword of Saburo
+3x Zetatech Faceplate
+1x Gorilla Arms
+3x Live with the Aftermath
+3x Bootleg Black Sapphire Show
+#S
+2x Maxtac Suppression Team
+3x Royce, Don't Call Me Simon
+2x Heywood Ripperdoc
+---
+# Name: RRG - Fixers
+#L
+1x Padre
+1x V, Streetkid
+1x Adam Smasher, Ender of Legends
+#D
+1x Valentino Street Racer
+3x 6th Street Recruits
+1x Maelstrom Zealots
+2x Meredith Stout, Stone Cold Corpo
+3x Pepe Najarro
+3x Animals Wrecker
+3x Yorinobu Arasaka
+3x Mantis Blades
+1x Riot Shield
+3x Satori, Sword of Saburo
+1x Detonate
+2x Industrial Assembly
+3x Peace Offering
+2x Synapse Burnout
+3x Bonnie and Clyde
+3x Memory Relapse
+3x Carnage at the Colosseum
+#S
+3x Royce, Don't Call Me Simon
+1x Riot Shield
+1x Detonate
+1x Synapse Burnout
+1x Gunpoint Diplomacy
+---
+# Name: RRG - Arasaka
+#L
+1x Padre
+1x V, Streetkid
+1x Adam Smasher, Ender of Legends
+#D
+1x Valentino Street Racer
+3x 6th Street Recruits
+1x Maelstrom Zealots
+2x Meredith Stout, Stone Cold Corpo
+3x Pepe Najarro
+3x Animals Wrecker
+3x Yorinobu Arasaka
+3x Mantis Blades
+1x Riot Shield
+3x Satori, Sword of Saburo
+2x Detonate
+2x Industrial Assembly
+3x Peace Offering
+3x Bonnie and Clyde
+1x Gunpoint Diplomacy
+3x Memory Relapse
+3x Carnage at the Colosseum
+#S
+2x Royce, Don't Call Me Simon
+2x Nadia
+1x Riot Shield
+2x Gunpoint Diplomacy
