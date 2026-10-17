@@ -2,6 +2,7 @@
 #
 # Paste deck exports here (a deck text export, an official deck builder text list,
 # or a deck link), separated by a line containing only ---
+# A 4th Legend (or one under #S / #O) becomes an alternate for the Legend of its color.
 # Optional lines in each deck:
 #   # Tier: Tier 1        which tier on the starting tier list (Tier 1, Tier 2 or Rogue)
 #   # Notes: ...          shown on the deck page
@@ -37,13 +38,6 @@
 3x 139 Trust No One
 2x 091 Valentino Street Racer
 ---
-# Name: Alt Jackie Judy
-# Tier: Tier 1
-#L
-1x Alt Cunningham
-1x Jackie Welles
-1x Judy Alvarez
----
 # Name: River's Closet
 # Tier: Tier 2
 # Notes: Most-built archetype on ExBurst this month.
@@ -65,58 +59,6 @@
 1x Goro Takemura
 1x Jackie Welles
 1x V
----
-# Name: Heist Tempo
-# Tier: Rogue
-# Notes: Official starter deck.
-#L
-1x v_corporate_exile
-1x viktor_vektor_sit_down_and_relax
-1x jackie_welles_pour_one_out_for_me
-#D
-2x dexter_deshawn_one_last_chance
-2x heywood_ripperdoc
-2x offduty_malfini
-2x secondhand_bombus
-2x t_bug_amateur_philosopher
-3x kiroshi_optics
-3x mandibular_upgrade
-3x zetatech_faceplate
-2x afterparty_at_lizzie_s
-3x delamain_cab
-3x evelyn_parker_scheming_siren
-2x mt0d12_flathead
-2x psycho_squad
-2x dying_night_v_s_pistol
-2x tetratronic_rippler
-3x floor_it
-2x reboot_optics
----
-# Name: Arasaka Steel
-# Tier: Rogue
-# Notes: Official starter deck.
-#L
-1x goro_takemura_hands_unclean
-1x yorinobu_arasaka_embracing_destruction
-1x saburo_arasaka_stubborn_patriarch
-#D
-2x chrome_fang
-2x minotaur
-3x ruthless_lowlife
-2x swordwise_huscle
-2x emergency_atlus
-2x field_operator
-2x goro_takemura_losing_his_way
-2x maxtac_av
-2x arasaka_emergency_radioport
-3x mantis_blades
-3x satori_sword_of_saburo
-2x industrial_assembly
-2x over_the_edge
-2x shattered_memories
-3x corpo_security
-3x sandevistan
-3x corporate_surveillance
 ---
 # Name: YYR
 #L
@@ -200,3 +142,20 @@
 2x Nadia, Fighting Through Grief
 1x Riot Shield
 2x Gunpoint Diplomacy
+
+---
+# Name: BBG Judy
+# Tier: Tier 1
+#L
+1x Jackie Welles, Pour One Out for Me
+1x Hanako Arasaka, Daughter of the Emperor
+1x Judy Alvarez
+
+---
+# Name: RRY
+# Notes: Muamar Reyes is the alternate for Dum Dum.
+#L
+1x Adam Smasher, Ender of Legends
+1x V, Streetkid
+1x Dum Dum
+1x Muamar Reyes
