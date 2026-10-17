@@ -425,6 +425,13 @@ function autoCode(d) {
   return cols.slice().sort((a, b) => count[b] - count[a] || COLOR_ORDER.indexOf(a) - COLOR_ORDER.indexOf(b)).join('');
 }
 const isDemoDeck = (d) => d.legends.some((id) => id?.startsWith('demo_'));
+/** A deck's key cards (up to 3). `keyCard` stays the first one, which tiles use. */
+const keysOf = (d) => (d.keyCards?.length ? d.keyCards : d.keyCard ? [d.keyCard] : []).filter(Boolean);
+const isKey = (d, id) => keysOf(d).includes(id);
+function setKeys(d, ids) {
+  d.keyCards = [...new Set(ids.filter(Boolean))].slice(0, 3);
+  d.keyCard = d.keyCards[0] || null;
+}
 const deckLabel = (d) => d.label || autoCode(d) || d.name || 'Deck';
 const deckCount = (d) => d.main.reduce((n, r) => n + r[1], 0);
 
@@ -529,10 +536,9 @@ function tierOf(d) {
 function deckSlideHTML(s) {
   const d = deck(s.deckId);
   if (!d) return `<div class="stage deck-slide"><div class="ds-empty">Pick a deck in the panel →</div></div>`;
-  if (s.listStyle === 'cards') return deckStacksSlideHTML(s, d);
-  if (s.listStyle && s.listStyle !== 'list') return deckFeaturedSlideHTML(s, d); // 'featured' (and the older 'text')
+  if (s.listStyle === 'cards') return deckStacksSlideHTML(s, d); // any other value shows names
   const tier = tierOf(d);
-  const key = card(d.keyCard);
+  const keys = keysOf(d).map(card).filter(Boolean);
   const cols = deckColors(d);
   const legends = d.legends.map((id) => {
     const c = card(id);
@@ -545,7 +551,7 @@ function deckSlideHTML(s) {
   // Compact rows when the grouped list wouldn't fit under the notes and breakdown.
   const lines = groups.reduce((t, g) => t + Math.ceil(g.rows.length / 2), 0);
   const many = lines * 66 + groups.length * 48 > (d.notes ? 640 : 770);
-  const rowHTML = ([c, n]) => `<div class="ds-row ${c.id === d.keyCard ? 'is-key' : ''}" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
+  const rowHTML = ([c, n]) => `<div class="ds-row ${isKey(d, c.id) ? 'is-key' : ''}" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
       ${artHTML(c, { cls: 'ds-row-art' })}
       <span class="ds-cost">${c.cost ?? '·'}</span><span class="ds-name">${esc(c.name)}</span>${roleTag(s, d, c.id)}<span class="ds-n">${n}×</span>
     </div>`;
@@ -559,7 +565,7 @@ function deckSlideHTML(s) {
       ${d.name && d.name !== deckLabel(d) ? `<div class="ds-name-big">${esc(d.name)}</div>` : ''}
     </header>
     <div class="ds-legends">${legends}</div>
-    ${key ? `<div class="ds-key" style="--c:${hexOf(key)}">${artHTML(key, { cls: 'ds-key-art' })}<div class="ds-key-cap"><span>Key card</span><b>${esc(key.name)}</b></div></div>` : ''}
+    ${keys.length ? `<div class="ds-keys">${keys.map((k, i) => `<div class="ds-key" style="--c:${hexOf(k)}">${artHTML(k, { cls: 'ds-key-art' })}<div class="ds-key-cap"><span>${i ? '&nbsp;' : keys.length > 1 ? 'Key cards' : 'Key card'}</span><b>${esc(k.name)}</b></div></div>`).join('')}</div>` : ''}
     <div class="ds-right">
       ${d.notes ? `<div class="ds-notes">${esc(d.notes)}</div>` : ''}
       ${breakdown}
@@ -576,52 +582,6 @@ const deckEyebrow = (d) => {
   const tier = tierOf(d);
   return `${tier ? `<span class="pill tier-pill" style="--t:${esc(tier.color)}">${esc(tier.name)}</span>` : ''}<span class="chips">${chips(deckColors(d), 'chip-lg')}</span>${d.main.length ? `<span class="ds-meta">${deckCount(d)} cards</span>` : ''}`;
 };
-
-/** Deck page that shows the deck's Core cards (or its key and most-played cards) large enough to
- * read, with the rest of the decklist as a compact list. */
-function deckFeaturedSlideHTML(s, d) {
-  const rows = d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c);
-  const groups = typeGroups(rows);
-  const ordered = groups.flatMap((g) => g.rows);
-  let featured = ordered.filter(([c]) => d.roles?.[c.id] === 'core');
-  if (!featured.length) {
-    featured = ordered.slice().sort((a, b) => (b[0].id === d.keyCard) - (a[0].id === d.keyCard) || b[1] - a[1]).slice(0, 6);
-    featured = ordered.filter((r) => featured.includes(r));
-  }
-  featured = featured.slice(0, 8);
-  const rest = groups.map((g) => ({ ...g, rows: g.rows.filter((r) => !featured.includes(r)) })).filter((g) => g.rows.length);
-  // Fit the featured cards into the area left above the compact list.
-  const W = 1300, H = 960 - (rest.length ? 200 : 0), gap = 16;
-  let best = { w: 0, cols: 1 };
-  for (let cols = 1; cols <= Math.max(1, featured.length); cols++) {
-    const lines = Math.ceil(featured.length / cols);
-    const w = Math.min((W - (cols - 1) * gap) / cols, ((H - (lines - 1) * gap) / lines) * CARD_ASPECT);
-    if (w > best.w) best = { w, cols };
-  }
-  const w = Math.floor(best.w);
-  const cardHTML = ([c, n]) => `<div class="df-card ${c.id === d.keyCard ? 'is-key' : ''}" style="width:${w}px;height:${Math.floor(w / CARD_ASPECT)}px">
-      ${artHTML(c, { full: true })}<span class="df-badge">${n}×</span>${roleTag(s, d, c.id)}</div>`;
-  const legends = d.legends.map((id) => {
-    const c = card(id);
-    return `<div class="dt-legend" style="--c:${hexOf(c)}">${artHTML(c)}<span>${esc(c?.name || '—')}</span></div>`;
-  }).join('');
-  return `<div class="stage deck-slide deck-featured">
-    <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(d.legends[0]))}38, transparent)"></div><div class="glow g2"></div>
-    <aside class="dt-left">
-      <div class="ds-eyebrow">${deckEyebrow(d)}</div>
-      <h1 class="dt-code">${esc(deckLabel(d))}</h1>
-      ${d.name && d.name !== deckLabel(d) ? `<div class="dt-deckname">${esc(d.name)}</div>` : ''}
-      ${groups.length ? breakdownHTML(groups, 'compact') : ''}
-      <div class="dt-legends">${legends}</div>
-      ${card(d.keyCard) ? `<div class="dt-key"><span>Key card</span><b>${esc(card(d.keyCard).name)}</b></div>` : ''}
-    </aside>
-    <div class="df-main">
-      <div class="df-grid" style="width:${best.cols * w + (best.cols - 1) * gap}px">${featured.map(cardHTML).join('') || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}</div>
-      ${rest.length ? `<div class="df-rest">${rest.map((g) => `<div class="df-rest-group"><span class="df-rest-label" style="--k:${g.color}">${esc(g.label)}</span>${g.rows.map(([c, n]) =>
-        `<span class="df-chip" style="--c:${hexOf(c)}"><b>${n}×</b> ${esc(c.name)}${roleTag(s, d, c.id)}</span>`).join('')}</div>`).join('')}</div>` : ''}
-    </div>
-  </div>`;
-}
 
 /** Full decklist as cards: a Legends column, then a column per card type, cards overlapped so every
  * name bar shows and the last card of each column is fully visible (like a visual deck builder). */
@@ -640,7 +600,7 @@ function deckStacksSlideHTML(s, d) {
     if (legends.length) push('Legends', '#eef1f6', legends, legends.length);
     for (const g of groups) {
       // Key card last so it shows in full; otherwise by cost.
-      const rows = g.rows.slice().sort((a, b) => (a[0].id === d.keyCard) - (b[0].id === d.keyCard));
+      const rows = g.rows.slice().sort((a, b) => isKey(d, a[0].id) - isKey(d, b[0].id));
       push(g.label, g.color, rows, g.count);
     }
     const tallest = Math.max(...cols.map((c) => c.rows.length));
@@ -651,7 +611,7 @@ function deckStacksSlideHTML(s, d) {
   const colHTML = (col) => `<div class="dk-col" style="width:${w}px">
       <div class="dk-label" style="--k:${col.color}">${esc(col.label)}${col.count !== '' ? ` <b>${col.count}</b>` : ''}</div>
       <div class="dk-stack" style="height:${h + step * (col.rows.length - 1)}px">${col.rows.map(([c, n], i) => `
-        <div class="dk-card ${c.id === d.keyCard ? 'is-key' : ''}" style="top:${i * step}px;width:${w}px;height:${h}px;z-index:${i + 1}">
+        <div class="dk-card ${isKey(d, c.id) ? 'is-key' : ''}" style="top:${i * step}px;width:${w}px;height:${h}px;z-index:${i + 1}">
           ${artHTML(c, { full: true })}
           ${roleTag(s, d, c.id)}${n ? `<span class="dk-n">${n}×</span>` : ''}
         </div>`).join('')}</div>
@@ -735,9 +695,9 @@ function renderSlideInspector() {
     el.innerHTML = `<h3>Deck page</h3>
       <label>Deck</label><select data-s="deckId">${state.decks.map((d) => `<option value="${d.id}" ${d.id === s.deckId ? 'selected' : ''}>${esc(deckLabel(d))}${d.name && d.name !== deckLabel(d) ? ' — ' + esc(d.name) : ''}</option>`).join('')}</select>
       <label>Decklist shows</label>
-      <select data-s="listStyle">${[['list', 'Names'], ['cards', 'Full decklist (cards)'], ['featured', 'Featured cards']].map(([k, v]) => `<option value="${k}" ${({ list: 'list', cards: 'cards' }[s.listStyle || 'list'] || 'featured') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <select data-s="listStyle">${[['list', 'Names'], ['cards', 'Full decklist (cards)']].map(([k, v]) => `<option value="${k}" ${(s.listStyle === 'cards' ? 'cards' : 'list') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
       <label class="check"><input type="checkbox" data-s="showRoles" ${s.showRoles !== false ? 'checked' : ''}> Show Core / Flex tags</label>
-      <p class="hint">Featured cards shows the deck's Core cards large enough to read (or its key and most-played cards when nothing is marked Core). Mark cards as Core or Flex in the deck editor. The page shows the deck's Legends, key card, notes and decklist from its export.</p>
+      <p class="hint">Mark cards as Core or Flex, and pick up to 3 key cards, in the deck editor.</p>
       <button data-edit-deck="${s.deckId}" class="block">Edit this deck</button>`;
     return;
   }
@@ -930,7 +890,7 @@ function renderDecks() {
     return `<div class="dl-row" style="--c:${hexOf(c)}"><span class="ds-cost">${c?.cost ?? '·'}</span><span class="nm">${esc(c?.name || id)}</span>
       <span class="qty"><button class="small" data-q="${id}" data-side="${side}" data-dq="-1">−</button>${n}<button class="small" data-q="${id}" data-side="${side}" data-dq="1">+</button></span>
       <button class="small role-btn ${d.roles?.[id] || ''}" data-role="${id}" title="Mark as Core or Flex">${d.roles?.[id] || 'core/flex'}</button>
-      <button class="small ${d.keyCard === id ? 'on' : ''}" data-setkey="${id}" title="Use as key card">★</button></div>`;
+      <button class="small ${isKey(d, id) ? 'on' : ''}" data-setkey="${id}" title="Key card (up to 3)">★</button></div>`;
   }).join('');
   ed.innerHTML = `<div class="deck-edit">
     <div>
@@ -940,8 +900,9 @@ function renderDecks() {
       </div>
       <label>Legends</label>
       <div class="slots">${d.legends.map((id, i) => slot(id, 'legend', i)).join('')}</div>
-      <label>Key card</label>
-      <div class="slots key">${slot(d.keyCard, 'key')}<p class="hint">The card that defines the deck. Pick it here, or press ★ on a card in the decklist.</p></div>
+      <label>Key cards (up to 3)</label>
+      <div class="slots">${[...keysOf(d), null].slice(0, 3).map((id, i) => slot(id, 'key', i)).join('')}</div>
+      <p class="hint">Up to 3 cards that define the deck. Pick them here, or press ★ on cards in the decklist. The first one is used on tier list tiles.</p>
       <label>Tile display</label>
       <div class="seg">${[['inherit', 'Slide default'], ...Object.entries(DISPLAY_MODES)].map(([k, v]) => `<button data-display="${k}" class="${(d.display || 'inherit') === k ? 'on' : ''}">${v}</button>`).join('')}</div>
       <label>Notes (shown on the deck page)</label>
@@ -1005,13 +966,18 @@ function bindDecks() {
       const role = b.dataset.slot;
       const onlyDeck = role === 'key' && d.main.length ? d.main.map((r) => r[0]) : null;
       openPicker(role === 'key' ? 'all' : 'legend', (id) => {
-        if (role === 'key') d.keyCard = id; else d.legends[Number(b.dataset.i)] = id;
+        if (role === 'key') { const ks = keysOf(d).slice(); ks[Number(b.dataset.i)] = id; setKeys(d, ks); } else d.legends[Number(b.dataset.i)] = id;
         save(); renderDecks();
       }, onlyDeck);
       return;
     }
     if (b.dataset.display) d.display = b.dataset.display;
-    else if (b.dataset.setkey) d.keyCard = b.dataset.setkey;
+    else if (b.dataset.setkey) {
+      const id = b.dataset.setkey, ks = keysOf(d);
+      if (ks.includes(id)) setKeys(d, ks.filter((x) => x !== id));
+      else if (ks.length >= 3) return toast('A deck can have up to 3 key cards. Unstar one first.');
+      else setKeys(d, [...ks, id]);
+    }
     else if (b.dataset.role) {
       d.roles = d.roles || {};
       const next = ROLES[(ROLES.indexOf(d.roles[b.dataset.role] || '') + 1) % ROLES.length];
@@ -1061,7 +1027,8 @@ function openImport(target = null) {
   $('#imp-go').onclick = () => {
     if (target && parsed[0]) {
       const p = parsed[0];
-      Object.assign(target, { legends: p.legends, main: p.main, side: p.side, unmatched: p.unmatched, keyCard: p.main.some((r) => r[0] === target.keyCard) ? target.keyCard : p.keyCard });
+      Object.assign(target, { legends: p.legends, main: p.main, side: p.side, unmatched: p.unmatched, keyCards: keysOf(target).filter((k) => p.main.some((r) => r[0] === k)) });
+      if (!keysOf(target).length) setKeys(target, [p.keyCard]); else setKeys(target, keysOf(target));
       if (!target.name || target.name === 'New deck') target.name = p.name;
     } else {
       for (const d of parsed) state.decks.push(d);
