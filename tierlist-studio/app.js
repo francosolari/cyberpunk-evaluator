@@ -156,16 +156,27 @@ function artHTML(c, { full = false, cls = '' } = {}) {
   return `<div class="art ${full ? 'full' : ''} ${cls}"><img src="${esc(c.img)}" alt="${esc(c.name)}" draggable="false" referrerpolicy="no-referrer" style="${style}"></div>`;
 }
 
+const hexOf = (c) => COLORS[c?.color]?.hex || '#6b7280';
+/** Inline style for the colored plinth + underline (tint uses hex alpha so PNG export can parse it). */
+const plinth = (hex) => `--c:${hex};--ct:${hex}55`;
+const chips = (cols, cls = 'chip') => cols.map((c) => `<span class="${cls}" style="background:${COLORS[c].hex}"></span>`).join('');
+
 function deckTileHTML(d, mode, { style = '', selectable = true } = {}) {
   if (d.display && d.display !== 'inherit') mode = d.display;
   const key = card(d.keyCard);
   const legends = d.legends.map(card);
-  const strips = `<div class="legend-strips">${legends.map((c) => artHTML(c)).join('')}</div>`;
+  const cells = legends.map((c) => `<div class="lg" style="${plinth(hexOf(c))}">${artHTML(c)}</div>`).join('');
+  const strips = `<div class="legend-strips">${cells}</div>`;
   let inner;
   if (mode === 'legends') inner = strips;
-  else if (mode === 'legends-rows') inner = `<div class="legend-strips rows">${legends.map((c) => artHTML(c)).join('')}</div>`;
+  else if (mode === 'legends-rows') inner = `<div class="legend-strips rows">${cells}</div>`;
   else if (mode === 'split') inner = `<div class="split">${artHTML(key)}${strips}</div>`;
-  else inner = artHTML(key, { full: mode === 'key-full' });
+  else {
+    // key-card modes: segmented underline in the Legends' colors
+    const cols = deckColors(d);
+    inner = artHTML(key, { full: mode === 'key-full' }) +
+      (cols.length ? `<div class="underline">${cols.map((c) => `<span style="background:${COLORS[c].hex}"></span>`).join('')}</div>` : '');
+  }
   const len = d.name.length;
   const lcls = len > 5 ? 'xlong' : len > 3 ? 'long' : '';
   const sel = selectable && ui.selectedDeck === d.id ? 'selected' : '';
@@ -234,19 +245,19 @@ function deckSlideHTML(s) {
   const key = card(d.keyCard);
   const legends = d.legends.map((id) => {
     const c = card(id);
-    return `<div class="spot-legend" style="--c:${COLORS[c?.color]?.hex || '#555'}">${artHTML(c)}<div class="cap">${esc(c?.name || '—')}</div></div>`;
+    return `<div class="spot-legend plate" style="${plinth(hexOf(c))}">${artHTML(c)}<div class="cap">${esc(c?.name || '—')}</div></div>`;
   }).join('');
   return `<div class="stage">
     <div class="spot">
       <div class="spot-info">
         ${tier ? `<div class="spot-tier" style="background:${esc(tier.color)}">${esc(tier.name)}</div>` : ''}
         <div class="spot-name">${esc(d.name)}</div>
-        <div class="spot-pips">${deckColors(d).map((c) => `<span class="pip" style="background:${COLORS[c].hex}"></span>`).join('')}</div>
+        <div class="spot-pips">${chips(deckColors(d), 'pip')}</div>
         ${d.subtitle ? `<div class="spot-sub">${esc(d.subtitle)}</div>` : ''}
         <div class="spot-notes">${esc(d.notes)}</div>
       </div>
       <div class="spot-legends">${legends}</div>
-      <div class="spot-key"><div class="spot-heading">Key card</div>${artHTML(key, { full: true })}<div class="cap">${esc(key?.name || '')}</div></div>
+      <div class="spot-key"><div class="spot-heading">Key card</div><div class="plate" style="${plinth(hexOf(key))}">${artHTML(key, { full: true })}<div class="cap">${esc(key?.name || '')}</div></div></div>
     </div>
   </div>`;
 }
@@ -486,8 +497,9 @@ function renderSlidesListOnly() {
 function renderDecks() {
   if (!deck(ui.deckId)) ui.deckId = state.decks[0]?.id;
   $('#deck-list').innerHTML = state.decks.map((d) => `<li data-deck-item="${d.id}" class="${d.id === ui.deckId ? 'active' : ''}">
-    <strong>${esc(d.name)}</strong><span class="hint">${esc(d.subtitle)}</span>
-    <span class="dots">${deckColors(d).map((c) => `<span class="dot" style="background:${COLORS[c].hex}"></span>`).join('')}</span></li>`).join('');
+    <span class="fan">${d.legends.map((id) => { const c = card(id); return `<span class="mini" style="${plinth(hexOf(c))}">${artHTML(c, { full: true })}</span>`; }).join('')}</span>
+    <span class="dl-text"><strong>${esc(d.name)}</strong><span class="hint">${esc(d.subtitle)}</span>
+    <span class="chips">${chips(deckColors(d))}</span></span></li>`).join('');
   const d = deck(ui.deckId);
   const ed = $('#deck-editor');
   if (!d) { ed.innerHTML = '<div class="empty-msg">No decks yet. Create one on the left.</div>'; return; }
