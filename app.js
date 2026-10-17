@@ -404,8 +404,14 @@ function decodeSimDeckCode(text) {
   const m = String(text).match(/[?&]d=([a-z0-9._\-]+)/i);
   if (!m || !/(^|\.)l\./.test(m[1])) return null;
   // Code letters are the set's first letter, except "w" is always the first set (whatever the catalog calls it).
+  // Code letters: "w" is the first set and "h" the second (Viktor Vektor, Sit Down and Relax is h1).
+  // Other sets use their first letter; a letter nothing matches goes to the one set left over.
   const firstSet = state.catalog?.numbering?.anchorSet || '';
-  const letterOf = (set) => (set && set === firstSet ? 'w' : (set || '')[0] || '');
+  const sets = [...new Set(allCards().map((c) => c.set).filter(Boolean))];
+  const hSet = allCards().find((c) => /viktor.*sit down/i.test(c.name))?.set;
+  const letterOf = (set) => (set && set === firstSet ? 'w' : set && set === hSet ? 'h' : (set || '')[0] || '');
+  const known = new Set(sets.map(letterOf));
+  const spare = sets.filter((x) => x !== firstSet && x !== hSet && !'wh'.includes(letterOf(x)));
   const byCode = new Map();
   const byNum = new Map();
   for (const c of allCards()) if (c.num != null) {
@@ -418,7 +424,9 @@ function decodeSimDeckCode(text) {
     if (!mm) return code;
     const n = parseInt(mm[2], 36);
     const only = new Set((byNum.get(n) || []).map((c) => c.set)).size === 1 ? byNum.get(n)[0] : null;
-    const hit = byCode.get(mm[1].toLowerCase() + ':' + n) || only;
+    const letter = mm[1].toLowerCase();
+    const viaSpare = !known.has(letter) && spare.length === 1 ? byCode.get(letterOf(spare[0]) + ':' + n) : null;
+    const hit = byCode.get(letter + ':' + n) || viaSpare || only;
     return hit ? hit.id : `${code} (#${n})`;
   };
   const out = { l: [], d: [], s: [] };
@@ -461,7 +469,6 @@ function relinkDecks() {
       } else (u.section === 'side' ? d.side : d.main).push([id, u.qty]);
       return false;
     });
-    if (!d.keyCard) d.keyCard = suggestKeyCard(d);
   }
 }
 
@@ -556,7 +563,7 @@ function parseDeckExport(raw) {
   d.legends = [0, 1, 2].map((i) => legends[i] || null);
   // A 4th Legend, or Legends listed under sideboard / options, are alternates for a slot.
   for (const id of [...legends.slice(3), ...altIds]) assignAlt(d, id);
-  d.keyCard = suggestKeyCard(d);
+  // No key card is picked on import; the deck's author chooses it.
   if (!d.name) d.name = autoCode(d) || 'Imported deck';
   return d;
 }
@@ -654,6 +661,8 @@ function deckTileHTML(d, mode, { style = '', selectable = true, showName = false
     return `<div class="strip ${xs.length ? 'has-alts' : ''}" style="--c:${hexOf(c)}">${artHTML(c)}${xs.map((a) => `<div class="strip-alt" title="${esc(a.name)}">${artHTML(a)}</div>`).join('')}</div>`; };
   const strips = `<div class="strips">${legends.map(strip).join('')}</div>`;
   let art;
+  // Without a key card, key card views fall back to the Legends.
+  if (!key && mode !== 'legends-bands') mode = 'legends';
   if (mode === 'legends') art = strips;
   else if (mode === 'legends-bands') art = strips.replace('class="strips"', 'class="strips bands"');
   else if (mode === 'split') art = `<div class="split">${artHTML(key)}${strips}</div>`;
