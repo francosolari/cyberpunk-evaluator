@@ -59,6 +59,10 @@ Legends and color strips always list the doubled color first, together: Yellow, 
 - **Deck page**: the deck code and name, its tier, its Legends and key card, notes, and a Units / Gear / Programs breakdown. The decklist can show **names** grouped by type, or the **full decklist as cards**; both always split Units / Gear / Programs and show a Sideboard / Options section. Core and Flex are tags on the cards. The full decklist is (modelled on the official deck builder's deck view: Legends in a column, the main deck as full cards in Units, Gear and Programs sections with copy counts, and the sideboard under it, all sized to fill the slide). A deck can have up to **3 key cards**, shown as banners under the Legends. In the deck editor, mark cards **Core** or **Flex**, and keep **Options**: cards you're considering that sit outside the deck (add them there, move cards between deck and options with → opt / → deck, or import them under an `Options:` / `#O` header). The full decklist groups cards by type (Core first, Flex last with a dashed outline, options in a strip below) or by **Core / Flex / Options** side by side.
 - **▶ Present** opens fullscreen slides (← → to move, Esc to exit). **Export PNG** renders 1920×1080. Card art only appears in the PNG if the image host allows cross-origin reads. Otherwise use Present and take a screenshot.
 
+## Sharing
+
+**Share** makes a link to a tier list (or all of them). The link holds the tiers and, for each deck, only what its tile shows: code, name, Legends and key card. Decklists aren't shared; plenty of tools already do that. Opening a link shows a read-only viewer; **Copy to my studio** adds the tier list next to your own decks.
+
 ## Art crops
 
 Each card has an **art window**: the top and bottom of its illustration, as a % of card height. Every layout scales the card so only that window shows, which keeps names and rules text off the slides. Set it once on any Legend with **Cards → Crop art → Save as default for all Legends**, then fine-tune the focus point on individual cards if needed.
