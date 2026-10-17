@@ -843,7 +843,11 @@ function deckStacksSlideHTML(s, d) {
   const legH = BOTTOM - TOP - label;
   const lh = legends.length ? Math.floor((legH - (legends.length - 1) * gap) / legends.length) : 0;
   const lw = Math.floor(lh * CARD_ASPECT);
-  const deckX = X + (lw ? lw + 56 : 0);
+  // Alternate Legends sit in a narrow column beside the Legend they swap with; the Legends stay full size.
+  const anyAlts = legends.some((c) => altsOf(d, c.id).length);
+  const aw = anyAlts ? Math.floor(lw * 0.36) : 0, ah = Math.floor(aw / CARD_ASPECT), altGap = 10;
+  const colW = lw + (anyAlts ? altGap + aw : 0);
+  const deckX = X + (lw ? colW + 56 : 0);
   const deckW = 1920 - X - deckX;
   // Sections side by side. Try every split of columns between them; keep the biggest cards.
   const SG = 40; // gap between sections
@@ -870,13 +874,11 @@ function deckStacksSlideHTML(s, d) {
       <div class="fd-face" style="height:${height}px">${artHTML(c, { full: true })}</div>${n ? `<div class="fd-tags"><span class="fd-n"><small>×</small>${n}</span>${MAIN_ZONES.includes(zone) && isKey(d, c.id) ? '<span class="fd-key">★ Key</span>' : ''}${MAIN_ZONES.includes(zone) ? roleTag(s, d, c.id) : ''}</div>` : ''}</div>`;
   // A Legend with alternates: one panel, the main Legend over a row of its alternates.
   const flexSlot = (c) => {
-    const alts = altsOf(d, c.id).map(card);
+    const fit = Math.max(1, Math.floor((lh + 8) / (ah + 8)));
+    const alts = altsOf(d, c.id).slice(0, fit).map(card);
     if (!alts.length) return '';
-    const pad = 8, g = 6, per = Math.max(3, alts.length);
-    const aw = Math.floor((lw - 2 * pad - (per - 1) * g) / per), ah = Math.floor(aw / CARD_ASPECT);
-    const mh = lh - 2 * pad - ah - g, mw = Math.floor(mh * CARD_ASPECT);
-    return `<div class="fd-flex" style="height:${lh}px;padding:${pad}px;gap:${g}px">${cardHTML(c, 0, mw, mh, 'is-legend', hexOf(c))}
-      <div class="fd-flex-alts" style="gap:${g}px">${alts.map((a) => cardHTML(a, 0, aw, ah, 'is-legend is-alt', hexOf(a))).join('')}</div></div>`;
+    return `<div class="fd-flex" style="gap:${altGap}px">${cardHTML(c, 0, lw, lh, 'is-legend', hexOf(c))}
+      <div class="fd-flex-alts">${alts.map((a) => cardHTML(a, 0, aw, ah, 'is-legend is-alt', hexOf(a))).join('')}</div></div>`;
   };
   const total = deckCount(d);
   return `<div class="stage deck-slide deck-full">
@@ -890,10 +892,10 @@ function deckStacksSlideHTML(s, d) {
       </div>
       ${typeSecs.length ? `<div class="fd-stats">${breakdownHTML(typeSecs, 'compact')}${deckStatsHTML(mainRows)}</div>` : ''}
     </header>
-    ${legends.length ? `<section class="fd-legends" style="left:${X}px;top:${TOP}px;width:${lw}px">
+    ${legends.length ? `<section class="fd-legends" style="left:${X}px;top:${TOP}px;width:${colW}px">
       <div class="fd-label">Legends <b>${legends.length}</b></div>
       <div class="fd-col">${legends.map((c) => flexSlot(c) || cardHTML(c, 0, lw, lh, 'is-legend', hexOf(c))).join('')}</div></section>
-      <div class="fd-rule" style="left:${X + lw + 28}px;top:${TOP}px;height:${legH + label}px"></div>` : ''}
+      <div class="fd-rule" style="left:${X + colW + 28}px;top:${TOP}px;height:${legH + label}px"></div>` : ''}
     <div class="fd-deck" style="left:${deckX}px;top:${TOP}px;width:${deckW}px">
       ${sections.map((g, i) => `<section class="fd-section">
         <div class="fd-label" style="--k:${g.color}">${esc(g.label)} <b>${g.count}</b></div>
