@@ -206,10 +206,10 @@ const video = vp.video();
 await vctx.close();
 if (video) { renameSync(await video.path(), join(OUT, '21-drag-demo.webm')); console.log('Drag video: 21-drag-demo.webm'); }
 
-/* ---------- Feature story: captioned 1080×1350 panels built from the screenshots ---------- */
+/* ---------- Feature story: captioned 1600×1000 panels built from the screenshots ---------- */
 const STORY = join(dirname(OUT), 'story');
 mkdirSync(STORY, { recursive: true });
-const sp = await (await browser.newContext({ viewport: { width: 1160, height: 1400 } })).newPage();
+const sp = await (await browser.newContext({ viewport: { width: 1680, height: 1080 } })).newPage();
 await sp.goto(pathToFileURL(join(here, 'story.html')).href + '?shots=' + encodeURIComponent(pathToFileURL(OUT).href));
 await sp.waitForFunction(() => [...document.images].every((i) => i.complete), null, { timeout: 30_000 }).catch(() => {});
 await sp.evaluate(() => document.fonts.ready);

@@ -32,7 +32,7 @@ Tier List Studio builds Cyberpunk TCG presentation slides: meta tier lists and d
 
 ## What you get
 
-1. **`promo/story/`: the feature story to share.** Ten 1080×1350 panels (portrait, sized for phones and social posts). Each one has a headline, a line of context and the screenshots that show the feature:
+1. **`promo/story/`: the feature story to share.** Ten 1600×1000 panels. Each one has a headline, a line of context and the screenshots that show the feature:
    01 cover · 02 drag and drop tiers · 03 tile views · 04 full decklist · 05 Key / Core / Flex · 06 flexible Legends · 07 editing on the slide · 08 import by scanning · 09 on your phone · 10 present and share.
    Open `promo/story.html` in a browser to see them all in a row. Edit its headlines and captions there, then rerun the script, or reload the page and screenshot it yourself.
 2. **`promo/shots/`: the raw screenshots** the story is built from, plus a short drag video. Use them for anything the story doesn't cover.
@@ -83,11 +83,15 @@ The script starts with an empty browser, so it sees the same seeded decks and ti
 
 ## Captions (draft)
 
-- **Your tier list, with real card art.** Rank decks by dragging them between tiers, and name the tiers whatever you want.
-- **Five tile views.** Show the Legends, the key card, or both.
-- **Deck pages that present themselves.** The full decklist shows key cards, Core and Flex picks, sideboard options, sellable % and the cost curve.
-- **One deck, flexible Legends.** Show the alternate Legends a list can play without splitting it into separate decks.
-- **Import in seconds.** Scan a deck image's QR code or paste an export.
-- **Present, export or share.** Full-screen slides, 1920×1080 PNGs, or a read-only link to your tier list.
+Plain descriptions of what each image shows. These match the story panels.
+
+- Tier lists and deck pages for Cyberpunk TCG, made from real card data.
+- Drag decks between tiers. Tiers can be renamed, recolored, reordered, added or removed.
+- Five ways to show a deck on a tier list: Legends, Legends as bands, key card art, full key card, or key card with Legends.
+- Full decklists laid out like the deck builder, with the cost curve and sellable share worked out from the list.
+- Key cards get corner brackets, core and flex cards get a tag, and options sit under the deck with the sideboard.
+- When a deck plays different Legends in one slot, list them as alternates instead of making two decks.
+- Import a deck by scanning the QR code on its image. The image stays on your device.
+- Present full screen, export 1920×1080 PNGs, or share a read-only link to a tier list.
 
 Fan-made, not affiliated with CD PROJEKT or WeirdCo. Cyberpunk and card images © CD PROJEKT S.A.

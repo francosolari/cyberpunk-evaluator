@@ -4,156 +4,125 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tier List Studio</title>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Martian+Mono:wdth,wght@87.5,600&family=Saira:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700&family=Saira:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* Feature story: one 1080×1350 panel per feature, built from the screenshots in shots/.
+/* Feature story: one 1600×1000 panel per feature, built from the screenshots in shots/.
  * capture.mjs saves each panel as story/NN-name.png; open this file to see them all in a row. */
-:root { --bg: #0b0d10; --panel: #12151b; --line: #252a35; --text: #eef1f6; --muted: #9aa3b5; --accent: #f3d34a; --cyan: #4cf0e6; }
+:root { --bg: #0d0f13; --text: #eceff4; --muted: #8e96a6; --line: #262b35; }
 * { box-sizing: border-box; }
 body { margin: 0; background: #050608; color: var(--text); font: 400 16px/1.4 "Saira", sans-serif; }
 .story { display: flex; flex-direction: column; align-items: center; gap: 40px; padding: 40px 0; }
-.panel { position: relative; width: 1080px; height: 1350px; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; padding: 84px 72px 64px; }
-.panel::after { content: ""; position: absolute; left: 72px; right: 72px; bottom: 44px; height: 1px; background: var(--line); }
-.foot { position: absolute; left: 72px; right: 72px; bottom: 14px; display: flex; justify-content: space-between; font: 500 15px "Saira"; color: #5d6575; }
-.foot b { font: 600 15px "Chakra Petch"; color: var(--muted); }
-.kicker { display: flex; align-items: center; gap: 12px; font: 600 18px var(--mono, "Martian Mono"); color: var(--muted); letter-spacing: .02em; }
-.kicker::before { content: ""; width: 10px; height: 10px; background: var(--cyan); }
-h1 { font: 700 76px/1.02 "Chakra Petch", sans-serif; margin: 22px 0 18px; letter-spacing: -.01em; }
-h1 em { font-style: normal; color: var(--accent); }
-.lede { font: 400 30px/1.35 "Saira", sans-serif; color: #c4cbd7; margin: 0 0 44px; max-width: 900px; }
-.media { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 22px; justify-content: center; }
-.shot { display: block; width: 100%; box-shadow: 0 0 0 1px #ffffff1a, 0 30px 70px #000c; background: #000; }
-.crop { overflow: hidden; box-shadow: 0 0 0 1px #ffffff1a, 0 30px 70px #000c; }
+.panel { position: relative; width: 1600px; height: 1000px; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; padding: 64px 72px 60px; }
+h1 { font: 600 50px/1.12 "Saira", sans-serif; margin: 0 0 12px; letter-spacing: -.005em; }
+.lede { font: 400 25px/1.4 "Saira", sans-serif; color: var(--muted); margin: 0 0 36px; max-width: 1200px; }
+.media { flex: 1; min-height: 0; overflow: hidden; display: flex; gap: 28px; align-items: flex-start; }
+.media > .shot { max-width: 100%; max-height: 100%; width: auto; }
+.row2 > * { min-width: 0; }
+.row2 img { max-width: 100%; max-height: 100%; }
+.shot { display: block; width: 100%; border: 1px solid var(--line); background: #000; }
+.crop { overflow: hidden; border: 1px solid var(--line); }
 .crop img { display: block; width: 100%; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-.label { font: 600 18px "Saira"; color: var(--muted); margin-top: 10px; }
-.label b { color: var(--text); font-weight: 600; }
-.phones { display: flex; justify-content: center; align-items: flex-start; gap: 36px; }
-.phone { width: 300px; border-radius: 44px; padding: 12px; background: #1b1f27; box-shadow: 0 0 0 2px #2c323e, 0 30px 70px #000c; }
-.phone img { display: block; width: 100%; aspect-ratio: 390 / 664; height: auto; border-radius: 34px; object-fit: cover; object-position: top center; }
-.media.phones { flex-direction: row; align-items: center; }
-.phones .phone { width: 330px; flex: none; }
-.bullets { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
-.bullets span { font: 500 22px "Saira"; background: #1a1e27; padding: 10px 16px; color: #d6dbe4; }
-.bullets span::before { content: "▪ "; color: var(--accent); }
-.cover { justify-content: center; }
-.cover h1 { font-size: 112px; }
-.cover .media { flex: none; margin-top: 30px; }
-.missing { display: grid; place-items: center; min-height: 200px; color: #5d6575; font: 500 18px var(--mono, monospace); outline: 1px dashed #333; }
+.grid2 { display: grid; grid-template-columns: repeat(2, 540px); gap: 22px 28px; align-content: start; }
+.grid2 .shot { width: 100%; }
+.label { font: 400 19px "Saira"; color: var(--muted); margin-top: 8px; }
+.phones { display: flex; justify-content: center; align-items: flex-start; gap: 40px; }
+.media.phones { justify-content: flex-start; }
+.phone { width: 340px; flex: none; border: 1px solid var(--line); }
+.phone img { display: block; width: 100%; aspect-ratio: 390 / 664; object-fit: cover; object-position: top center; }
+.cover h1 { font: 700 80px/1 "Chakra Petch", sans-serif; margin-bottom: 14px; }
+.credit { position: absolute; right: 72px; bottom: 28px; font: 400 17px "Saira"; color: #5f6777; }
+.missing { display: grid; place-items: center; min-height: 200px; color: #5d6575; font: 500 18px monospace; outline: 1px dashed #333; }
 </style>
 </head>
 <body>
 <div class="story">
 
 <section class="panel cover" id="p01-cover">
-  <div class="kicker">Cyberpunk TCG</div>
-  <h1>Tier List <em>Studio</em></h1>
-  <p class="lede">Make meta tier lists and deck pages with real card art, ready to present. Free, in the browser, nothing to install.</p>
+  <h1>Tier List Studio</h1>
+  <p class="lede">Tier lists and deck pages for Cyberpunk TCG, made from real card data. Runs in the browser.</p>
   <div class="media"><img class="shot" data-src="01-tier-key-and-legends.png" alt=""></div>
-  <div class="foot"><b>Tier List Studio</b><span>Fan-made · Cyberpunk and card images © CD PROJEKT S.A.</span></div>
+  <p class="credit">Fan-made. Not affiliated with CD PROJEKT or WeirdCo. Cyberpunk and card images © CD PROJEKT S.A.</p>
 </section>
 
 <section class="panel" id="p02-tiers">
-  <div class="kicker">Tier lists</div>
-  <h1>Drag. Drop. <em>Ranked.</em></h1>
-  <p class="lede">Drag decks between tiers and watch them slide into place. Name, color and reorder tiers however your meta calls it.</p>
+  <h1>Drag decks between tiers</h1>
+  <p class="lede">Tiers can be renamed, recolored, reordered, added or removed. On a phone, press and hold a deck to drag it.</p>
   <div class="media">
     <img class="shot" data-src="11-ui-drag-deck-between-tiers.png" alt="">
-    <div class="bullets"><span>Any number of tiers</span><span>Tier 1 / 2 / Rogue or S–C</span><span>Press and hold on phones</span></div>
   </div>
-  <div class="foot"><b>Tier List Studio</b><span>02</span></div>
 </section>
 
 <section class="panel" id="p03-views">
-  <div class="kicker">Deck tiles</div>
-  <h1>Show the deck <em>your way.</em></h1>
-  <p class="lede">Legends, the key card, or both. Art is cropped to the illustration, so slides stay clean.</p>
+  <h1>Five ways to show a deck on a tier list</h1>
+  <p class="lede">Card art is cropped to the illustration, so names and rules text stay off the slide.</p>
   <div class="media grid2">
-    <div><img class="shot" data-src="02-tier-legends.png" alt=""><div class="label"><b>Legends</b> as strips</div></div>
-    <div><img class="shot" data-src="04-tier-key-art.png" alt=""><div class="label"><b>Key card</b> art</div></div>
-    <div><img class="shot" data-src="03-tier-legend-bands.png" alt=""><div class="label"><b>Legends</b> as bands</div></div>
-    <div><img class="shot" data-src="05-tier-key-full-card.png" alt=""><div class="label"><b>Full</b> key card</div></div>
+    <div><img class="shot" data-src="02-tier-legends.png" alt=""><div class="label">Legends</div></div>
+    <div><img class="shot" data-src="04-tier-key-art.png" alt=""><div class="label">Key card art</div></div>
+    <div><img class="shot" data-src="03-tier-legend-bands.png" alt=""><div class="label">Legends as bands</div></div>
+    <div><img class="shot" data-src="05-tier-key-full-card.png" alt=""><div class="label">Full key card</div></div>
   </div>
-  <div class="foot"><b>Tier List Studio</b><span>03</span></div>
 </section>
 
 <section class="panel" id="p04-decklist">
-  <div class="kicker">Deck pages</div>
-  <h1>The full list, <em>at a glance.</em></h1>
-  <p class="lede">Every card at full size by type, with copy counts, the cost curve and how much of the deck you can sell.</p>
+  <h1>Full decklists, laid out like the deck builder</h1>
+  <p class="lede">Cards grouped by type with copy counts. The cost curve and sellable share are worked out from the list.</p>
   <div class="media">
     <img class="shot" data-src="09-deck-page-full-decklist.png" alt="">
-    <div class="bullets"><span>Units / Gear / Programs</span><span>Sideboard &amp; options</span><span>Sellable % and curve</span></div>
   </div>
-  <div class="foot"><b>Tier List Studio</b><span>04</span></div>
 </section>
 
 <section class="panel" id="p05-roles">
-  <div class="kicker">Deck pages</div>
-  <h1>Key. Core. <em>Flex.</em></h1>
-  <p class="lede">Mark what the deck is built around, what's locked in and what changes between lists. Discuss fringe options without splitting the deck.</p>
+  <h1>Key, core and flex cards</h1>
+  <p class="lede">Key cards get corner brackets, core and flex cards get a tag, and options sit under the deck with the sideboard.</p>
   <div class="media">
-    <div class="crop" style="aspect-ratio: 1.15"><img data-src="09-deck-page-full-decklist.png" alt="" style="width: 190%; margin: -17.5% 0 0 -10%"></div>
-    <div class="bullets"><span>Up to 3 key cards</span><span>Core and Flex tags</span><span>Sideboard / options</span></div>
+    <div class="crop" style="height: 100%; aspect-ratio: 1.6"><img data-src="09-deck-page-full-decklist.png" alt="" style="width: 150%; margin: -14.5% 0 0 -6%"></div>
   </div>
-  <div class="foot"><b>Tier List Studio</b><span>05</span></div>
 </section>
 
 <section class="panel" id="p06-flex-legends">
-  <div class="kicker">Flexible Legends</div>
-  <h1>One deck, <em>more Legends.</em></h1>
-  <p class="lede">When a slot can be Viktor or Muamar, it's still one archetype. List the alternates once and they show on every deck page.</p>
-  <div class="media">
-    <img class="shot" data-src="08-deck-page-names.png" alt="">
-    <img class="shot" data-src="14b-legend-alternates.png" alt="" style="width: 70%; align-self: center">
+  <h1>Alternate Legends</h1>
+  <p class="lede">When a deck plays Viktor or Muamar in the same slot, list both instead of making two decks.</p>
+  <div class="media row2">
+    <img class="shot" data-src="08-deck-page-names.png" alt="" style="width: 62%">
+    <img class="shot" data-src="14b-legend-alternates.png" alt="" style="width: 36%">
   </div>
-  <div class="foot"><b>Tier List Studio</b><span>06</span></div>
 </section>
 
 <section class="panel" id="p07-editing">
-  <div class="kicker">Editing</div>
-  <h1>Edit right <em>on the slide.</em></h1>
-  <p class="lede">Drag cards between Core, Deck, Flex and Sideboard. Change counts, star key cards and quick-add any card by name.</p>
-  <div class="media">
-    <img class="shot" data-src="13-ui-core-flex-board.png" alt="">
-    <img class="shot" data-src="12-ui-deck-page-editor.png" alt="">
+  <h1>Edit the list under the slide</h1>
+  <p class="lede">Drag cards between Core, Deck, Flex and Sideboard, change counts, or add a card by name. The slide updates as you go.</p>
+  <div class="media row2">
+    <img class="shot" data-src="12-ui-deck-page-editor.png" alt="" style="width: 55%">
+    <img class="shot" data-src="13-ui-core-flex-board.png" alt="" style="width: 43%">
   </div>
-  <div class="foot"><b>Tier List Studio</b><span>07</span></div>
 </section>
 
 <section class="panel" id="p08-import">
-  <div class="kicker">Import</div>
-  <h1>Scan a deck image. <em>Done.</em></h1>
-  <p class="lede">Drop in a deck image with a QR code, or paste an export or deck link. The image is read on your device and never uploaded.</p>
+  <h1>Import a deck from its image</h1>
+  <p class="lede">The QR code on a deck image is read on your device; the image isn't uploaded. Text exports and deck links work too.</p>
   <div class="media">
     <img class="shot" data-src="15-ui-import-scan-or-paste.png" alt="">
-    <div class="bullets"><span>QR deck images</span><span>Text exports</span><span>Deck links</span></div>
   </div>
-  <div class="foot"><b>Tier List Studio</b><span>08</span></div>
 </section>
 
 <section class="panel" id="p09-phone">
-  <div class="kicker">Mobile</div>
-  <h1>Works on <em>your phone.</em></h1>
-  <p class="lede">Rank decks, edit lists and present from anywhere. Your work saves on your device.</p>
+  <h1>On a phone</h1>
+  <p class="lede">The same tier lists and deck pages, sized for a small screen. Work is saved in the browser.</p>
   <div class="media phones">
     <div class="phone"><img data-src="18-phone-tier-list.png" alt=""></div>
     <div class="phone"><img data-src="19-phone-deck-page.png" alt=""></div>
   </div>
-  <div class="foot"><b>Tier List Studio</b><span>09</span></div>
 </section>
 
 <section class="panel" id="p10-share">
-  <div class="kicker">Present &amp; share</div>
-  <h1>Present it. <em>Share it.</em></h1>
-  <p class="lede">Full-screen slides, 1920×1080 images, or a read-only link to your tier list. Four slide styles to match your channel.</p>
+  <h1>Present, export or share</h1>
+  <p class="lede">Full-screen slides, 1920×1080 PNGs, or a read-only link to a tier list. Four slide styles.</p>
   <div class="media grid2">
-    <div><img class="shot" data-src="06-tier-style-band.png" alt=""><div class="label"><b>Band</b> style</div></div>
-    <div><img class="shot" data-src="06-tier-style-frame.png" alt=""><div class="label"><b>Frame</b> style</div></div>
-    <div><img class="shot" data-src="06-tier-style-rail.png" alt=""><div class="label"><b>Rail</b> style</div></div>
-    <div><img class="shot" data-src="17-ui-share-tier-list.png" alt=""><div class="label"><b>Share</b> a link</div></div>
+    <div><img class="shot" data-src="06-tier-style-band.png" alt=""><div class="label">Band style</div></div>
+    <div><img class="shot" data-src="06-tier-style-frame.png" alt=""><div class="label">Frame style</div></div>
+    <div><img class="shot" data-src="06-tier-style-rail.png" alt=""><div class="label">Rail style</div></div>
+    <div><img class="shot" data-src="17-ui-share-tier-list.png" alt=""><div class="label">Share link</div></div>
   </div>
-  <div class="foot"><b>Tier List Studio</b><span>10</span></div>
 </section>
 
 </div>
