@@ -490,7 +490,7 @@ function deckTileHTML(d, mode, { style = '', selectable = true, showName = false
   const label = deckLabel(d);
   const sel = selectable && ui.selectedDeck === d.id ? 'selected' : '';
   const sub = showName && d.name && d.name !== label ? d.name : d.subtitle;
-  return `<div class="deck-tile ${sel}" draggable="false" data-deck="${d.id}" title="${esc(d.name || label)}" style="${style}">
+  return `<div class="deck-tile ${sel}" draggable="false" tabindex="0" role="button" aria-label="${esc(label + (d.name && d.name !== label ? ', ' + d.name : ''))}" data-deck="${d.id}" title="${esc(d.name || label)}" style="${style}">
     <div class="tile-art">${art}</div>
     <div class="tile-cap">
       <div class="segs">${cols.map((c) => `<span style="background:${COLORS[c].hex}"></span>`).join('') || '<span style="background:#8b93a3"></span>'}</div>
@@ -588,7 +588,7 @@ function deckSlideHTML(s) {
   return `<div class="stage deck-slide">
     <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(legendsOf(d)[0]))}38, transparent)"></div><div class="glow g2"></div>
     <header class="ds-head">
-      <div class="ds-eyebrow">${tier ? `<span class="pill tier-pill" style="--t:${esc(tier.color)}">${esc(tier.name)}</span>` : ''}<span class="chips">${chips(cols, 'chip-lg')}</span>${d.main.length ? `<span class="ds-meta">${deckCount(d)} cards</span>` : ''}</div>
+      <div class="ds-eyebrow">${tier ? `<span class="pill tier-pill" style="--t:${esc(tier.color)}">${esc(tier.name)}</span>` : ''}<span class="chips">${chips(cols, 'chip-lg')}</span>${d.main.length ? `<span class="ds-meta">${deckCount(d)} cards</span>` : ''}${missingNote(d)}</div>
       <h1 class="ds-code">${esc(deckLabel(d))}</h1>
       ${d.name && d.name !== deckLabel(d) ? `<div class="ds-name-big">${esc(d.name)}</div>` : ''}
     </header>
@@ -603,6 +603,9 @@ function deckSlideHTML(s) {
 }
 
 const ROLES = ['', 'core', 'flex'];
+/** Cards in a deck that the current card data doesn't know (renamed, removed, or data not loaded). */
+const missingCount = (d) => [...d.main, ...(d.side || []), ...(d.options || [])].filter(([id]) => !card(id)).length + d.legends.filter((id) => id && !card(id)).length + (d.unmatched || []).length;
+const missingNote = (d) => { const n = missingCount(d); return n ? `<span class="missing-note">${n} card${n > 1 ? 's' : ''} not in the current card data</span>` : ''; };
 /** Sideboard and options shown together as one "Sideboard / Options" section. Rows: [card, n, zone]. */
 function extraRows(d, s = {}) {
   if (s.showOptions === false) return [];
@@ -673,7 +676,7 @@ function deckStacksSlideHTML(s, d) {
         <h1>${esc(d.name && d.name !== deckLabel(d) ? d.name : deckLabel(d))}</h1>
         <div class="fd-meta">${(() => { const t = tierOf(d); return t ? `<span class="pill tier-pill" style="--t:${esc(t.color)}">${esc(t.name)}</span>` : ''; })()}
           <span class="fd-code">${esc(deckLabel(d))}</span><span class="chips">${chips(deckColors(d), 'chip-lg')}</span>
-          <span class="ds-meta">${total} cards · ${legends.length} Legends${extras.length ? ` · ${extras.reduce((t, r) => t + r[1], 0)} sideboard / options` : ''}</span></div>
+          ${missingNote(d)}<span class="ds-meta">${total} cards · ${legends.length} Legends${extras.length ? ` · ${extras.reduce((t, r) => t + r[1], 0)} sideboard / options` : ''}</span></div>
       </div>
       ${typeSecs.length ? breakdownHTML(typeSecs, 'compact') : ''}
     </header>
@@ -741,7 +744,7 @@ function renderSlideList() {
   $('#slide-list').innerHTML = state.slides.map((x, i) => `
     <li data-slide="${x.id}" class="${x.id === ui.slideId ? 'active' : ''}">
       <span class="t"><span class="nm">${i + 1}. ${esc(x.name || 'Slide')}</span><span class="k">${x.type === 'deck' ? 'Deck page' : 'Tier list'}</span></span>
-      <button data-move="-1" title="Move up">↑</button><button data-move="1" title="Move down">↓</button><button data-del-slide title="Delete">×</button>
+      <button data-move="-1" title="Move up" aria-label="Move slide up">↑</button><button data-move="1" title="Move down" aria-label="Move slide down">↓</button><button data-del-slide title="Delete" aria-label="Delete slide">×</button>
     </li>`).join('');
 }
 function stageBox() {
@@ -802,8 +805,8 @@ function renderSlideInspector() {
       <label class="filebtn">Upload<input type="file" accept="image/*" data-upload-logo hidden></label></div></details>
     <h3 style="margin-top:20px">Tiers <span class="hint">(${s.tiers.length})</span></h3>
     <div id="tier-edits">${s.tiers.map((t) => `<div class="tier-edit" data-tier-edit="${t.id}" style="--t:${esc(t.color)}">
-      <div class="row gap"><input type="color" data-t="color" value="${esc(t.color)}"><input data-t="name" value="${esc(t.name)}" style="flex:1">
-      <button class="small" data-tmove="-1" title="Move up">↑</button><button class="small" data-tmove="1" title="Move down">↓</button><button class="small danger" data-tdel title="Remove tier">×</button></div>
+      <div class="row gap"><input type="color" data-t="color" value="${esc(t.color)}" aria-label="Tier color"><input data-t="name" value="${esc(t.name)}" style="flex:1" aria-label="Tier name">
+      <button class="small" data-tmove="-1" title="Move up" aria-label="Move tier up">↑</button><button class="small" data-tmove="1" title="Move down" aria-label="Move tier down">↓</button><button class="small danger" data-tdel title="Remove tier" aria-label="Remove tier">×</button></div>
       <textarea data-t="desc" rows="2" placeholder="Description (optional)">${esc(t.desc)}</textarea>
     </div>`).join('')}</div>
     <button data-tadd class="block">+ Add tier</button>
@@ -924,6 +927,31 @@ function bindSlides() {
     });
   }
 }
+/* Keyboard: on a focused deck tile, ↑/↓ move it to the tier above/below (↓ from the last tier, or
+ * Delete, unranks it), ←/→ reorder it within its tier, Enter selects it to edit its list. */
+function bindDeckKeys() {
+  document.addEventListener('keydown', (e) => {
+    const tile = e.target.closest?.('#stage-host .deck-tile, #pool .deck-tile');
+    const s = slide();
+    if (!tile || s?.type !== 'tier' || ui.viewing) return;
+    const id = tile.dataset.deck;
+    const tierIdx = s.tiers.findIndex((t) => t.deckIds.includes(id)); // -1 = unranked
+    let handled = true;
+    if (e.key === 'Enter' || e.key === ' ') selectDeck(ui.selectedDeck === id ? null : id);
+    else if (e.key === 'ArrowUp') { if (tierIdx !== 0) moveDeck(id, s.tiers[tierIdx < 0 ? s.tiers.length - 1 : tierIdx - 1].id); }
+    else if (e.key === 'ArrowDown') moveDeck(id, tierIdx >= 0 && tierIdx < s.tiers.length - 1 ? s.tiers[tierIdx + 1].id : 'pool');
+    else if (e.key === 'Delete' || e.key === 'Backspace') moveDeck(id, 'pool');
+    else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && tierIdx >= 0) {
+      const ids = s.tiers[tierIdx].deckIds, i = ids.indexOf(id), j = i + (e.key === 'ArrowLeft' ? -1 : 1);
+      if (j >= 0 && j < ids.length) { [ids[i], ids[j]] = [ids[j], ids[i]]; save(); renderStage(); }
+    } else handled = false;
+    if (!handled) return;
+    e.preventDefault();
+    markGuide('ranked');
+    $(`#stage-host .deck-tile[data-deck="${id}"], #pool .deck-tile[data-deck="${id}"]`)?.focus();
+  });
+}
+
 /** Selecting only toggles a class: rebuilding the slide would reload every card image. */
 function selectDeck(id) {
   ui.selectedDeck = id;
@@ -1902,6 +1930,7 @@ function openHelp() {
     <h3>Gestures</h3>
     <ul class="help-list">
       <li><b>Move a deck or card:</b> drag it. On a phone, press and hold first.</li>
+      <li><b>Keyboard:</b> Tab to a deck, then ↑ ↓ to change tier, ← → to reorder, Delete to unrank, Enter to edit its list.</li>
       <li><b>Edit a deck's list:</b> tap the deck; its list opens below the slide.</li>
       <li><b>Change one card:</b> on a deck page, tap the card.</li>
       <li><b>Core, Flex, key cards:</b> drag cards between columns in the list; ★ marks a key card (up to 3).</li>
@@ -2089,6 +2118,7 @@ $('#viewer-present').onclick = () => present(0);
 bindBoards();
 enableTouchDrag();
 enableDeckDrag();
+bindDeckKeys();
 bindGlobal();
 bindSlides();
 bindDecks();
