@@ -227,7 +227,7 @@ function makeDemo() {
   };
 }
 function newDeck(p = {}) {
-  return { id: uid(), name: '', label: '', subtitle: '', legends: [null, null, null], keyCard: null, main: [], side: [], options: [], notes: '', display: 'inherit', ...p };
+  return { id: uid(), createdAt: Date.now(), name: '', label: '', subtitle: '', legends: [null, null, null], keyCard: null, main: [], side: [], options: [], notes: '', display: 'inherit', ...p };
 }
 
 /* ---------------- state ---------------- */
@@ -737,9 +737,16 @@ function renderPool() {
   if (!s || s.type !== 'tier') { pw.hidden = true; return; }
   pw.hidden = false;
   const ranked = new Set(s.tiers.flatMap((t) => t.deckIds));
-  const pool = state.decks.filter((d) => !ranked.has(d.id));
-  $('#pool').innerHTML = pool.length ? pool.map((d) => deckTileHTML(d, s.display, { showName: true })).join('')
-    : '<span class="hint">Every deck is ranked. Drag one here to unrank it, or import more decks in the Decks tab.</span>';
+  const all = state.decks.filter((d) => !ranked.has(d.id));
+  const q = prefs().poolQuery;
+  $('#pool-q').value = q;
+  $('#pool-count').textContent = all.length ? `(${all.length})` : '';
+  const pool = sortDecks(all.filter((d) => deckMatches(d, q)), 'name');
+  const groups = pool.length > 8 ? groupDecks(pool, 'color') : [{ label: '', decks: pool }];
+  $('#pool').classList.toggle('compact', pool.length > 12);
+  $('#pool').innerHTML = pool.length ? groups.map((g) => `<div class="pgroup">${g.label ? `<span class="pg-label" style="--g:${g.color}">${esc(g.label)} <b>${g.decks.length}</b></span>` : ''}
+      ${g.decks.map((d) => deckTileHTML(d, s.display, { showName: true })).join('')}</div>`).join('')
+    : `<span class="hint">${all.length ? 'No unranked decks match.' : 'Every deck is ranked. Drag one here to unrank it, or import more decks in the Decks tab.'}</span>`;
 }
 
 function renderSlideInspector() {
@@ -827,6 +834,7 @@ function bindSlides() {
     } else ui.slideId = li.dataset.slide;
     save(); renderSlides();
   });
+  $('#pool-q').oninput = (e) => { prefs().poolQuery = e.target.value; renderPool(); };
   $('#add-tier-slide').onclick = () => {
     const base = state.slides.find((x) => x.type === 'tier');
     const s = base ? clone(base) : makeDemo().slides[0];
@@ -957,13 +965,64 @@ function addDeckSlide(d) {
   state.slides.push(s); ui.slideId = s.id; save(); setView('slides');
 }
 
+/* ---------------- deck search, grouping and sorting ---------------- */
+function prefs() {
+  state.prefs = { deckGroup: 'color', deckSort: 'new', deckQuery: '', poolQuery: '', collapsed: {}, ...state.prefs };
+  return state.prefs;
+}
+const COLOR_GROUPS = [['R', 'Red'], ['Y', 'Yellow'], ['G', 'Green'], ['B', 'Blue'], ['multi', 'Three colors'], ['none', 'No Legends yet']];
+/** The deck's main color: its doubled (or tripled) Legend color, or 'multi' when all three differ. */
+function mainColor(d) {
+  const cols = deckColors(d);
+  if (!cols.length) return 'none';
+  return cols.length === 3 && new Set(cols).size === 3 ? 'multi' : cols[0];
+}
+function deckMatches(d, q) {
+  q = norm(q);
+  return !q || norm([deckLabel(d), d.name, ...legendsOf(d).map((id) => card(id)?.name || '')].join(' ')).includes(q);
+}
+function sortDecks(list, how) {
+  const at = (d) => d.createdAt || state.decks.indexOf(d);
+  const by = {
+    new: (a, b) => at(b) - at(a),
+    name: (a, b) => deckLabel(a).localeCompare(deckLabel(b)) || (a.name || '').localeCompare(b.name || ''),
+    cards: (a, b) => deckCount(b) - deckCount(a),
+  }[how] || (() => 0);
+  return list.slice().sort(by);
+}
+/** Groups decks for lists: by main color, by tier (first tier list), or one flat group. */
+function groupDecks(list, how) {
+  if (how === 'color') {
+    return COLOR_GROUPS.map(([key, label]) => ({ key: 'c:' + key, label, color: COLORS[key]?.hex || '#8b93a3', decks: list.filter((d) => mainColor(d) === key) })).filter((g) => g.decks.length);
+  }
+  if (how === 'tier') {
+    const ts = state.slides.find((x) => x.type === 'tier');
+    const groups = (ts?.tiers || []).map((t) => ({ key: 't:' + t.id, label: t.name, color: t.color, decks: list.filter((d) => t.deckIds.includes(d.id)) }));
+    const ranked = new Set((ts?.tiers || []).flatMap((t) => t.deckIds));
+    groups.push({ key: 't:none', label: 'Unranked', color: '#8b93a3', decks: list.filter((d) => !ranked.has(d.id)) });
+    return groups.filter((g) => g.decks.length);
+  }
+  return [{ key: 'all', label: '', decks: list }];
+}
+
 /* ---------------- Decks view ---------------- */
 function renderDecks() {
   if (!deck(ui.deckId)) ui.deckId = state.decks[0]?.id;
-  $('#deck-list').innerHTML = state.decks.map((d) => `<li data-deck-item="${d.id}" class="${d.id === ui.deckId ? 'active' : ''}">
+  const pf = prefs();
+  $('#deck-q').value = pf.deckQuery;
+  $('#deck-group').value = pf.deckGroup;
+  $('#deck-sort').value = pf.deckSort;
+  const shown = sortDecks(state.decks.filter((d) => deckMatches(d, pf.deckQuery)), pf.deckSort);
+  const item = (d) => `<li data-deck-item="${d.id}" class="${d.id === ui.deckId ? 'active' : ''}">
     <span class="fan">${legendsOf(d).map((id) => `<span class="mini" style="--c:${hexOf(card(id))}">${artHTML(card(id))}</span>`).join('')}</span>
     <span class="dl-text"><strong>${esc(deckLabel(d))}</strong><span class="hint">${esc(d.name && d.name !== deckLabel(d) ? d.name : d.main.length ? deckCount(d) + ' cards' : '')}</span></span>
-    <span class="chips">${chips(deckColors(d))}</span></li>`).join('') || '<li class="hint">No decks yet.</li>';
+    <span class="chips">${chips(deckColors(d))}</span></li>`;
+  $('#deck-count').textContent = pf.deckQuery ? `${shown.length} of ${state.decks.length}` : state.decks.length;
+  $('#deck-list').innerHTML = groupDecks(shown, pf.deckGroup).map((g) => {
+    const closed = !pf.deckQuery && pf.collapsed[g.key];
+    return (g.label ? `<li class="dgroup ${closed ? 'closed' : ''}" data-group="${g.key}" style="--g:${g.color}"><span class="caret">▾</span>${esc(g.label)}<b>${g.decks.length}</b></li>` : '') +
+      (closed ? '' : g.decks.map(item).join(''));
+  }).join('') || `<li class="hint">${state.decks.length ? 'No decks match.' : 'No decks yet.'}</li>`;
   const demos = state.decks.filter(isDemoDeck).length;
   $('#deck-list').insertAdjacentHTML('beforeend', demos && state.catalog ? `<li class="demo-note"><button id="clear-demo" class="small block">Remove ${demos} demo decks</button></li>` : '');
   const d = deck(ui.deckId);
@@ -1199,7 +1258,12 @@ function exportSimText(d) {
 }
 
 function bindDecks() {
+  $('#deck-q').oninput = (e) => { prefs().deckQuery = e.target.value; renderDecks(); };
+  $('#deck-group').onchange = (e) => { prefs().deckGroup = e.target.value; save(); renderDecks(); };
+  $('#deck-sort').onchange = (e) => { prefs().deckSort = e.target.value; save(); renderDecks(); };
   $('#deck-list').addEventListener('click', (e) => {
+    const g = e.target.closest('[data-group]');
+    if (g) { const c = prefs().collapsed; c[g.dataset.group] = !c[g.dataset.group]; save(); renderDecks(); return; }
     if (e.target.id === 'clear-demo') {
       const gone = new Set(state.decks.filter(isDemoDeck).map((d) => d.id));
       state.decks = state.decks.filter((d) => !gone.has(d.id));
@@ -1527,6 +1591,77 @@ function updateBadge() {
   $('#data-badge').classList.toggle('warn', !state.catalog);
 }
 
+/* ---------------- touch dragging ----------------
+ * Phones have no HTML drag-and-drop: press and hold a card or deck, then drag it.
+ * A quick swipe still scrolls, and tap-then-tap still works. */
+function enableTouchDrag() {
+  let st = null;
+  let lastDrop = 0;
+  const cleanup = () => {
+    if (!st) return;
+    clearTimeout(st.timer);
+    st.ghost?.remove();
+    st.el.classList.remove('dragging');
+    $$('.bcol.over, .drop-hover').forEach((x) => x.classList.remove('over', 'drop-hover'));
+    st = null;
+  };
+  const targetAt = (x, y) => {
+    const t = document.elementFromPoint(x, y);
+    return st.kind === 'card' ? t?.closest('.bcol') : t?.closest('#stage-host [data-drop], #pool');
+  };
+  document.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch' || e.target.closest('button')) return;
+    const el = e.target.closest('.bcard, #stage-host .deck-tile, #pool .deck-tile');
+    if (!el) return;
+    const kind = el.matches('.bcard') ? 'card' : 'deck';
+    st = { el, kind, x: e.clientX, y: e.clientY, active: false };
+    st.timer = setTimeout(() => {
+      if (!st) return;
+      st.active = true;
+      el.classList.add('dragging');
+      navigator.vibrate?.(8);
+      st.ghost = document.createElement('div');
+      st.ghost.className = 'touch-ghost';
+      st.ghost.textContent = kind === 'card' ? card(el.dataset.card)?.name || '' : deckLabel(deck(el.dataset.deck));
+      document.body.appendChild(st.ghost);
+      st.ghost.style.transform = `translate(${st.x}px, ${st.y}px)`;
+    }, 220);
+  });
+  document.addEventListener('pointermove', (e) => {
+    if (!st) return;
+    if (!st.active) { if (Math.hypot(e.clientX - st.x, e.clientY - st.y) > 10) cleanup(); return; }
+    st.x = e.clientX; st.y = e.clientY;
+    st.ghost.style.transform = `translate(${st.x}px, ${st.y}px)`;
+    const t = targetAt(st.x, st.y);
+    $$('.bcol.over, .drop-hover').forEach((x) => x !== t && x.classList.remove('over', 'drop-hover'));
+    t?.classList.add(st.kind === 'card' ? 'over' : 'drop-hover');
+  });
+  // Once a hold has started a drag, stop the page from scrolling under the finger.
+  document.addEventListener('touchmove', (e) => { if (st?.active) e.preventDefault(); }, { passive: false });
+  document.addEventListener('pointerup', (e) => {
+    if (!st) return;
+    if (st.active) {
+      const t = targetAt(e.clientX, e.clientY);
+      if (t && st.kind === 'card') {
+        moveCard(deck(st.el.closest('.board').dataset.boardDeck), st.el.dataset.card, t.dataset.zone);
+        save(); lastDrop = Date.now(); cleanup(); refreshBoards(); return;
+      }
+      if (t && st.kind === 'deck') {
+        const before = document.elementFromPoint(e.clientX, e.clientY)?.closest('.deck-tile')?.dataset.deck;
+        const id = st.el.dataset.deck;
+        lastDrop = Date.now(); cleanup();
+        moveDeck(id, t.dataset.drop || 'pool', before !== id ? before : null); return;
+      }
+      lastDrop = Date.now();
+    }
+    cleanup();
+  });
+  document.addEventListener('pointercancel', cleanup);
+  document.addEventListener('contextmenu', (e) => { if (st) e.preventDefault(); });
+  // The tap that ends a drag shouldn't also count as a click.
+  document.addEventListener('click', (e) => { if (Date.now() - lastDrop < 400) { e.stopPropagation(); e.preventDefault(); } }, true);
+}
+
 /* ---------------- images ---------------- */
 function fileToDataURL(file, maxW) {
   return new Promise((resolve, reject) => {
@@ -1666,6 +1801,7 @@ document.addEventListener('click', (e) => { if (!e.target.closest('.card-menu'))
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCardMenu(); });
 bindQuickAdd(refreshBoards);
 bindBoards();
+enableTouchDrag();
 bindGlobal();
 bindSlides();
 bindDecks();
