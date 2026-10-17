@@ -714,6 +714,7 @@ function renderSlides() {
   if (!slide()) ui.slideId = state.slides[0]?.id;
   renderSlideList();
   renderPool();
+  renderSlideBoard();
   renderStage();
   renderSlideInspector();
 }
@@ -798,6 +799,7 @@ function moveDeck(deckId, toTierId, beforeDeckId = null) {
   save();
   renderPool();
   renderStage();
+  renderSlideBoard();
 }
 
 function applyPreset(s, key) {
@@ -915,12 +917,8 @@ function bindSlides() {
       const dz = e.target.closest('[data-drop]') || e.target.closest('[data-tier]')?.querySelector('[data-drop]');
       if (tile && (!ui.selectedDeck || ui.selectedDeck === tile.dataset.deck)) {
         ui.selectedDeck = ui.selectedDeck === tile.dataset.deck ? null : tile.dataset.deck;
-        renderPool(); renderStage();
+        renderPool(); renderStage(); renderSlideBoard();
       } else if (ui.selectedDeck && dz) moveDeck(ui.selectedDeck, dz.dataset.drop, tile?.dataset.deck);
-    });
-    z.addEventListener('dblclick', (e) => {
-      const tile = e.target.closest('.deck-tile');
-      if (tile) { ui.deckId = tile.dataset.deck; ui.selectedDeck = null; setView('decks'); }
     });
   }
 }
@@ -947,7 +945,7 @@ function openCardMenu(d, id, x, y) {
     else if (b.dataset.cmBump) bumpCard(d, id, Number(b.dataset.cmBump));
     else if ('cmKey' in b.dataset) toggleKey(d, id);
     else if ('cmRemove' in b.dataset) removeCard(d, id);
-    save(); renderStage();
+    save(); renderStage(); renderSlideBoard();
     if ('cmRemove' in b.dataset || !(d.main.concat(d.options || [])).some((row) => row[0] === id)) closeCardMenu();
     else openCardMenu(d, id, x, y);
   };
@@ -1119,7 +1117,7 @@ let boardPick = null; // tap-to-move on touch screens: the card picked up, then 
 function boardHTML(d) {
   const rowsIn = (zone) => (zone === 'options' ? d.options || [] : d.main.filter(([id]) => (d.roles?.[id] || 'deck') === zone))
     .map(([id, n]) => [card(id), n, id]).sort((a, b) => (a[0]?.cost ?? 99) - (b[0]?.cost ?? 99) || (a[0]?.name || '').localeCompare(b[0]?.name || ''));
-  return `<div class="board">${ZONES.map(([zone, label, hint]) => {
+  return `<div class="board" data-board-deck="${d.id}">${ZONES.map(([zone, label, hint]) => {
     const rows = rowsIn(zone);
     const n = rows.reduce((t, r) => t + r[1], 0);
     return `<div class="bcol ${zone}" data-zone="${zone}">
@@ -1132,6 +1130,64 @@ function boardHTML(d) {
     </div>`;
   }).join('')}</div>
   <p class="hint">Drag cards between columns, or tap a card and then a column. ★ marks a key card (up to 3).</p>`;
+}
+
+/** Board interactions work wherever a board is shown: the Decks tab or under a slide on the Slides tab. */
+function refreshBoards() {
+  if (ui.view === 'decks') renderDecks();
+  else if (ui.view === 'slides') { renderStage(); renderSlideBoard(); }
+}
+function bindBoards() {
+  let drag = null; // { deck, card }
+  document.addEventListener('dragstart', (e) => {
+    const c = e.target.closest?.('.bcard');
+    if (!c) return;
+    drag = { deck: c.closest('.board').dataset.boardDeck, card: c.dataset.card };
+    e.dataTransfer.setData('text/plain', drag.card);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  document.addEventListener('dragover', (e) => {
+    const col = e.target.closest?.('.bcol');
+    if (!col || !drag) return;
+    e.preventDefault();
+    $$('.bcol.over').forEach((x) => x !== col && x.classList.remove('over'));
+    col.classList.add('over');
+  });
+  document.addEventListener('dragend', () => { drag = null; $$('.bcol.over').forEach((x) => x.classList.remove('over')); });
+  document.addEventListener('drop', (e) => {
+    const col = e.target.closest?.('.bcol');
+    if (!col || !drag) return;
+    e.preventDefault();
+    moveCard(deck(drag.deck), drag.card, col.dataset.zone);
+    drag = null; save(); refreshBoards();
+  });
+  document.addEventListener('click', (e) => {
+    const board = e.target.closest?.('.board');
+    if (!board) return;
+    const d = deck(board.dataset.boardDeck);
+    const bc = e.target.closest('.bcard');
+    const col = e.target.closest('.bcol');
+    if (!bc && !(col && boardPick)) return;
+    e.stopPropagation();
+    if (bc && e.target.closest('[data-bump]')) bumpCard(d, bc.dataset.card, Number(e.target.closest('[data-bump]').dataset.bump));
+    else if (bc && e.target.closest('[data-key]')) { if (!toggleKey(d, bc.dataset.card)) return; }
+    else if (bc) { boardPick = boardPick === bc.dataset.card ? null : bc.dataset.card; refreshBoards(); return; }
+    else { moveCard(d, boardPick, col.dataset.zone); boardPick = null; }
+    save(); refreshBoards();
+  }, true);
+}
+
+/** Decklist board under a deck page slide on the Slides tab. */
+function renderSlideBoard() {
+  const wrap = $('#slide-board');
+  const s = slide();
+  // Deck page: that deck. Tier list: the deck currently tapped/selected.
+  const d = s?.type === 'deck' ? deck(s.deckId) : s?.type === 'tier' && ui.selectedDeck ? deck(ui.selectedDeck) : null;
+  wrap.hidden = !d;
+  if (!d) return;
+  const tip = s.type === 'tier' ? 'Tap a tier to move this deck, or edit its list here.' : 'Changes show on the slide right away.';
+  wrap.innerHTML = `<div class="pool-head"><h3>${esc(deckLabel(d))} decklist</h3><span class="hint">${esc(d.name && d.name !== deckLabel(d) ? d.name + ' · ' : '')}${deckCount(d)} in the deck${(d.options || []).length ? ` · +${d.options.reduce((t, r) => t + r[1], 0)} options` : ''}. ${tip}</span></div>
+    ${quickAddHTML(d)}${boardHTML(d)}`;
 }
 
 function exportSimText(d) {
@@ -1159,34 +1215,6 @@ function bindDecks() {
   $('#add-deck').onclick = () => { const d = newDeck({ name: 'New deck' }); state.decks.push(d); ui.deckId = d.id; save(); renderDecks(); };
   $('#import-deck').onclick = () => openImport();
   const ed = $('#deck-editor');
-  // Board: drag cards between zones, or tap a card then a column.
-  let dragCard = null;
-  ed.addEventListener('dragstart', (e) => {
-    const c = e.target.closest('.bcard');
-    if (!c) return;
-    dragCard = c.dataset.card;
-    e.dataTransfer.setData('text/plain', dragCard);
-    e.dataTransfer.effectAllowed = 'move';
-  });
-  ed.addEventListener('dragover', (e) => { const col = e.target.closest('.bcol'); if (col && dragCard) { e.preventDefault(); $$('.bcol.over').forEach((x) => x !== col && x.classList.remove('over')); col.classList.add('over'); } });
-  ed.addEventListener('dragend', () => { dragCard = null; $$('.bcol.over').forEach((x) => x.classList.remove('over')); });
-  ed.addEventListener('drop', (e) => {
-    const col = e.target.closest('.bcol');
-    if (!col || !dragCard) return;
-    e.preventDefault();
-    moveCard(deck(ui.deckId), dragCard, col.dataset.zone);
-    dragCard = null; save(); renderDecks();
-  });
-  ed.addEventListener('click', (e) => {
-    const d = deck(ui.deckId);
-    const bc = e.target.closest('.bcard');
-    if (bc || (e.target.closest('.bcol') && boardPick)) e.stopPropagation();
-    if (bc && e.target.closest('[data-bump]')) { bumpCard(d, bc.dataset.card, Number(e.target.closest('[data-bump]').dataset.bump)); save(); renderDecks(); return; }
-    if (bc && e.target.closest('[data-key]')) { if (toggleKey(d, bc.dataset.card)) { save(); renderDecks(); } return; }
-    if (bc) { boardPick = boardPick === bc.dataset.card ? null : bc.dataset.card; renderDecks(); return; }
-    const col = e.target.closest('.bcol');
-    if (col && boardPick) { moveCard(d, boardPick, col.dataset.zone); boardPick = null; save(); renderDecks(); }
-  }, true);
   ed.addEventListener('input', (e) => {
     const k = e.target.dataset.d;
     if (!k) return;
@@ -1636,7 +1664,8 @@ function bindGlobal() {
 $('#build').textContent = document.querySelector('meta[name=build]')?.content || '';
 document.addEventListener('click', (e) => { if (!e.target.closest('.card-menu')) closeCardMenu(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCardMenu(); });
-bindQuickAdd(() => { if (ui.view === 'decks') renderDecks(); else { renderStage(); } });
+bindQuickAdd(refreshBoards);
+bindBoards();
 bindGlobal();
 bindSlides();
 bindDecks();

@@ -427,3 +427,9 @@ code { color: var(--accent); }
 }
 
 .dl-full { grid-column: 1 / -1; }
+
+#slide-board { max-height: 46%; }
+#slide-board[hidden] { display: none; }
+#slide-board .board { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { #slide-board { max-height: none; } #slide-board .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { #slide-board .board { grid-template-columns: 1fr; } }
