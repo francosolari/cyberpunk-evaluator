@@ -76,5 +76,5 @@ The studio follows **Kiroshi Scan**, the design system in `cyberpunk-tcg-tracker
 - Sentence-case labels with no tracking, and a cyan tick opening each section.
 - Martian Mono for numbers.
 - Card colors fill the cost boxes; there are no colored side stripes.
-- Key cards get cyan target-lock brackets.
+- Key cards get cyan target-lock brackets; cyan means Key and nothing else. Core is a solid yellow tag, Flex a white outlined tag.
 - No glow, gradients, dashed boxes or outlined pills.

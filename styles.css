@@ -728,3 +728,7 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 .fd-card.is-small .fd-tags .fd-n small { font-size: 12px; }
 .fd-tags .fd-key { background: #07080c !important; color: var(--accent-2) !important; padding: 0 9px !important; font-size: 16px !important; font-weight: 700; white-space: nowrap; box-shadow: inset 0 -2px 0 var(--accent-2), inset 0 2px 0 var(--accent-2) !important; }
 .stage .fd-tags .role { font-size: 16px !important; padding: 0 10px !important; }
+
+/* One meaning per color: yellow = Core (and copy counts), cyan = Key only, Flex = plain white outline. */
+.role.flex { background: #07080c !important; color: var(--text) !important; box-shadow: inset 0 0 0 2px #dfe4ec !important; border: none !important; }
+.bcol.flex { border-top-color: #dfe4ec; }
