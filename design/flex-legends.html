@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flex Legend Options</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Martian+Mono:wdth,wght@87.5,400;87.5,600&family=Saira:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#0b0d10; --panel:#12151b; --panel2:#181c24; --line:#252a35; --text:#e8ecf2; --muted:#8b93a3; --accent:#f3d34a; --accent2:#4cf0e6; --mono:"Martian Mono",monospace;
+  --R:#d23a3a; --Y:#d8b13a; --G:#2f9e6a; --B:#2f6fd2; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 "Saira",sans-serif; }
+main { max-width:1180px; margin:0 auto; padding:32px 16px 80px; }
+h1 { font:700 34px/1.1 "Chakra Petch",sans-serif; margin:0 0 6px; }
+h2 { font:600 22px/1.2 "Saira",sans-serif; margin:48px 0 4px; display:flex; align-items:center; gap:10px; }
+h2::before { content:""; width:6px; height:6px; background:var(--accent2); }
+.lede { color:var(--muted); max-width:760px; margin:0; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; margin-top:16px; }
+.opt { background:var(--panel); padding:16px; display:flex; flex-direction:column; gap:12px; }
+.opt h3 { margin:0; font:600 16px "Saira",sans-serif; display:flex; gap:8px; align-items:baseline; }
+.opt h3 b { font:600 13px var(--mono); color:var(--muted); }
+.opt p { margin:0; color:#b7bfcc; font-size:14px; }
+.pick { align-self:flex-start; font:600 12px var(--mono); background:var(--accent); color:#0b0d10; padding:3px 7px; }
+.stagebox { background:#07080b; padding:18px; display:flex; justify-content:center; align-items:center; min-height:200px; }
+
+/* placeholder art */
+.art { position:relative; overflow:hidden; background:linear-gradient(180deg,var(--c) 0%,#14121c 85%); }
+.art::before { content:""; position:absolute; left:50%; top:30%; width:42%; aspect-ratio:1; transform:translateX(-50%); border-radius:50%; background:#f1c9a5; }
+.art::after { content:attr(data-i); position:absolute; left:0; right:0; bottom:8%; text-align:center; font:700 12px "Chakra Petch"; color:#fff9; letter-spacing:.05em; }
+.card { position:relative; border-radius:6px; overflow:hidden; outline:2px solid var(--c); background:#0e0f14; display:flex; flex-direction:column; }
+.card .art { flex:1; }
+.card .tb { height:34%; background:#14161d; }
+
+/* tiles */
+.tile { width:210px; background:#0e1016; }
+.tile .strips { display:flex; gap:3px; height:150px; background:#000; }
+.tile .strip { flex:1; display:flex; flex-direction:column; gap:2px; min-width:0; position:relative; }
+.tile .strip .art { flex:1; }
+.tile .art::after { top:62%; bottom:auto; }
+.tile .cap { text-align:center; padding:6px 6px 8px; border-top:4px solid; border-image:linear-gradient(90deg,var(--Y) 0 33%,var(--Y) 33% 66%,var(--R) 66%) 1; }
+.tile .code { font:700 26px/1 "Chakra Petch"; }
+.tile .sub { font-size:12px; color:var(--muted); }
+/* T1 split */
+.split .art.alt { flex:0 0 26%; }
+/* T2 stack */
+.stack .strip .peek { position:absolute; inset:0; }
+.tile.stack .strip.flex { padding-top:10px; }
+.tile.stack .strip.flex::before, .tile.stack .strip.flex::after { content:""; position:absolute; left:6px; right:6px; height:5px; }
+.tile.stack .strip.flex::before { top:0; background:var(--G); }
+.tile.stack .strip.flex::after { top:5px; left:3px; right:3px; background:#5a6070; }
+.count { position:absolute; right:3px; bottom:3px; font:600 12px/1 var(--mono); background:#07080c; color:var(--accent); padding:3px 4px; box-shadow:inset 0 0 0 1.5px var(--accent); }
+/* T3 dots */
+.pips { position:absolute; left:0; right:0; bottom:5px; display:flex; justify-content:center; gap:4px; }
+.pips i { width:12px; height:12px; border-radius:50%; outline:2px solid #07080c; }
+
+/* deck page legends */
+.dl { display:flex; gap:12px; }
+.dl figure { margin:0; width:150px; background:#0e1016; display:flex; flex-direction:column; }
+.dl figure .art { height:150px; }
+.dl figcaption { padding:8px; text-align:center; border-top:4px solid var(--c); }
+.dl figcaption b { display:block; font:700 14px "Saira"; }
+.dl figcaption span { font-size:12px; color:var(--muted); }
+.alts { display:flex; justify-content:center; gap:4px; margin-top:6px; }
+.alts .chip { display:flex; align-items:center; gap:4px; font:500 11px "Saira"; color:#c9d0dc; background:var(--panel2); padding:2px 6px 2px 2px; }
+.alts .chip .art { width:18px; height:18px; }
+.alts .chip .art::after { display:none; }
+.fan { position:relative; }
+.fan .back { position:absolute; top:-7px; height:12px; left:8px; right:8px; }
+.fan .back.b2 { top:-13px; left:16px; right:16px; }
+.mini-row { display:flex; gap:5px; padding:6px 8px 0; justify-content:center; }
+.mini-row .card { width:34px; height:46px; outline-width:1.5px; }
+
+/* full decklist column */
+.col { display:flex; flex-direction:column; gap:10px; width:170px; }
+.col .card { height:220px; }
+.col .lbl { font:600 12px var(--mono); color:var(--muted); display:flex; justify-content:space-between; }
+.rowalts { display:flex; gap:6px; margin-top:6px; }
+.rowalts .card { flex:1; height:auto; aspect-ratio:.716; }
+.flexgroup { background:#11141b; padding:8px; box-shadow:inset 0 0 0 1px var(--line); }
+.flexgroup .eyebrow { font:600 11px var(--mono); color:var(--muted); margin-bottom:6px; display:flex; justify-content:space-between; }
+.cardstack { position:relative; height:232px; }
+.cardstack .card { position:absolute; left:0; right:0; height:220px; }
+.cardstack .card.b1 { top:0; left:16px; right:-16px; transform:scale(.94); transform-origin:top right; filter:brightness(.55); }
+.cardstack .card.b2 { top:0; left:8px; right:-8px; transform:scale(.97); transform-origin:top right; filter:brightness(.7); }
+.cardstack .card.f { top:12px; }
+
+/* editor */
+.ed { width:100%; max-width:380px; display:flex; flex-direction:column; gap:8px; }
+.ed .slots { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.slot { background:#0b0d12; outline:1px solid var(--line); display:flex; flex-direction:column; }
+.slot .art { aspect-ratio:.8; }
+.slot .n { font-size:11px; padding:5px; text-align:center; border-top:3px solid var(--c); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.slot .altrow { display:flex; gap:4px; padding:5px; border-top:1px solid var(--line); align-items:center; }
+.slot .altrow .art { width:22px; aspect-ratio:1; outline:1.5px solid var(--c); }
+.slot .altrow .art::after { display:none; }
+.slot .altrow .add { width:22px; height:22px; display:grid; place-items:center; color:var(--muted); outline:1px solid var(--line); font-size:14px; }
+.slot.flexon { outline:1px solid var(--accent); }
+.flexlist { background:#0b0d12; outline:1px solid var(--line); padding:8px; display:flex; flex-direction:column; gap:6px; }
+.flexlist .hd { font:600 12px var(--mono); color:var(--muted); display:flex; justify-content:space-between; }
+.flexlist .r { display:grid; grid-template-columns:22px 26px 1fr 54px 16px; gap:8px; align-items:center; font-size:13px; }
+.flexlist .r .art { width:26px; aspect-ratio:1; outline:1.5px solid var(--c); }
+.flexlist .r .art::after { display:none; }
+.flexlist .r .h { color:#59606e; letter-spacing:-2px; }
+.flexlist .r .p { font:600 12px var(--mono); color:var(--text); background:var(--panel2); padding:3px 6px; text-align:right; }
+.flexlist .r.main span:nth-child(3) { font-weight:600; }
+.flexlist .r .x { color:var(--muted); }
+.flexlist .addrow { color:var(--muted); font-size:13px; padding:4px 0 0; border-top:1px solid var(--line); }
+.tag { font:600 11px var(--mono); background:var(--accent); color:#0b0d10; padding:2px 5px; }
+.rec { margin-top:48px; background:var(--panel2); padding:18px 20px; }
+.rec h2 { margin-top:0; }
+.rec ul { margin:8px 0 0; padding-left:18px; color:#c9d0dc; }
+@media (max-width:520px) { .dl figure { width:31vw; } .dl figure .art { height:28vw; } }
+</style>
+</head>
+<body>
+<main>
+<h1>Flex Legends: options</h1>
+<p class="lede">A deck where one Legend slot changes between lists, like YYR with Viktor or Muamar or a third pick. Each slot has a main Legend and any number of alternates, ordered by how often they're played. Stand-in art throughout. Pick one option per row, or mix them.</p>
+
+<h2>1 · Setting it in the deck editor</h2>
+<div class="grid">
+  <div class="opt">
+    <h3><b>E1</b> Alternates under each slot</h3>
+    <div class="stagebox"><div class="ed">
+      <div class="slots">
+        <div class="slot" style="--c:var(--Y)"><div class="art" style="--c:var(--Y)" data-i="RIVER"></div><div class="n">River Ward</div><div class="altrow"><span class="add">+</span></div></div>
+        <div class="slot" style="--c:var(--Y)"><div class="art" style="--c:var(--Y)" data-i="VIKTOR"></div><div class="n">Viktor Vektor</div><div class="altrow"><span class="art" style="--c:var(--Y)"></span><span class="art" style="--c:var(--G)"></span><span class="add">+</span></div></div>
+        <div class="slot" style="--c:var(--R)"><div class="art" style="--c:var(--R)" data-i="JACKIE"></div><div class="n">Jackie Welles</div><div class="altrow"><span class="add">+</span></div></div>
+      </div>
+    </div></div>
+    <p>A thin row under each Legend: faces of its alternates, then +. Tap a face to make it the main Legend, remove it, or reorder it. Compact, and you can see at a glance which slot flexes.</p>
+  </div>
+  <div class="opt">
+    <h3><b>E2</b> Make a slot flexible</h3>
+    <div class="stagebox"><div class="ed">
+      <div class="slots">
+        <div class="slot" style="--c:var(--Y)"><div class="art" style="--c:var(--Y)" data-i="RIVER"></div><div class="n">River Ward</div></div>
+        <div class="slot flexon" style="--c:var(--Y)"><div class="art" style="--c:var(--Y)" data-i="VIKTOR"></div><div class="n">Flex · 3</div></div>
+        <div class="slot" style="--c:var(--R)"><div class="art" style="--c:var(--R)" data-i="JACKIE"></div><div class="n">Jackie Welles</div></div>
+      </div>
+      <div class="flexlist">
+        <div class="hd"><span>Slot 2 · options</span><span>Share</span></div>
+        <div class="r main"><span class="h">⋮⋮</span><span class="art" style="--c:var(--Y)"></span><span>Viktor Vektor</span><span class="p">70%</span><span class="x">×</span></div>
+        <div class="r"><span class="h">⋮⋮</span><span class="art" style="--c:var(--Y)"></span><span>Muamar Reyes</span><span class="p">25%</span><span class="x">×</span></div>
+        <div class="r"><span class="h">⋮⋮</span><span class="art" style="--c:var(--G)"></span><span>Panam Palmer</span><span class="p">5%</span><span class="x">×</span></div>
+        <div class="addrow">+ Add a Legend to this slot</div>
+      </div>
+    </div></div>
+    <p>Tapping "Make flexible" on a slot opens a short list: drag to reorder, and an optional play share for each Legend. The top Legend is the one shown big. More to fill in, but the slides can then show "70 / 25 / 5".</p>
+  </div>
+</div>
+
+<h2>2 · On the tier list tile</h2>
+<div class="grid">
+  <div class="opt">
+    <h3><b>T1</b> Split strip</h3>
+    <div class="stagebox"><div class="tile split">
+      <div class="strips">
+        <div class="strip"><div class="art" style="--c:var(--Y)" data-i="RIVER"></div></div>
+        <div class="strip"><div class="art" style="--c:var(--Y)" data-i="VIKTOR"></div><div class="art alt" style="--c:var(--Y);flex-basis:18%"></div><div class="art alt" style="--c:var(--G);flex-basis:12%"></div></div>
+        <div class="strip"><div class="art" style="--c:var(--R)" data-i="JACKIE"></div></div>
+      </div>
+      <div class="cap"><div class="code">YYR</div><div class="sub">River's Closet</div></div>
+    </div></div>
+    <p>The flexible strip divides: the main Legend on top, alternates as smaller bands under it, sized by share if set. No label needed, and the tile size doesn't change.</p>
+  </div>
+  <div class="opt">
+    <h3><b>T2</b> Stacked strip with a count</h3>
+    <div class="stagebox"><div class="tile stack">
+      <div class="strips">
+        <div class="strip"><div class="art" style="--c:var(--Y)" data-i="RIVER"></div></div>
+        <div class="strip flex" style="padding-top:10px"><div class="art" style="--c:var(--Y)" data-i="VIKTOR"></div><span class="count">+2</span></div>
+        <div class="strip"><div class="art" style="--c:var(--R)" data-i="JACKIE"></div></div>
+      </div>
+      <div class="cap"><div class="code">YYR</div><div class="sub">River's Closet</div></div>
+    </div></div>
+    <p>The flexible strip has card edges peeking above it, as if more cards are stacked behind, plus a +2 count in the same yellow-on-black as copy counts. Reads as "more options here" without showing faces.</p>
+  </div>
+  <div class="opt">
+    <h3><b>T3</b> Color pips</h3>
+    <div class="stagebox"><div class="tile">
+      <div class="strips">
+        <div class="strip"><div class="art" style="--c:var(--Y)" data-i="RIVER"></div></div>
+        <div class="strip"><div class="art" style="--c:var(--Y)" data-i="VIKTOR"></div><div class="pips"><i style="background:var(--Y)"></i><i style="background:var(--G)"></i></div></div>
+        <div class="strip"><div class="art" style="--c:var(--R)" data-i="JACKIE"></div></div>
+      </div>
+      <div class="cap"><div class="code">YYR</div><div class="sub">River's Closet</div></div>
+    </div></div>
+    <p>Small dots at the bottom of the strip, one per alternate, in that Legend's color. The quietest option; it says "this flexes" but not to what.</p>
+  </div>
+</div>
+
+<h2>3 · On the deck page</h2>
+<div class="grid">
+  <div class="opt">
+    <h3><b>D1</b> Alternates as named chips</h3>
+    <div class="stagebox"><div class="dl">
+      <figure style="--c:var(--Y)"><div class="art" style="--c:var(--Y)" data-i="RIVER"></div><figcaption><b>River Ward</b><span>Detective on the Hunt</span></figcaption></figure>
+      <figure style="--c:var(--Y)"><div class="art" style="--c:var(--Y)" data-i="VIKTOR"></div><figcaption><b>Viktor Vektor</b><span>Sit Down and Relax</span>
+        <div class="alts"><span class="chip"><span class="art" style="--c:var(--Y)"></span>Muamar</span><span class="chip"><span class="art" style="--c:var(--G)"></span>Panam</span></div></figcaption></figure>
+      <figure style="--c:var(--R)"><div class="art" style="--c:var(--R)" data-i="JACKIE"></div><figcaption><b>Jackie Welles</b><span>Pour One Out</span></figcaption></figure>
+    </div></div>
+    <p>Under the main Legend's name, a chip for each alternate: a small face and first name. Easy to read on a slide, and scales to 3 or 4 alternates.</p>
+  </div>
+  <div class="opt">
+    <h3><b>D2</b> Mini cards under the Legend</h3>
+    <div class="stagebox"><div class="dl">
+      <figure style="--c:var(--Y)"><div class="art" style="--c:var(--Y)" data-i="RIVER"></div><figcaption><b>River Ward</b><span>Detective on the Hunt</span></figcaption></figure>
+      <figure style="--c:var(--Y)"><div class="art" style="--c:var(--Y)" data-i="VIKTOR"></div><figcaption><b>Viktor Vektor</b><span>Sit Down and Relax</span></figcaption>
+        <div class="mini-row" style="padding-bottom:8px"><div class="card" style="--c:var(--Y)"><div class="art" style="--c:var(--Y)"></div><div class="tb"></div></div><div class="card" style="--c:var(--G)"><div class="art" style="--c:var(--G)"></div><div class="tb"></div></div></div></figure>
+      <figure style="--c:var(--R)"><div class="art" style="--c:var(--R)" data-i="JACKIE"></div><figcaption><b>Jackie Welles</b><span>Pour One Out</span></figcaption></figure>
+    </div></div>
+    <p>Small full cards in a row under the flexible Legend. More visual and less readable; works best with 1 or 2 alternates.</p>
+  </div>
+</div>
+
+<h2>4 · On the full decklist (Legends column)</h2>
+<div class="grid">
+  <div class="opt">
+    <h3><b>F1</b> Flex group</h3>
+    <div class="stagebox"><div class="col">
+      <div class="lbl"><span>Legends</span><span>3</span></div>
+      <div class="flexgroup"><div class="eyebrow"><span>Slot 2</span><span>3 options</span></div>
+        <div class="card" style="--c:var(--Y);height:190px"><div class="art" style="--c:var(--Y)" data-i="VIKTOR"></div><div class="tb"></div></div>
+        <div class="rowalts"><div class="card" style="--c:var(--Y)"><div class="art" style="--c:var(--Y)"></div><div class="tb"></div></div><div class="card" style="--c:var(--G)"><div class="art" style="--c:var(--G)"></div><div class="tb"></div></div><div class="card" style="visibility:hidden"></div></div>
+      </div>
+    </div></div>
+    <p>The flexible slot gets a subtle panel: the main Legend, with alternates as a row of small cards under it. That Legend is a little smaller to make room; the other two Legends stay full size.</p>
+  </div>
+  <div class="opt">
+    <h3><b>F2</b> Card stack</h3>
+    <div class="stagebox"><div class="col">
+      <div class="lbl"><span>Legends</span><span>3</span></div>
+      <div class="cardstack">
+        <div class="card b1" style="--c:var(--G)"><div class="art" style="--c:var(--G)"></div><div class="tb"></div></div>
+        <div class="card b2" style="--c:var(--Y)"><div class="art" style="--c:var(--Y)"></div><div class="tb"></div></div>
+        <div class="card f" style="--c:var(--Y)"><div class="art" style="--c:var(--Y)" data-i="VIKTOR"></div><div class="tb"></div><span class="count" style="font-size:14px;padding:4px 6px">+2</span></div>
+      </div>
+    </div></div>
+    <p>Alternates fan out behind the main Legend, dimmed, with a +2 count. Matches T2 on the tiles; shows the alternates' colors but not their names.</p>
+  </div>
+</div>
+
+<div class="rec">
+  <h2>My pick</h2>
+  <ul>
+    <li><b>E1</b> for setting it: one + under the Legend, no extra screen. The share % from E2 can come later if you want it.</li>
+    <li><b>T1</b> split strip on tiles: shows the actual alternates, scales to several, and needs no label.</li>
+    <li><b>D1</b> named chips on the deck page: presenters will say the names out loud, so the slide should show them.</li>
+    <li><b>F1</b> flex group on the full decklist: same idea as D1, in card form.</li>
+  </ul>
+</div>
+</main>
+</body>
+</html>
