@@ -39,7 +39,7 @@ Each deck gets a **tile code** from its Legends' colors, majority color first (2
 
 ### Editing a decklist
 
-The deck editor has a **Core / Deck / Flex / Options** board. Drag cards between columns, or tap a card and then a column on a phone. Use −/+ to change counts and ★ for key cards (up to 3). The **quick add** box above the board finds a card by name and adds it to whichever column you pick. On a deck page slide, tap any card to move it, star it, change its count or remove it, without leaving the slide. The slide panel has its own quick add box.
+The **Slides** tab has a **Core / Deck / Flex / Options** board under the slide: for a deck page it edits that deck, and on a tier list it edits whichever deck you tap. The Decks tab has the same board. Drag cards between columns, or tap a card and then a column on a phone. Use −/+ to change counts and ★ for key cards (up to 3). The **quick add** box above the board finds a card by name and adds it to whichever column you pick. On a deck page slide, tap any card to move it, star it, change its count or remove it, without leaving the slide. The slide panel has its own quick add box.
 
 Legends and color strips always list the doubled color first, together: Yellow, Yellow, Blue, never Yellow, Blue, Yellow.
 
