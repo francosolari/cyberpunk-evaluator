@@ -37,6 +37,12 @@ To import several decks at once, separate them with a `---` line. Names are matc
 
 Each deck gets a **tile code** from its Legends' colors, majority color first (2 Red + 1 Green → `RRG`). You can override the code. The deck also gets a **key card**, suggested from the decklist; change it with ★. **Copy sim export** writes the deck back out in sim text format.
 
+### Editing a decklist
+
+The deck editor has a **Core / Deck / Flex / Options** board. Drag cards between columns, or tap a card and then a column on a phone. Use −/+ to change counts and ★ for key cards (up to 3). The **quick add** box above the board finds a card by name and adds it to whichever column you pick. On a deck page slide, tap any card to move it, star it, change its count or remove it, without leaving the slide. The slide panel has its own quick add box.
+
+Legends and color strips always list the doubled color first, together: Yellow, Yellow, Blue, never Yellow, Blue, Yellow.
+
 ## Slides
 
 - **Tier list**: any number of tiers, each with a name, color and description. Add, remove and reorder tiers freely, or start from a preset (Tier 1/2/Rogue, S/A/B/C, Tier 0–3). Drag decks between tiers, or on a touch screen tap a deck and then a tier. Tiles show the Legends' art, the key card's art, both, or the full key card.
