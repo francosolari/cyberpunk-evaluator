@@ -6,17 +6,17 @@
   <title>Tier List Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Saira:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
     <div class="brand">Tier List <span>Studio</span></div>
-    <nav class="tabs" role="tablist">
+    <nav class="tabs">
       <button data-view="slides" class="active">Slides</button>
       <button data-view="decks">Decks</button>
-      <button data-view="cards">Card Library</button>
-      <button data-view="source">Card Source</button>
+      <button data-view="cards">Cards</button>
+      <button data-view="data">Card Data <span id="data-badge" class="badge"></span></button>
     </nav>
     <div class="actions">
       <button id="btn-present" class="primary">▶ Present</button>
@@ -33,14 +33,13 @@
   </header>
 
   <main id="app">
-    <!-- SLIDES VIEW -->
     <section id="view-slides" class="view active">
       <aside class="panel slide-list">
         <h3>Slides</h3>
         <ol id="slide-list"></ol>
         <div class="row gap">
           <button id="add-tier-slide">+ Tier list</button>
-          <button id="add-deck-slide">+ Deck spotlight</button>
+          <button id="add-deck-slide">+ Deck page</button>
         </div>
       </aside>
       <div class="workspace">
@@ -48,7 +47,7 @@
         <div class="pool-wrap">
           <div class="pool-head">
             <h3>Unranked decks</h3>
-            <span class="hint">Drag decks onto a tier — or tap a deck, then tap a tier. Double-click a deck to edit.</span>
+            <span class="hint">Drag onto a tier, or tap a deck and then a tier. Double-click a deck to edit it.</span>
           </div>
           <div id="pool" class="pool" data-drop="pool"></div>
         </div>
@@ -56,45 +55,41 @@
       <aside class="panel inspector" id="slide-inspector"></aside>
     </section>
 
-    <!-- DECKS VIEW -->
     <section id="view-decks" class="view">
       <aside class="panel">
         <h3>Decks</h3>
-        <ul id="deck-list" class="list"></ul>
-        <button id="add-deck" class="primary block">+ New deck</button>
+        <button id="import-deck" class="primary block">⇩ Import deck export</button>
+        <button id="add-deck" class="block">+ Blank deck</button>
+        <ul id="deck-list" class="list" style="margin-top:12px"></ul>
       </aside>
       <div class="workspace pad" id="deck-editor"></div>
     </section>
 
-    <!-- CARDS VIEW -->
     <section id="view-cards" class="view">
       <div class="workspace pad">
         <div class="toolbar">
           <input type="search" id="card-search" placeholder="Search cards…">
           <select id="card-filter">
-            <option value="all">All cards</option>
             <option value="legend">Legends</option>
-            <option value="card">Other cards</option>
+            <option value="all">All cards</option>
+            <option value="card">Non-Legends</option>
           </select>
-          <button id="add-card" class="primary">+ Add card</button>
+          <button id="add-card">+ Custom card</button>
         </div>
         <div id="card-grid" class="card-grid"></div>
       </div>
     </section>
 
-    <!-- SOURCE VIEW -->
-    <section id="view-source" class="view">
-      <div class="workspace pad narrow" id="source-view"></div>
+    <section id="view-data" class="view">
+      <div class="workspace pad narrow" id="data-view"></div>
     </section>
   </main>
 
-  <!-- Presentation overlay -->
   <div id="present" class="present" hidden>
     <div id="present-host"></div>
     <div class="present-hud"><span id="present-count"></span> · ← → to navigate · Esc to exit</div>
   </div>
 
-  <!-- Modal -->
   <div id="modal" class="modal" hidden>
     <div class="modal-card">
       <button class="modal-x" data-close>×</button>
@@ -103,7 +98,6 @@
   </div>
 
   <div id="toast" class="toast" hidden></div>
-
   <script src="app.js"></script>
 </body>
 </html>
