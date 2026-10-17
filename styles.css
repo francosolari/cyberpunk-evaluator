@@ -780,3 +780,59 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 @media (pointer: coarse) {
   input[type=text], input[type=url], input[type=search], input:not([type]), select, textarea { font-size: 16px !important; }
 }
+
+/* ---------- Card / Legend picker: deck-builder style pool ---------- */
+.picker-modal .modal-card { padding-top: 0; }
+.picker-top { position: sticky; top: 0; z-index: 2; background: var(--panel); padding: 18px 0 10px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--line); }
+.picker-top h3 { margin: 0; }
+.picker-top input[type=search] { width: 100%; }
+.picker-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+.picker-seg { display: flex; }
+.picker-seg button { padding: 6px 12px; font-size: 13px; clip-path: none !important; border-radius: 0; }
+.picker-seg button.on { background: var(--accent); color: #0b0d10; border-color: var(--accent); }
+.picker-colors { display: flex; gap: 6px; flex-wrap: wrap; }
+.picker-colors button { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 8px; font-size: 13px; clip-path: none !important; color: var(--muted); }
+.picker-colors button i { width: 10px; height: 10px; background: var(--c); opacity: .45; }
+.picker-colors button.on { color: var(--text); box-shadow: inset 0 0 0 2px var(--c); }
+.picker-colors button.on i { opacity: 1; }
+.picker-meta { font-size: 13px; }
+.picker-jump { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+.picker-jump button { min-width: 30px; padding: 3px 6px; font: 600 12px var(--mono); clip-path: none !important; }
+.picker-jump button.by-color { box-shadow: inset 0 -3px 0 var(--c); }
+.picker-grid { display: block; margin-top: 0; }
+.pick-head { font: 600 14px "Saira", sans-serif; color: var(--text); padding: 14px 0 6px; scroll-margin-top: 190px; }
+.pick-head b { font: 600 12px var(--mono); color: var(--muted); margin-left: 4px; }
+.pick-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 10px; }
+.picker-grid .pick { position: relative; display: flex; flex-direction: column; text-align: left; padding: 4px; cursor: pointer; clip-path: none !important; border-radius: 6px; }
+.picker-grid .pick .n { display: block; }
+.picker-grid .pick.used { opacity: .5; }
+.pick-n { position: absolute; top: 8px; right: 8px; font: 600 12px/1 var(--mono); background: #07080c; color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); padding: 4px 5px; }
+.pick-none { display: block; margin: 16px 0 4px; }
+@media (max-width: 700px) {
+  .picker-top { padding-top: 14px; }
+  .pick-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .picker-seg { width: 100%; }
+  .picker-seg button { flex: 1; padding: 8px 4px; }
+  .picker-jump { margin-left: 0; width: 100%; }
+  .picker-jump button { flex: 1; min-width: 0; padding: 6px 0; }
+  .pick-head { scroll-margin-top: 250px; }
+}
+.picker-modal .modal-x { display: none; }
+.picker-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.picker-x { font-size: 18px; padding: 2px 12px; }
+.picker-grid .pick { min-width: 0; }
+.picker-grid .pick .n { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+@media (max-width: 700px) {
+  .picker-top { gap: 6px; padding: 12px 0 8px; }
+  .picker-top h3 { font-size: 15px; }
+  .picker-row { gap: 6px; }
+  .picker-seg button, .picker-colors button { font-size: 13px; padding: 6px 4px; min-height: 0; }
+  .picker-colors { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .picker-colors button { justify-content: center; gap: 4px; }
+  .picker-meta .hint:not(#picker-count) { display: none; }
+  .picker-meta { flex-wrap: nowrap; }
+  .picker-jump { width: auto; flex: 1; flex-wrap: nowrap; }
+  .picker-jump button { padding: 4px 0; }
+  .pick-head { scroll-margin-top: 200px; padding-top: 10px; }
+  .picker-grid .pick .n { font-size: 11px; }
+}
