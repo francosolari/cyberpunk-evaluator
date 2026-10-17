@@ -14,7 +14,7 @@
 # replace them with real lists when you have them.
 
 # Name: BBG
-# Key: Three Mouths, One Desire
+# Key: Les Élémens
 # Tier: Tier 1
 
 # Legends
