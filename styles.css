@@ -471,3 +471,13 @@ code { color: var(--accent); }
 #deck-list .dl-text strong { font-size: 13px; }
 #deck-list .dl-text .hint { font-size: 11px; }
 .pool.compact .deck-tile { width: 70px; height: 95px; }
+
+.board { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+#slide-board .board { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.bcol.side { border-top: 3px solid #8b93a3; }
+.over-limit { color: var(--danger) !important; font-weight: 700; }
+.cm-zones { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 1200px) { .board, #slide-board .board { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .board, #slide-board .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .board, #slide-board .board { grid-template-columns: 1fr; } }
+.menu-note { margin: 0 2px 4px; max-width: 230px; line-height: 1.4; }
