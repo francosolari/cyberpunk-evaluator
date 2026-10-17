@@ -8,7 +8,7 @@ const SIM_ORIGIN = 'https://cyberpunk-tcg-sim.online';
 const CATALOG_URL = `${SIM_ORIGIN}/api/cards/catalog`;
 const LEADERBOARD_URL = `${SIM_ORIGIN}/api/ranked/leaderboard`;
 const STAGE_W = 1920, STAGE_H = 1080;
-const CATALOG_SCHEMA = 3; // 2 added rules text, 3 collector numbers; older saved catalogs are refreshed once
+const CATALOG_SCHEMA = 4; // 2 rules text, 3-4 collector numbers; older saved catalogs are refreshed once
 const CARD_ASPECT = 0.716;          // card width / height
 const TILE_ASPECT = 0.74;           // deck tile width / height (art + caption)
 // Crop = the card's art window (top/bottom, % of card height) + focus point + extra zoom.
@@ -307,8 +307,57 @@ const deck = (id) => state.decks.find((d) => d.id === id) || null;
 const slide = (id = ui.slideId) => state.slides.find((s) => s.id === id) || null;
 
 /** Parses the sim catalog ({cards:[…]}) into compact records. Image paths are relative to the sim. */
+/* Collector numbers: the deck-image codes use them, but the catalog's field for them is unknown.
+ * Three cards with known numbers (from a real deck image) find it: every number inside each
+ * card's fields (nested ones too) is a candidate, and the one that gives all three wins. */
+const NUMBER_ANCHORS = [[/dexter.*off the grid/i, 2], [/^v\b.*street ?kid/i, 5], [/wakako.*peace/i, 110]];
+function numberCandidates(obj, prefix = '', depth = 0, out = new Map()) {
+  if (depth > 3 || obj == null) return out;
+  if (Array.isArray(obj)) { obj.slice(0, 3).forEach((v, i) => numberCandidates(v, `${prefix}[${i}]`, depth + 1, out)); return out; }
+  if (typeof obj === 'object') { for (const [k, v] of Object.entries(obj)) numberCandidates(v, prefix ? `${prefix}.${k}` : k, depth + 1, out); return out; }
+  const nums = typeof obj === 'number' ? [obj] : typeof obj === 'string' ? (obj.match(/\d+/g) || []).map(Number) : [];
+  nums.forEach((n, i) => { out.set(`${prefix}#${i}`, n); out.set(`${prefix}#last`, nums[nums.length - 1]); });
+  if (typeof obj === 'string') out.set(`${prefix}#str`, obj);
+  return out;
+}
+function discoverNumbering(list) {
+  const nameOf = (c) => c?.display_name || c?.name || '';
+  const anchors = NUMBER_ANCHORS.map(([re, n]) => [list.find((c) => re.test(nameOf(c))), n]).filter(([c]) => c);
+  if (anchors.length < 2) return { how: 'none', reason: 'anchor cards not in catalog' };
+  const setOf = (c) => String(c.set_code || c.set || c.set_name || '').toLowerCase();
+  const maps = anchors.map(([c, n]) => [numberCandidates(c), n]);
+  const keys = [...maps[0][0].keys()].filter((k) => maps.every(([m, n]) => m.get(k) === n));
+  const pick = keys.find((k) => /number|collector|code|no\b/i.test(k)) || keys[0];
+  if (pick) {
+    // The same string often carries the set too ("WNC-110"); its letters stand in when there's no set field.
+    const str = anchors.map(([c]) => numberCandidates(c).get(pick.replace(/#\w+$/, '#str')));
+    const setLetters = str.every((v) => typeof v === 'string' && /^[a-z]+/i.test(v)) ? true : false;
+    return { how: 'field', key: pick, setLetters, anchorSet: setOf(anchors[0][0]) || (setLetters ? str[0].match(/^[a-z]+/i)[0].toLowerCase() : '') };
+  }
+  // Fall back to the catalog's own order: position within the card's set, or overall.
+  for (const within of [true, false]) {
+    const pos = (c) => { const pool = within ? list.filter((x) => setOf(x) === setOf(c)) : list; return pool.indexOf(c) + 1; };
+    if (anchors.every(([c, n]) => pos(c) === n)) return { how: within ? 'set-order' : 'order', anchorSet: setOf(anchors[0][0]) };
+  }
+  return { how: 'none', reason: 'no field matched', sample: anchors[0][0] };
+}
+function numberWith(rule, list) {
+  if (rule.how === 'field') return (c) => numberCandidates(c).get(rule.key) ?? null;
+  if (rule.how === 'set-order' || rule.how === 'order') {
+    const setOf = (c) => String(c.set_code || c.set || c.set_name || '');
+    const idx = new Map();
+    const counters = {};
+    for (const c of list) { const k = rule.how === 'set-order' ? setOf(c) : ''; counters[k] = (counters[k] || 0) + 1; idx.set(c, counters[k]); }
+    return (c) => idx.get(c) ?? null;
+  }
+  return (c) => collectorNumber(c);
+}
+
 function parseCatalog(json, origin = SIM_ORIGIN) {
   const list = Array.isArray(json?.cards) ? json.cards : Array.isArray(json) ? json : [];
+  const rule = discoverNumbering(list);
+  const numOf = numberWith(rule, list);
+  parseCatalog.lastRule = rule;
   const seen = new Set();
   const out = [];
   for (const c of list) {
@@ -328,8 +377,8 @@ function parseCatalog(json, origin = SIM_ORIGIN) {
       page: c.source?.card_page_url || '',
       text: typeof c.rules_text === 'string' ? c.rules_text.slice(0, 800) : '',
       // Collector number and set, used to read the sim's compact deck codes (e.g. w32 = #110).
-      num: collectorNumber(c),
-      set: String(c.set_code || c.set || c.set_name || '').toLowerCase(),
+      num: numOf(c),
+      set: String(c.set_code || c.set || c.set_name || (rule.setLetters && (numberCandidates(c).get(rule.key.replace(/#\w+$/, '#str')) || '').match(/^[a-z]*/i)[0]) || '').toLowerCase(),
       codes,
     });
   }
@@ -353,17 +402,22 @@ function collectorNumber(c) {
 function decodeSimDeckCode(text) {
   const m = String(text).match(/[?&]d=([a-z0-9._\-]+)/i);
   if (!m || !/(^|\.)l\./.test(m[1])) return null;
+  // Code letters are the set's first letter, except "w" is always the first set (whatever the catalog calls it).
+  const firstSet = state.catalog?.numbering?.anchorSet || '';
+  const letterOf = (set) => (set && set === firstSet ? 'w' : (set || '')[0] || '');
   const byCode = new Map();
+  const byNum = new Map();
   for (const c of allCards()) if (c.num != null) {
-    const letter = (c.set || '')[0] || '';
-    const key = letter + ':' + c.num;
+    const key = letterOf(c.set) + ':' + c.num;
     if (!byCode.has(key)) byCode.set(key, c); // first printing wins; alternate arts share the number
+    byNum.set(c.num, [...(byNum.get(c.num) || []), c]);
   }
   const lookup = (code) => {
     const mm = code.match(/^([a-z])([0-9a-z]+?)(?:-[a-z0-9]+)?$/i);
     if (!mm) return code;
     const n = parseInt(mm[2], 36);
-    const hit = byCode.get(mm[1].toLowerCase() + ':' + n) || [...byCode.entries()].find(([k]) => k.endsWith(':' + n))?.[1];
+    const only = new Set((byNum.get(n) || []).map((c) => c.set)).size === 1 ? byNum.get(n)[0] : null;
+    const hit = byCode.get(mm[1].toLowerCase() + ':' + n) || only;
     return hit ? hit.id : `${code} (#${n})`;
   };
   const out = { l: [], d: [], s: [] };
@@ -385,7 +439,9 @@ async function loadCatalogFromSim() {
 function applyCatalog(json, from) {
   const cards = parseCatalog(json);
   if (!cards.length) throw new Error('No cards found in that JSON.');
-  state.catalog = { schema: CATALOG_SCHEMA, from, at: new Date().toISOString(), revision: String(json?.cardPoolRevision ?? ''), cards };
+  const r = parseCatalog.lastRule || {};
+  state.catalog = { schema: CATALOG_SCHEMA, from, at: new Date().toISOString(), revision: String(json?.cardPoolRevision ?? ''), cards,
+    numbering: { how: r.how, key: r.key, anchorSet: r.anchorSet, reason: r.reason, sample: r.how === 'none' && r.sample ? JSON.stringify(r.sample).slice(0, 1500) : undefined } };
   rebuildIndex();
   nameIndex = null;
   relinkDecks();
@@ -1764,6 +1820,9 @@ function renderData() {
     ${cat ? `<div class="callout ok"><b>${cat.cards.length} cards</b> (${legends.length} Legends), loaded ${new Date(cat.at).toLocaleString()}${cat.revision ? ` · pool revision ${esc(cat.revision)}` : ''}.</div>`
       : '<div class="callout warn">No card data yet. The app is showing demo placeholders.</div>'}
     <p>Card names, types, colors and art load automatically from a public card catalog. Refresh after a new set releases.</p>
+    ${cat ? (cat.numbering?.how && cat.numbering.how !== 'none'
+      ? `<p class="hint">Deck images: collector numbers found (${esc(cat.numbering.how === 'field' ? cat.numbering.key : cat.numbering.how)}).</p>`
+      : `<div class="callout warn">Deck images can't be matched to cards yet: collector numbers weren't found in the card data (${esc(cat.numbering?.reason || 'not checked')}). Send a screenshot of this box to get it fixed.${cat.numbering?.sample ? `<pre class="diag">${esc(cat.numbering.sample)}</pre>` : ''}</div>`) : ''}
     <div class="row gap"><button class="primary" id="cat-fetch">${cat ? 'Refresh' : 'Load'} card data</button>
       <label class="filebtn">Load catalog .json<input type="file" id="cat-file" accept=".json,application/json" hidden></label>
       <button id="cat-paste-btn">Paste JSON</button></div>

@@ -694,3 +694,4 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 .dropzone .hint { max-width: 460px; }
 .or-label { margin-top: 14px; }
 .import-sub { margin: 6px 2px 0; }
+.diag { white-space: pre-wrap; word-break: break-all; font: 11px/1.4 var(--mono); max-height: 240px; overflow: auto; background: var(--bg); padding: 8px; margin-top: 8px; }
