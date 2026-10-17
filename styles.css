@@ -518,3 +518,22 @@ code { color: var(--accent); }
 .look-frame .tier-name span { position: absolute; left: -2px; top: -2px; font-size: 30px; line-height: 1; letter-spacing: .06em; padding: 8px 40px 7px 16px; background: var(--t); color: #0b0c10;
   clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
 .look-frame .tier-name { font-size: 0 !important; }
+
+/* ---------- De-templating pass (applies to every slide) ---------- */
+/* Flat background: no glow blobs, no grid. */
+.stage { background: #0b0c10; }
+.stage::before, .stage .glow { display: none !important; }
+/* Type counts as a plain line instead of stat boxes. */
+.ds-breakdown-line { display: flex; align-items: baseline; gap: 14px; font: 500 30px "Saira", sans-serif; color: #9aa3b5; white-space: nowrap; }
+.ds-breakdown-line b { font: 700 38px "Chakra Petch", sans-serif; color: #eef1f6; margin-right: 4px; }
+.ds-breakdown-line i { font-style: normal; color: #4a5263; }
+.ds-breakdown-line.compact { font-size: 22px; gap: 10px; }
+.ds-breakdown-line.compact b { font-size: 28px; }
+.fd-head .ds-breakdown-line, .dk-head .ds-breakdown-line { flex: none; }
+.ds-right .ds-breakdown-line { padding-bottom: 6px; border-bottom: 1px solid #ffffff14; }
+/* Plain text instead of pills and spaced-out eyebrows. */
+.pill { background: none !important; color: #c9d0dc; border-radius: 0; padding: 0; font-weight: 500; letter-spacing: .04em; text-transform: none; }
+.s-eyebrow .pill::before { content: "/ "; color: #5b6475; }
+.tier-pill { color: var(--t) !important; font-weight: 700; }
+.brandmark { letter-spacing: .08em; }
+.ds-meta { text-transform: none; letter-spacing: .02em; }
