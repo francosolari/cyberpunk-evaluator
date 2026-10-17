@@ -161,7 +161,10 @@ async function loadSeeds() {
     const tier = text.match(/^#\s*Tier:\s*(.+)$/im)?.[1].trim();
     const notes = text.match(/^#\s*Notes:\s*(.+)$/im)?.[1].trim();
     const alts = [...text.matchAll(/^#\s*Alternates?:\s*(.+?)\s*=\s*(.+)$/gim)];
-    const d = parseDeckExport(text.replace(/^#\s*(Tier|Notes|Alternates?):.*$/gim, ''));
+    const keys = text.match(/^#\s*Keys?:\s*(.+)$/im)?.[1].split(/\s*;\s*/) || [];
+    const d = parseDeckExport(text.replace(/^#\s*(Tier|Notes|Alternates?|Keys?):.*$/gim, ''));
+    // "# Key: Card; Card" stars up to 3 key cards (imports never pick one on their own).
+    setKeys(d, keys.map((n) => resolveCard(n)).filter(Boolean));
     // "# Alternates: Viktor Vektor = Muamar Reyes" puts alternates on that Legend's slot.
     for (const [, main, list] of alts) {
       const id = resolveCard(main, { legend: true });

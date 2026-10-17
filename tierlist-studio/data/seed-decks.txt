@@ -3,6 +3,7 @@
 # Paste deck exports here (a deck text export, an official deck builder text list,
 # or a deck link), separated by a line containing only ---
 # A 4th Legend (or one under #S / #O) becomes an alternate for the Legend of its color.
+#   # Key: Card; Card     up to 3 key cards (shown on key card tile views and deck pages)
 # Or name the slot: # Alternates: Viktor Vektor = Muamar Reyes   (several: separate with ;)
 # Optional lines in each deck:
 #   # Tier: Tier 1        which tier on the starting tier list (Tier 1, Tier 2 or Rogue)
@@ -13,6 +14,7 @@
 # replace them with real lists when you have them.
 
 # Name: BBG
+# Key: Three Mouths, One Desire
 # Tier: Tier 1
 
 # Legends
@@ -62,6 +64,7 @@
 1x V
 ---
 # Name: YYR
+# Key: Johnny Silverhand, Never Stop Fighting
 # Alternates: Viktor Vektor, Sit Down and Relax = Muamar Reyes
 #L
 1x River Ward, Detective on the Hunt
@@ -89,6 +92,7 @@
 2x Heywood Ripperdoc
 ---
 # Name: RRG - Fixers
+# Key: Pepe Najarro, Working Doubles
 #L
 1x Dexter DeShawn, Off the Grid
 1x Padre, Man of the Cross
@@ -117,6 +121,7 @@
 1x Gunpoint Diplomacy
 ---
 # Name: RRG - Arasaka
+# Key: Yorinobu Arasaka, Steel Dragon
 #L
 1x Padre, Man of the Cross
 1x V, Streetkid
