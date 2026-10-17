@@ -678,3 +678,9 @@ body.viewing .slide-list .row, body.viewing #slide-list button { display: none !
 :focus-visible { outline: 2px solid var(--accent-2) !important; outline-offset: 2px; }
 .deck-tile:focus-visible { outline: 3px solid var(--accent-2) !important; outline-offset: 2px; }
 .missing-note { font: 600 20px "Saira", sans-serif; color: #0b0d10; background: var(--danger); padding: 3px 10px; margin-right: 14px; }
+
+.tier-actions { margin-top: 8px; flex-wrap: nowrap; }
+.tier-actions button { flex: 1; }
+#toast { display: flex; align-items: center; gap: 10px; }
+#toast[hidden] { display: none; }
+.toast-action { background: var(--accent) !important; color: #0b0d10; border-color: var(--accent) !important; }
