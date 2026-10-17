@@ -174,7 +174,9 @@ async function applySamples() {
     const r = await fetch(LEADERBOARD_URL, { credentials: 'omit' });
     if (r.ok) {
       for (const t of topTrios(await r.json(), 14)) {
-        if (decks.some((d) => d.legends.slice().sort().join('+') === t.key)) continue;
+        // Skip a trio a seed already covers, alternates included (Adam / V / Muamar is the RRY seed's alternate).
+        const head = (id) => norm(card(id)?.name.split(',')[0] || id);
+        if (decks.some((d) => { const have = new Set([...d.legends, ...allAlts(d)].filter(Boolean).map(head)); return t.key.split('+').every((id) => have.has(head(id))); })) continue;
         const d = newDeck({ legends: t.key.split('+'), notes: `${t.games} ranked games this season`, sample: true, fromLeaderboard: true });
         if (d.legends.every(card)) { d.name = d.legends.map((id) => card(id).name.split(',')[0].split(' ')[0]).join(' · '); decks.push(d); }
       }
