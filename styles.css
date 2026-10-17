@@ -187,10 +187,18 @@ code { color: var(--accent); }
 .ds-key-cap { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 30px; border-left: 8px solid var(--c); }
 .ds-key-cap span { font: 600 20px "Chakra Petch", sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
 .ds-key-cap b { font: 700 40px "Saira", sans-serif; }
-.ds-notes { position: absolute; left: 1080px; right: 80px; top: 80px; font-size: 26px; line-height: 1.4; color: #c9d0dc; white-space: pre-line; max-height: 150px; overflow: hidden; }
-.ds-list { position: absolute; left: 1080px; right: 80px; top: 250px; bottom: 60px; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 64px; gap: 10px 14px; align-content: start; }
-.ds-list.no-notes { top: 110px; }
-.ds-list.dense { grid-auto-rows: 52px; gap: 8px 12px; }
+.ds-right { position: absolute; left: 1080px; right: 80px; top: 76px; bottom: 56px; display: flex; flex-direction: column; gap: 22px; }
+.ds-notes { flex: none; font-size: 26px; line-height: 1.4; color: #c9d0dc; white-space: pre-line; max-height: 110px; overflow: hidden; }
+.ds-breakdown { flex: none; display: flex; gap: 8px; }
+.ds-type { flex-basis: 0; min-width: 120px; padding: 10px 16px 12px; border-radius: 10px; background: #10131a; border: 1px solid #ffffff12; border-top: 5px solid var(--k); }
+.ds-type-n { font: 700 46px/1 "Chakra Petch", sans-serif; }
+.ds-type-l { font: 600 17px "Chakra Petch", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #9aa3b5; margin-top: 4px; }
+.ds-list { flex: 1; min-height: 0; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 58px; gap: 8px 14px; align-content: start; }
+.ds-list.dense { grid-auto-rows: 46px; gap: 6px 12px; }
+.ds-list.dense .ds-name { font-size: 19px; }
+.ds-list.dense .ds-cost, .ds-list.dense .ds-n { font-size: 22px; }
+.ds-group { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: 10px; padding: 6px 2px 0; font: 600 18px "Chakra Petch", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #9aa3b5; border-bottom: 1px solid #ffffff14; }
+.ds-group b { color: #eef1f6; }
 .ds-row { position: relative; display: flex; align-items: center; gap: 12px; padding: 0 14px 0 0; border-radius: 8px; overflow: hidden; background: #10131a; border: 2px solid #ffffff0d; border-left: 5px solid var(--c); }
 .ds-row .ds-row-art { position: absolute; right: 0; top: 0; bottom: 0; width: 50%; opacity: .45; }
 .ds-row::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 56%; background: linear-gradient(90deg, #10131a, #10131a00 70%); }

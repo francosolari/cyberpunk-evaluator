@@ -535,13 +535,19 @@ function deckSlideHTML(s) {
     const [main, ...rest] = (c?.name || '—').split(/,\s*|\s+[—–-]\s+/);
     return `<figure class="ds-legend" style="--c:${hexOf(c)};--ca:${hexOf(c)}66">${artHTML(c)}<figcaption><b>${esc(main)}</b><span>${esc(rest.join(', '))}</span></figcaption></figure>`;
   }).join('');
-  const rows = d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c)
-    .sort((a, b) => (a[0].cost ?? 99) - (b[0].cost ?? 99) || a[0].name.localeCompare(b[0].name));
-  const many = rows.length > 20;
-  const list = rows.map(([c, n]) => `<div class="ds-row ${c.id === d.keyCard ? 'is-key' : ''}" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
+  const rows = d.main.map(([id, n]) => [card(id), n]).filter(([c]) => c);
+  const groups = typeGroups(rows);
+  const total = rows.reduce((t, [, n]) => t + n, 0);
+  // Compact rows when the grouped list wouldn't fit under the notes and breakdown.
+  const lines = groups.reduce((t, g) => t + Math.ceil(g.rows.length / 2), 0);
+  const many = lines * 66 + groups.length * 48 > (d.notes ? 640 : 770);
+  const rowHTML = ([c, n]) => `<div class="ds-row ${c.id === d.keyCard ? 'is-key' : ''}" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
       ${artHTML(c, { cls: 'ds-row-art' })}
       <span class="ds-cost">${c.cost ?? '·'}</span><span class="ds-name">${esc(c.name)}</span><span class="ds-n">${n}×</span>
-    </div>`).join('');
+    </div>`;
+  const list = groups.map((g) => `<div class="ds-group"><span>${esc(g.label)}</span><b>${g.count}</b></div>${g.rows.map(rowHTML).join('')}`).join('');
+  const breakdown = total ? `<div class="ds-breakdown">${groups.map((g) => `<div class="ds-type" style="flex-grow:${g.count};--k:${g.color}">
+      <div class="ds-type-n">${g.count}</div><div class="ds-type-l">${esc(g.label)}</div></div>`).join('')}</div>` : '';
   return `<div class="stage deck-slide">
     <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(d.legends[0]))}38, transparent)"></div><div class="glow g2"></div>
     <header class="ds-head">
@@ -551,9 +557,29 @@ function deckSlideHTML(s) {
     </header>
     <div class="ds-legends">${legends}</div>
     ${key ? `<div class="ds-key" style="--c:${hexOf(key)}">${artHTML(key, { cls: 'ds-key-art' })}<div class="ds-key-cap"><span>Key card</span><b>${esc(key.name)}</b></div></div>` : ''}
-    ${d.notes ? `<div class="ds-notes">${esc(d.notes)}</div>` : ''}
-    <div class="ds-list ${many ? 'dense' : ''} ${d.notes ? '' : 'no-notes'}">${list || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}</div>
+    <div class="ds-right">
+      ${d.notes ? `<div class="ds-notes">${esc(d.notes)}</div>` : ''}
+      ${breakdown}
+      <div class="ds-list ${many ? 'dense' : ''}">${list || '<div class="ds-nolist">Import a deck export to show the decklist.</div>'}</div>
+    </div>
   </div>`;
+}
+
+// Main-deck cards by type (Units, Gear, Programs, then anything else), each sorted by cost.
+const TYPE_GROUPS = [['unit', 'Units', '#ff6b6b'], ['gear', 'Gear', '#5ce1e6'], ['program', 'Programs', '#c08bff']];
+function typeGroups(rows) {
+  const out = TYPE_GROUPS.map(([key, label, color]) => ({ key, label, color, rows: [], count: 0 }));
+  for (const [c, n] of rows) {
+    let g = out.find((x) => (c.type || '').toLowerCase().includes(x.key));
+    if (!g) {
+      const label = c.type ? c.type.replace(/^./, (ch) => ch.toUpperCase()) + 's' : 'Other';
+      g = out.find((x) => x.label === label) || out[out.push({ key: label, label, color: '#8b93a3', rows: [], count: 0 }) - 1];
+    }
+    g.rows.push([c, n]);
+    g.count += n;
+  }
+  out.forEach((g) => g.rows.sort((a, b) => (a[0].cost ?? 99) - (b[0].cost ?? 99) || a[0].name.localeCompare(b[0].name)));
+  return out.filter((g) => g.count);
 }
 
 const slideHTML = (s, editing = false) => (!s ? '<div class="stage"></div>' : s.type === 'deck' ? deckSlideHTML(s) : tierSlideHTML(s, editing));
