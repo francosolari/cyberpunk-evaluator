@@ -40,7 +40,7 @@ A new visitor's studio starts from `data/seed-decks.txt`: deck exports separated
 
 To import several decks at once, separate them with a `---` line. Names are matched to the catalog without regard to case or punctuation. A short name like "Panam Palmer" matches "Panam Palmer, Nomad Cavalry" when only one card fits. Lines that match no card are listed so you can fix them.
 
-Each deck gets a **tile code** from its Legends' colors, majority color first (2 Red + 1 Green → `RRG`). You can override the code. The deck also gets a **key card**, suggested from the decklist; change it with ★. **Copy deck export** writes the deck back out as a text export.
+Each deck gets a **tile code** from its Legends' colors, majority color first (2 Red + 1 Green → `RRG`). You can override the code. Key cards are never picked for you: star up to 3 with ★. Until a deck has one, tiles set to a key card view show its Legends. **Copy deck export** writes the deck back out as a text export.
 
 ### Choosing Legends and cards
 
