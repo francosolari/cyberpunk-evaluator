@@ -58,3 +58,14 @@ Legends and color strips always list the doubled color first, together: Yellow, 
 ## Art crops
 
 Each card has an **art window**: the top and bottom of its illustration, as a % of card height. Every layout scales the card so only that window shows, which keeps names and rules text off the slides. Set it once on any Legend with **Cards → Crop art → Save as default for all Legends**, then fine-tune the focus point on individual cards if needed.
+
+## Design
+
+The studio follows **Kiroshi Scan**, the design system in `cyberpunk-tcg-tracker/DESIGN.md`:
+- Flat charcoal with square geometry; cut corners on buttons, chips and badges, which are always filled.
+- Yellow only for identity, the active selection and the primary action.
+- Sentence-case labels with no tracking, and a cyan tick opening each section.
+- Martian Mono for numbers.
+- Card colors fill the cost boxes; there are no colored side stripes.
+- Key cards get cyan target-lock brackets.
+- No glow, gradients, dashed boxes or outlined pills.

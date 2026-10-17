@@ -543,3 +543,114 @@ code { color: var(--accent); }
 .drag-ghost { position: fixed !important; z-index: 500; pointer-events: none; margin: 0; opacity: .95; box-shadow: 0 18px 40px #000c !important; transform: rotate(-2deg) !important; }
 body.dragging-deck, body.dragging-deck * { cursor: grabbing !important; }
 #stage-host .deck-tile, #pool .deck-tile { touch-action: pan-y; }
+
+/* =====================================================================
+ * Kiroshi Scan: the design system from cyberpunk-tcg-tracker/DESIGN.md.
+ * Flat charcoal, square geometry, cut corners on anything you press or that labels a state.
+ * Yellow only for identity, the active selection and the one primary action per view.
+ * Labels in sentence case with no tracking. No glow, gradients, dashed boxes, outlined pills or
+ * colored side stripes. This block comes last so it overrides the earlier styles.
+ * ===================================================================== */
+:root {
+  --bg: #0b0d10; --panel: #12151a; --panel-2: #191d24; --line: #232a33; --line-strong: #353f4c;
+  --text: #e8edf2; --muted: #8d98a7; --accent: #f4e34f; --accent-2: #4cf0e6; --danger: #ff5757;
+  --cut: 7px; --cut-s: 4px;
+  --mono: "Martian Mono", ui-monospace, monospace;
+}
+*, *::before, *::after { border-radius: 0 !important; }
+.art.full, .art.full img, .crop-src, .crop-src img { border-radius: 8px !important; } /* printed card corners */
+
+/* Labels: sentence case, no tracking, no yellow headings */
+h3 { color: var(--text); text-transform: none; letter-spacing: 0; font: 600 14px "Chakra Petch", sans-serif; display: flex; align-items: center; gap: 8px; }
+h3::before { content: ""; width: 5px; height: 5px; background: var(--accent-2); flex: none; }
+label { text-transform: none; letter-spacing: 0; font-size: 12.5px; }
+.brand { text-transform: none; letter-spacing: 0; }
+.bhead, .dgroup, .pg-label, .cm-title, .tag, .badge { text-transform: none !important; letter-spacing: 0 !important; }
+
+/* Pressable things: filled, cut corners, never outlined */
+button, .filebtn, .menu summary, .tag, .badge, .toast, .role, .seg button {
+  border: 1px solid transparent; clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+}
+.tag, .badge, .role, button.small { clip-path: polygon(var(--cut-s) 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%, 0 var(--cut-s)); }
+button, .filebtn, .menu summary { background: var(--panel-2); border-color: var(--panel-2); }
+button:hover, .filebtn:hover { background: #222833; border-color: #222833; }
+button.on, .seg button.on, .tabs button.active { background: #2a2a17; color: var(--accent); border-color: #2a2a17; }
+.tabs button.active { background: var(--panel-2); }
+.toast { border-color: var(--panel-2); background: var(--panel-2); border-left: none; }
+.role { border: none !important; text-transform: capitalize !important; letter-spacing: 0 !important; font-family: "Saira", sans-serif !important; font-weight: 600 !important; }
+.role.core { background: var(--text); color: #0b0d10; }
+.role.flex { background: #10393b !important; color: var(--accent-2); padding: 5px 8px 4px !important; }
+.role-btn.core { background: var(--text); color: #0b0d10; border-color: var(--text); }
+.role-btn.flex { background: #10393b; color: var(--accent-2); border-color: #10393b; }
+
+/* Numbers in Martian Mono */
+.ds-cost, .bq b, .ds-n, .fd-n, .dk-n, .df-badge, #deck-count, #pool-count, .bhead span, .dgroup b, .ds-breakdown-line b, .cm-row b { font-family: var(--mono) !important; font-weight: 600; }
+
+/* No colored side stripes: the card's game color fills its cost box instead */
+.bcard, .dl-row, .ds-row, .qa-hit, .tier-edit, .cm-title, .ds-key-cap, .card-cell { border-left: none !important; box-shadow: none !important; }
+.bcard .ds-cost, .dl-row .ds-cost, .ds-row .ds-cost, .qa-hit .ds-cost { background: var(--c) !important; color: #0b0d10; }
+.cm-title { padding-left: 0; }
+.tier-edit { border: none; background: var(--panel-2); }
+.tier-edit input[type=color] { border: none; }
+
+/* No dashed boxes: space and hairlines instead */
+.pool, .bempty, .slot, .bcol, .bcol.flex, .bcol.side, .bcol.core, .bcol.options { border: none !important; }
+.bcol { background: var(--panel); }
+.bcol .bhead { border-top: 1px solid var(--line); padding-top: 8px; position: relative; }
+.bcol .bhead::before { content: ""; position: absolute; left: 0; top: -1px; width: 28px; height: 2px; background: var(--accent-2); }
+.bempty { background: var(--bg); }
+.pool { padding: 0; }
+.pool.drop-hover, .tier-decks.drop-hover, .bcol.over { outline: none !important; background: rgba(76, 240, 230, .06) !important; }
+.empty-msg, .callout { border: none !important; background: var(--panel); }
+.callout.warn { box-shadow: inset 0 2px 0 var(--accent-2); }
+
+/* Panels open with a hairline and a cyan tick, not boxes */
+.panel, .inspector { border-color: var(--line); }
+
+/* =============== Slides =============== */
+.stage { background: #0b0d10; }
+.deck-tile { box-shadow: none !important; border-color: #ffffff1a; }
+.deck-tile.selected { border-color: var(--accent); box-shadow: none !important; outline: 3px solid var(--accent); }
+.tile-art::after { display: none; }                     /* no gradient fade */
+.tier-name { text-shadow: none !important; }
+.s-title, .tier-name { text-transform: none; }          /* as typed */
+.stage .brandmark { letter-spacing: 0 !important; text-transform: none; font-weight: 600; }
+/* Section labels on slides: sentence case with the section-opener tick */
+.fd-label, .ds-group, .ds-type-l, .dk-label { text-transform: none !important; letter-spacing: 0 !important; color: var(--text) !important; font-family: "Chakra Petch", sans-serif; }
+.fd-label { position: relative; border-top: 1px solid #ffffff1f; padding-top: 10px; font-size: 26px; }
+.fd-label::before { content: ""; position: absolute; left: 0; top: -1px; width: 40px; height: 3px; background: var(--accent-2); }
+.fd-section .fd-label { border-bottom: none; }
+.ds-group { font-size: 22px; border-bottom: none; border-top: 1px solid #ffffff1f; position: relative; padding-top: 10px; }
+.ds-group::before { content: ""; position: absolute; left: 0; top: -1px; width: 34px; height: 3px; background: var(--accent-2); }
+.ds-group.extra, .ds-row.is-extra { border-style: solid; }
+.ds-row { border: none; }
+.ds-row.is-key { outline: 2px solid var(--accent-2); }
+/* No glows on legends or key cards */
+.ds-legend, .fd-card, .fd-card.is-legend, .fd-card.is-key, .df-card, .dk-card { box-shadow: none !important; }
+.ds-legend { border: none; }
+.fd-card.is-legend { outline: 2px solid var(--k); outline-offset: 0; }
+.fd-card.is-flex::after, .fd-card.is-option::after { display: none; }
+/* Key cards: target-lock corner brackets */
+.fd-card.is-key::before, .dk-card.is-key::before {
+  content: ""; position: absolute; inset: -9px; pointer-events: none; z-index: 2;
+  --b: 3px; --l: 26px; --k2: var(--accent-2);
+  background:
+    linear-gradient(var(--k2), var(--k2)) top left / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) top left / var(--b) var(--l) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) top right / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) top right / var(--b) var(--l) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom left / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom left / var(--b) var(--l) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom right / var(--l) var(--b) no-repeat,
+    linear-gradient(var(--k2), var(--k2)) bottom right / var(--b) var(--l) no-repeat;
+}
+.fd-key { background: var(--accent-2) !important; color: #0b0d10; letter-spacing: 0 !important; text-transform: none !important; font-family: "Saira", sans-serif !important; font-size: 15px !important; clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px); }
+/* Copy counts: filled, cut corner */
+.fd-n, .dk-n, .dc-badge { border: none !important; background: #0b0d10 !important; color: var(--text) !important; box-shadow: none !important; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); }
+.fd-n small { color: var(--muted); }
+.ds-n { color: var(--text) !important; text-shadow: none; }
+.ds-key-cap span { color: var(--accent-2); letter-spacing: 0; text-transform: none; }
+.ds-key::after { background: rgba(11, 13, 16, .82); } /* flat scrim, not a gradient */
+.ds-row::after { background: rgba(16, 19, 26, .78); }
+.ds-row .ds-row-art { opacity: .35; }
+.ds-meta { color: var(--muted); }
