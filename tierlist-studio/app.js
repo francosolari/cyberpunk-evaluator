@@ -46,9 +46,16 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const norm = (s) => String(s ?? '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '');
 
-function toast(msg, ms = 3200) {
+function toast(msg, ms = 3200, action = null) {
   const t = $('#toast');
   t.textContent = msg;
+  if (action) {
+    const b = document.createElement('button');
+    b.className = 'small toast-action';
+    b.textContent = action.label;
+    b.onclick = () => { t.hidden = true; action.run(); };
+    t.append(' ', b);
+  }
   t.hidden = false;
   clearTimeout(toast._t);
   toast._t = setTimeout(() => (t.hidden = true), ms);
@@ -836,7 +843,7 @@ function renderSlideInspector() {
       <button class="small" data-tmove="-1" title="Move up" aria-label="Move tier up">↑</button><button class="small" data-tmove="1" title="Move down" aria-label="Move tier down">↓</button><button class="small danger" data-tdel title="Remove tier" aria-label="Remove tier">×</button></div>
       <textarea data-t="desc" rows="2" placeholder="Description (optional)">${esc(t.desc)}</textarea>
     </div>`).join('')}</div>
-    <button data-tadd class="block">+ Add tier</button>
+    <div class="row gap tier-actions"><button data-tadd>+ Add tier</button><button data-tclear ${s.tiers.some((t) => t.deckIds.length) ? '' : 'disabled'}>Clear tier list</button></div>
     <details class="more" data-more="presets" ${prefs().open?.['presets'] ? 'open' : ''}><summary>Tier presets</summary>
     <label>Start from a preset</label>
     <div class="row gap">${Object.keys(TIER_PRESETS).map((k) => `<button class="small" data-preset="${esc(k)}">${esc(k)}</button>`).join('')}</div>
@@ -925,6 +932,12 @@ function bindSlides() {
     if (!b) return;
     if (b.dataset.editDeck) { ui.deckId = b.dataset.editDeck; setView('decks'); return; }
     if (b.dataset.preset) applyPreset(s, b.dataset.preset);
+    else if ('tclear' in b.dataset) {
+      // Moves every deck back to Unranked; tiers and decks stay. Undo restores the placement.
+      const before = s.tiers.map((t) => t.deckIds.slice());
+      s.tiers.forEach((t) => (t.deckIds = []));
+      toast('Tier list cleared. All decks are back in Unranked.', 7000, { label: 'Undo', run: () => { s.tiers.forEach((t, i) => (t.deckIds = before[i] || [])); save(); renderSlides(); } });
+    }
     else if ('tadd' in b.dataset) s.tiers.push({ id: uid(), name: 'Tier ' + (s.tiers.length + 1), desc: '', color: TIER_PALETTE[s.tiers.length % TIER_PALETTE.length], deckIds: [] });
     else {
       const box = b.closest('[data-tier-edit]');
