@@ -412,8 +412,16 @@ function suggestKeyCard(d) {
 }
 
 /* ---------------- deck derived data ---------------- */
+/** Legends in display order: the most common color first and kept together (Y, Y, B, not Y, B, Y). */
+function legendsOf(d) {
+  const ids = d.legends.filter(Boolean);
+  const count = {};
+  ids.forEach((id) => { const c = card(id)?.color || '?'; count[c] = (count[c] || 0) + 1; });
+  const rank = (id) => { const c = card(id)?.color || '?'; return [-count[c], COLOR_ORDER.indexOf(c) < 0 ? 9 : COLOR_ORDER.indexOf(c)]; };
+  return ids.map((id, i) => [id, i]).sort((a, b) => { const x = rank(a[0]), y = rank(b[0]); return x[0] - y[0] || x[1] - y[1] || a[1] - b[1]; }).map(([id]) => id);
+}
 function deckColors(d) {
-  const cols = d.legends.map((id) => card(id)?.color).filter(Boolean);
+  const cols = legendsOf(d).map((id) => card(id)?.color).filter(Boolean);
   if (cols.length) return cols;
   return (d.label || d.name || '').toUpperCase().split('').filter((l) => COLORS[l]);
 }
@@ -461,7 +469,7 @@ const chips = (cols, cls = 'chip') => cols.map((c) => `<span class="${cls}" styl
 function deckTileHTML(d, mode, { style = '', selectable = true, showName = false } = {}) {
   if (d.display && d.display !== 'inherit') mode = d.display;
   const key = card(d.keyCard);
-  const legends = d.legends.map(card);
+  const legends = legendsOf(d).map(card);
   const strips = `<div class="strips">${legends.map((c) => `<div class="strip" style="--c:${hexOf(c)}">${artHTML(c)}</div>`).join('')}</div>`;
   let art;
   if (mode === 'legends') art = strips;
@@ -541,7 +549,7 @@ function deckSlideHTML(s) {
   const tier = tierOf(d);
   const keys = keysOf(d).map(card).filter(Boolean);
   const cols = deckColors(d);
-  const legends = d.legends.map((id) => {
+  const legends = legendsOf(d).map((id) => {
     const c = card(id);
     const [main, ...rest] = (c?.name || '—').split(/,\s*|\s+[—–-]\s+/);
     return `<figure class="ds-legend" style="--c:${hexOf(c)};--ca:${hexOf(c)}66">${artHTML(c)}<figcaption><b>${esc(main)}</b><span>${esc(rest.join(', '))}</span></figcaption></figure>`;
@@ -552,14 +560,14 @@ function deckSlideHTML(s) {
   // Compact rows when the grouped list wouldn't fit under the notes and breakdown.
   const lines = groups.reduce((t, g) => t + Math.ceil(g.rows.length / 2), 0);
   const many = lines * 66 + groups.length * 48 > (d.notes ? 640 : 770);
-  const rowHTML = ([c, n]) => `<div class="ds-row ${isKey(d, c.id) ? 'is-key' : ''}" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
+  const rowHTML = ([c, n]) => `<div data-card="${c.id}" class="ds-row ${isKey(d, c.id) ? 'is-key' : ''}" style="--c:${hexOf(c)};--ca:${hexOf(c)}40">
       ${artHTML(c, { cls: 'ds-row-art' })}
       <span class="ds-cost">${c.cost ?? '·'}</span><span class="ds-name">${esc(c.name)}</span>${roleTag(s, d, c.id)}<span class="ds-n">${n}×</span>
     </div>`;
   const list = groups.map((g) => `<div class="ds-group"><span>${esc(g.label)}</span><b>${g.count}</b></div>${g.rows.map(rowHTML).join('')}`).join('');
   const breakdown = total ? breakdownHTML(groups) : '';
   return `<div class="stage deck-slide">
-    <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(d.legends[0]))}38, transparent)"></div><div class="glow g2"></div>
+    <div class="glow g1" style="background:radial-gradient(closest-side, ${hexOf(card(legendsOf(d)[0]))}38, transparent)"></div><div class="glow g2"></div>
     <header class="ds-head">
       <div class="ds-eyebrow">${tier ? `<span class="pill tier-pill" style="--t:${esc(tier.color)}">${esc(tier.name)}</span>` : ''}<span class="chips">${chips(cols, 'chip-lg')}</span>${d.main.length ? `<span class="ds-meta">${deckCount(d)} cards</span>` : ''}</div>
       <h1 class="ds-code">${esc(deckLabel(d))}</h1>
@@ -609,7 +617,7 @@ function deckStacksSlideHTML(s, d) {
     strip = [...(optRows.length ? [{ label: 'Options', rows: ordered(optRows), option: true, note: 'not in the deck' }] : []), ...(side.length ? [{ label: 'Sideboard', rows: side }] : [])];
   }
   sections.forEach((x) => (x.count = x.rows.reduce((t, r) => t + r[1], 0)));
-  const legends = d.legends.map(card).filter(Boolean);
+  const legends = legendsOf(d).map(card).filter(Boolean);
   const X = 70, TOP = 214, BOTTOM = 1080 - 40, gap = 14, label = 44;
   const stripH = strip.length ? 190 : 0;
   const bodyH = BOTTOM - TOP - stripH - label;
@@ -640,7 +648,7 @@ function deckStacksSlideHTML(s, d) {
   const gridH = Math.max(0, ...counts.map((n, i) => Math.ceil(n / best.cols[i]))) * (h + gap) - gap;
   const stripTop = Math.min(TOP + label + gridH + 28, BOTTOM - stripH + 10); // right under the grid
   const sw = Math.floor((stripH - label - 6) * CARD_ASPECT);
-  const cardHTML = (c, n, width, height, extra = '', typeColor = '', option = false) => `<div class="fd-card ${isKey(d, c.id) ? 'is-key' : ''} ${!option && roleOf(c) === 'flex' ? 'is-flex' : ''} ${option ? 'is-option' : ''} ${extra}" style="width:${width}px;height:${height}px${typeColor ? `;--k:${typeColor}` : ''}">
+  const cardHTML = (c, n, width, height, extra = '', typeColor = '', option = false) => `<div data-card="${c.id}" class="fd-card ${isKey(d, c.id) ? 'is-key' : ''} ${!option && roleOf(c) === 'flex' ? 'is-flex' : ''} ${option ? 'is-option' : ''} ${extra}" style="width:${width}px;height:${height}px${typeColor ? `;--k:${typeColor}` : ''}">
       ${artHTML(c, { full: true })}${n ? `<span class="fd-n">${option ? '<small>+</small>' : '<small>×</small>'}${n}</span>` : ''}${option ? '' : roleTag(s, d, c.id)}${isKey(d, c.id) ? '<span class="fd-key">Key</span>' : ''}</div>`;
   const total = deckCount(d);
   const optCount = optRows.reduce((t, r) => t + r[1], 0);
@@ -747,6 +755,7 @@ function renderSlideInspector() {
       <label class="check"><input type="checkbox" data-s="showRoles" ${s.showRoles !== false ? 'checked' : ''}> Show Core / Flex tags</label>
       <label class="check"><input type="checkbox" data-s="showOptions" ${s.showOptions !== false ? 'checked' : ''}> Show options (cards outside the deck)</label>
       <p class="hint">Mark cards as Core or Flex, and pick up to 3 key cards, in the deck editor.</p>
+      ${deck(s.deckId) ? `<label>Quick add</label>${quickAddHTML(deck(s.deckId))}<p class="hint">Tap any card on the slide to move it between Core, Flex and Options, star it, or change its count.</p>` : ''}
       <button data-edit-deck="${s.deckId}" class="block">Edit this deck</button>`;
     return;
   }
@@ -900,6 +909,8 @@ function bindSlides() {
       moveDeck(id, dz.dataset.drop, before !== id ? before : null);
     });
     z.addEventListener('click', (e) => {
+      const cardEl = e.target.closest('[data-card]');
+      if (cardEl && slide()?.type === 'deck') { e.stopPropagation(); openCardMenu(deck(slide().deckId), cardEl.dataset.card, e.clientX, e.clientY); return; }
       const tile = e.target.closest('.deck-tile');
       const dz = e.target.closest('[data-drop]') || e.target.closest('[data-tier]')?.querySelector('[data-drop]');
       if (tile && (!ui.selectedDeck || ui.selectedDeck === tile.dataset.deck)) {
@@ -913,6 +924,36 @@ function bindSlides() {
     });
   }
 }
+/* Tap a card on a deck slide (in the editor) for quick changes. */
+function openCardMenu(d, id, x, y) {
+  closeCardMenu();
+  const c = card(id);
+  const zone = zoneOf(d, id);
+  const n = (zone === 'options' ? d.options : d.main).find((r) => r[0] === id)?.[1] || 0;
+  const m = document.createElement('div');
+  m.className = 'card-menu';
+  m.innerHTML = `<div class="cm-title" style="--c:${hexOf(c)}">${esc(c?.name || id)}</div>
+    <div class="cm-zones">${ZONES.map(([z, label]) => `<button data-cm-zone="${z}" class="${zone === z ? 'on' : ''}">${label}</button>`).join('')}</div>
+    <div class="cm-row"><button data-cm-bump="-1" aria-label="One fewer">−</button><b>${zone === 'options' ? '+' : '×'}${n}</b><button data-cm-bump="1" aria-label="One more">+</button>
+      <button data-cm-key class="${isKey(d, id) ? 'on' : ''}">★ Key</button><button data-cm-remove class="danger">Remove</button></div>`;
+  document.body.appendChild(m);
+  const r = m.getBoundingClientRect();
+  m.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + 'px';
+  m.style.top = Math.max(8, Math.min(y + 8, innerHeight - r.height - 8)) + 'px';
+  m.onclick = (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.cmZone) moveCard(d, id, b.dataset.cmZone);
+    else if (b.dataset.cmBump) bumpCard(d, id, Number(b.dataset.cmBump));
+    else if ('cmKey' in b.dataset) toggleKey(d, id);
+    else if ('cmRemove' in b.dataset) removeCard(d, id);
+    save(); renderStage();
+    if ('cmRemove' in b.dataset || !(d.main.concat(d.options || [])).some((row) => row[0] === id)) closeCardMenu();
+    else openCardMenu(d, id, x, y);
+  };
+}
+function closeCardMenu() { $$('.card-menu').forEach((m) => m.remove()); }
+
 function addDeckSlide(d) {
   const s = { id: uid(), type: 'deck', name: 'Deck: ' + (d ? deckLabel(d) : ''), deckId: d?.id || null };
   state.slides.push(s); ui.slideId = s.id; save(); setView('slides');
@@ -922,7 +963,7 @@ function addDeckSlide(d) {
 function renderDecks() {
   if (!deck(ui.deckId)) ui.deckId = state.decks[0]?.id;
   $('#deck-list').innerHTML = state.decks.map((d) => `<li data-deck-item="${d.id}" class="${d.id === ui.deckId ? 'active' : ''}">
-    <span class="fan">${d.legends.map((id) => `<span class="mini" style="--c:${hexOf(card(id))}">${artHTML(card(id))}</span>`).join('')}</span>
+    <span class="fan">${legendsOf(d).map((id) => `<span class="mini" style="--c:${hexOf(card(id))}">${artHTML(card(id))}</span>`).join('')}</span>
     <span class="dl-text"><strong>${esc(deckLabel(d))}</strong><span class="hint">${esc(d.name && d.name !== deckLabel(d) ? d.name : d.main.length ? deckCount(d) + ' cards' : '')}</span></span>
     <span class="chips">${chips(deckColors(d))}</span></li>`).join('') || '<li class="hint">No decks yet.</li>';
   const demos = state.decks.filter(isDemoDeck).length;
@@ -968,15 +1009,129 @@ function renderDecks() {
     <div>
       <h3>Preview</h3>
       <div class="previews">${Object.entries(DISPLAY_MODES).map(([k, v]) => `<figure>${deckTileHTML({ ...d, display: k }, k, { selectable: false, showName: true })}<figcaption>${v}</figcaption></figure>`).join('')}</div>
-      <h3 style="margin-top:20px">Decklist <span class="hint">${deckCount(d)} main${d.side.length ? ` · ${d.side.reduce((n, r) => n + r[1], 0)} side` : ''}</span></h3>
+    </div>
+    <div class="dl-full">
+      <h3>Decklist <span class="hint">${deckCount(d)} in the deck${(d.options || []).length ? ` · +${d.options.reduce((t, r) => t + r[1], 0)} options` : ''}${d.side.length ? ` · ${d.side.reduce((n, r) => n + r[1], 0)} side` : ''}</span></h3>
       ${d.unmatched?.length ? `<div class="callout warn">${d.unmatched.length} line(s) didn't match a card${state.catalog ? '' : ' (load the card data first)'}: ${d.unmatched.map((u) => esc(u.name)).join(', ')}</div>` : ''}
-      <div class="dl">${listRows(d.main, 0) || '<p class="hint">No decklist yet. Use “Replace from export…” to import one.</p>'}</div>
-      <h3 style="margin-top:18px">Options <span class="hint">cards you're considering, outside the deck${(d.options || []).length ? ` · +${d.options.reduce((t, r) => t + r[1], 0)}` : ''}</span></h3>
-      <div class="dl">${listRows(d.options || [], 2)}</div>
-      <button data-add-option class="small" style="margin-top:6px">+ Add option</button>
+      ${quickAddHTML(d)}
+      ${boardHTML(d)}
       ${d.side.length ? `<h3 style="margin-top:14px">Sideboard</h3><div class="dl">${listRows(d.side, 1)}</div>` : ''}
     </div>
   </div>`;
+}
+
+/* ---------------- deck card operations (shared by the editor board and the slide menu) ---------------- */
+// Zones: 'core' | 'deck' | 'flex' are the main deck with that role; 'options' is outside the deck.
+function zoneOf(d, id) {
+  if ((d.options || []).some((r) => r[0] === id)) return 'options';
+  return d.roles?.[id] || 'deck';
+}
+function takeRow(list, id) {
+  const i = list.findIndex((r) => r[0] === id);
+  return i < 0 ? null : list.splice(i, 1)[0];
+}
+function mergeRow(list, id, n) {
+  const row = list.find((r) => r[0] === id);
+  if (row) row[1] += n; else list.push([id, n]);
+}
+function setRole(d, id, zone) {
+  d.roles = d.roles || {};
+  if (zone === 'core' || zone === 'flex') d.roles[id] = zone; else delete d.roles[id];
+}
+function moveCard(d, id, zone) {
+  d.options = d.options || [];
+  if (zone === 'options') {
+    const row = takeRow(d.main, id);
+    if (row) mergeRow(d.options, id, row[1]);
+    setRole(d, id, '');
+    if (isKey(d, id)) setKeys(d, keysOf(d).filter((k) => k !== id));
+  } else {
+    const row = takeRow(d.options, id);
+    if (row) mergeRow(d.main, id, row[1]);
+    setRole(d, id, zone);
+  }
+}
+function addCard(d, id, zone, n = 1) {
+  d.options = d.options || [];
+  if (zoneOf(d, id) === 'options' && zone !== 'options') moveCard(d, id, zone);
+  mergeRow(zone === 'options' ? d.options : d.main, id, n);
+  if (zone !== 'options') setRole(d, id, zone);
+}
+function bumpCard(d, id, delta) {
+  const list = zoneOf(d, id) === 'options' ? d.options : d.main;
+  const row = list.find((r) => r[0] === id);
+  if (!row) return;
+  row[1] += delta;
+  if (row[1] <= 0) removeCard(d, id);
+}
+function removeCard(d, id) {
+  takeRow(d.main, id); takeRow(d.options || [], id); setRole(d, id, '');
+  if (isKey(d, id)) setKeys(d, keysOf(d).filter((k) => k !== id));
+}
+function toggleKey(d, id) {
+  const ks = keysOf(d);
+  if (ks.includes(id)) return setKeys(d, ks.filter((x) => x !== id)), true;
+  if (ks.length >= 3) { toast('A deck can have up to 3 key cards. Unstar one first.'); return false; }
+  if (zoneOf(d, id) === 'options') moveCard(d, id, 'deck');
+  setKeys(d, [...ks, id]);
+  return true;
+}
+
+/* Quick add: a search box that adds a card straight into a zone. */
+function quickAddHTML(d) {
+  return `<div class="qa" data-qa-deck="${d.id}">
+    <input class="qa-input" type="search" placeholder="Quick add a card…" autocomplete="off" aria-label="Quick add a card">
+    <select class="qa-zone" aria-label="Add to"><option value="deck">to Deck</option><option value="core">to Core</option><option value="flex">to Flex</option><option value="options">to Options</option></select>
+    <div class="qa-results" hidden></div>
+  </div>`;
+}
+function bindQuickAdd(onChange) {
+  const results = (box) => {
+    const q = norm(box.querySelector('.qa-input').value);
+    const list = q ? allCards().filter((c) => !isLegend(c) && norm(c.name).includes(q)).sort((a, b) => norm(a.name).indexOf(q) - norm(b.name).indexOf(q) || a.name.localeCompare(b.name)).slice(0, 8) : [];
+    const el = box.querySelector('.qa-results');
+    el.hidden = !list.length;
+    el.innerHTML = list.map((c, i) => `<button class="qa-hit ${i ? '' : 'first'}" data-qa-add="${c.id}" style="--c:${hexOf(c)}"><span class="ds-cost">${c.cost ?? '·'}</span>${esc(c.name)}<span class="hint">${esc(c.type || '')}</span></button>`).join('');
+  };
+  const add = (box, id) => {
+    const d = deck(box.dataset.qaDeck);
+    if (!d || !id) return;
+    addCard(d, id, box.querySelector('.qa-zone').value);
+    save();
+    toast(`Added ${card(id).name}.`);
+    box.querySelector('.qa-input').value = '';
+    onChange();
+    document.querySelector(`[data-qa-deck="${d.id}"] .qa-input`)?.focus();
+  };
+  document.addEventListener('input', (e) => { const box = e.target.closest('.qa'); if (box && e.target.matches('.qa-input')) results(box); });
+  document.addEventListener('keydown', (e) => {
+    const box = e.target.closest?.('.qa');
+    if (box && e.key === 'Enter') { e.preventDefault(); add(box, box.querySelector('.qa-hit')?.dataset.qaAdd); }
+  });
+  document.addEventListener('click', (e) => {
+    const hit = e.target.closest('[data-qa-add]');
+    if (hit) add(hit.closest('.qa'), hit.dataset.qaAdd);
+  });
+}
+
+const ZONES = [['core', 'Core', 'always in the list'], ['deck', 'Deck', 'untagged'], ['flex', 'Flex', 'slots that change'], ['options', 'Options', 'outside the deck']];
+let boardPick = null; // tap-to-move on touch screens: the card picked up, then tap a column
+function boardHTML(d) {
+  const rowsIn = (zone) => (zone === 'options' ? d.options || [] : d.main.filter(([id]) => (d.roles?.[id] || 'deck') === zone))
+    .map(([id, n]) => [card(id), n, id]).sort((a, b) => (a[0]?.cost ?? 99) - (b[0]?.cost ?? 99) || (a[0]?.name || '').localeCompare(b[0]?.name || ''));
+  return `<div class="board">${ZONES.map(([zone, label, hint]) => {
+    const rows = rowsIn(zone);
+    const n = rows.reduce((t, r) => t + r[1], 0);
+    return `<div class="bcol ${zone}" data-zone="${zone}">
+      <div class="bhead"><b>${label}</b> <span>${zone === 'options' && n ? '+' : ''}${n}</span><small>${hint}</small></div>
+      ${rows.map(([c, n, id]) => `<div class="bcard ${boardPick === id ? 'picked' : ''}" draggable="true" data-card="${id}" style="--c:${hexOf(c)}">
+        <span class="ds-cost">${c?.cost ?? '·'}</span><span class="nm">${esc(c?.name || id)}</span>
+        <span class="bq"><button class="small" data-bump="-1" aria-label="One fewer">−</button><b>${n}</b><button class="small" data-bump="1" aria-label="One more">+</button></span>
+        <button class="small key ${isKey(d, id) ? 'on' : ''}" data-key aria-label="Key card">★</button>
+      </div>`).join('') || '<div class="bempty">Drop cards here</div>'}
+    </div>`;
+  }).join('')}</div>
+  <p class="hint">Drag cards between columns, or tap a card and then a column. ★ marks a key card (up to 3).</p>`;
 }
 
 function exportSimText(d) {
@@ -1004,6 +1159,34 @@ function bindDecks() {
   $('#add-deck').onclick = () => { const d = newDeck({ name: 'New deck' }); state.decks.push(d); ui.deckId = d.id; save(); renderDecks(); };
   $('#import-deck').onclick = () => openImport();
   const ed = $('#deck-editor');
+  // Board: drag cards between zones, or tap a card then a column.
+  let dragCard = null;
+  ed.addEventListener('dragstart', (e) => {
+    const c = e.target.closest('.bcard');
+    if (!c) return;
+    dragCard = c.dataset.card;
+    e.dataTransfer.setData('text/plain', dragCard);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  ed.addEventListener('dragover', (e) => { const col = e.target.closest('.bcol'); if (col && dragCard) { e.preventDefault(); $$('.bcol.over').forEach((x) => x !== col && x.classList.remove('over')); col.classList.add('over'); } });
+  ed.addEventListener('dragend', () => { dragCard = null; $$('.bcol.over').forEach((x) => x.classList.remove('over')); });
+  ed.addEventListener('drop', (e) => {
+    const col = e.target.closest('.bcol');
+    if (!col || !dragCard) return;
+    e.preventDefault();
+    moveCard(deck(ui.deckId), dragCard, col.dataset.zone);
+    dragCard = null; save(); renderDecks();
+  });
+  ed.addEventListener('click', (e) => {
+    const d = deck(ui.deckId);
+    const bc = e.target.closest('.bcard');
+    if (bc || (e.target.closest('.bcol') && boardPick)) e.stopPropagation();
+    if (bc && e.target.closest('[data-bump]')) { bumpCard(d, bc.dataset.card, Number(e.target.closest('[data-bump]').dataset.bump)); save(); renderDecks(); return; }
+    if (bc && e.target.closest('[data-key]')) { if (toggleKey(d, bc.dataset.card)) { save(); renderDecks(); } return; }
+    if (bc) { boardPick = boardPick === bc.dataset.card ? null : bc.dataset.card; renderDecks(); return; }
+    const col = e.target.closest('.bcol');
+    if (col && boardPick) { moveCard(d, boardPick, col.dataset.zone); boardPick = null; save(); renderDecks(); }
+  }, true);
   ed.addEventListener('input', (e) => {
     const k = e.target.dataset.d;
     if (!k) return;
@@ -1451,6 +1634,9 @@ function bindGlobal() {
 }
 
 $('#build').textContent = document.querySelector('meta[name=build]')?.content || '';
+document.addEventListener('click', (e) => { if (!e.target.closest('.card-menu')) closeCardMenu(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCardMenu(); });
+bindQuickAdd(() => { if (ui.view === 'decks') renderDecks(); else { renderStage(); } });
 bindGlobal();
 bindSlides();
 bindDecks();
